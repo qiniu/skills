@@ -26,7 +26,7 @@ qshell 通过系统 PATH 查找，直接使用 `qshell` 命令调用。
 
 ### 使用策略
 
-**不要提前检查 qshell 是否安装。** 直接执行用户请求的 qshell 命令。仅当命令执行失败（如 `command not found`、`no such file or directory`、exit code 127）时，才阅读 `references/install.md` 按步骤自动下载安装，然后重新执行命令。
+**不要提前检查 qshell 是否安装。** 直接执行用户请求的 qshell 命令。仅当命令执行失败（如 `command not found`、`no such file or directory`、exit code 127）时，告知用户 qshell 未安装，并询问是否需要自动安装。获得用户同意后，阅读 `references/install.md` 按步骤下载安装，然后重新执行命令。
 
 ### 账号未配置时
 
@@ -34,6 +34,8 @@ qshell 通过系统 PATH 查找，直接使用 `qshell` 命令调用。
 ```bash
 qshell account <AccessKey> <SecretKey> <Name>
 ```
+
+> **安全提示：** AccessKey 和 SecretKey 会出现在 shell 历史记录中。建议执行前在命令前加一个空格（需 `HISTCONTROL=ignorespace`），或执行后运行 `history -d <行号>` 删除该条记录。
 
 ### 沙箱功能鉴权
 
@@ -57,7 +59,8 @@ qshell account <AccessKey> <SecretKey> <Name>     # 设置账号
 # 用户管理
 qshell user ls                                    # 列出所有已配置账号
 qshell user cu <Name>                             # 切换当前账号
-qshell user lookup                                # 查看当前用户
+qshell user current                               # 查看当前用户
+qshell user lookup <Name>                         # 查看指定账号详情
 
 # 列出所有 bucket
 qshell buckets
@@ -127,7 +130,7 @@ Key    FileSize    Hash    PutTime    MimeType    FileType    EndUser
 ### 3. 文件上传
 
 ```bash
-# 表单上传（适合小文件，< 几百 MB）
+# 表单上传（适合小文件，建议 < 100MB）
 qshell fput <Bucket> <Key> <LocalFile>
 qshell fput <Bucket> <Key> <LocalFile> --overwrite            # 覆盖同名
 qshell fput <Bucket> <Key> <LocalFile> --file-type 1          # 上传为低频存储
@@ -189,7 +192,7 @@ qshell rename <Bucket> <OldKey> <NewKey>
 # 删除文件
 qshell delete <Bucket> <Key>
 
-# 抓取远程资源到 bucket（适合小文件 < 50MB）
+# 抓取远程资源到 bucket（大文件建议使用 sync 命令）
 qshell fetch <RemoteURL> <Bucket> -k <Key>
 
 # 同步远程大文件到 bucket（使用分片上传，支持断点续传，适合大文件）
@@ -197,8 +200,9 @@ qshell sync <SrcResUrl> <Bucket> -k <Key>
 qshell sync <SrcResUrl> <Bucket> -k <Key> --overwrite
 qshell sync <SrcResUrl> <Bucket> -k <Key> --file-type 1      # 指定存储类型
 
-# 镜像更新
+# 镜像更新（从源站重新拉取覆盖旧文件）
 qshell mirrorupdate <Bucket> <Key>
+qshell prefetch <Bucket> <Key>                     # 同 mirrorupdate
 
 # 批量操作（从文件或 stdin 读取列表）
 qshell batchcopy <SrcBucket> <DestBucket> -i <MapFile>        # 每行: SrcKey\tDestKey
@@ -261,9 +265,6 @@ qshell cdnprefetch -i <URLListFile>
 # 也可以从 stdin 输入
 echo "http://example.com/path/file.jpg" | qshell cdnrefresh
 echo "http://example.com/path/file.jpg" | qshell cdnprefetch
-
-# CDN 预取（单个 URL）
-qshell prefetch <Bucket> <Key>
 ```
 
 ### 8. 数据处理 (pfop)
@@ -349,13 +350,13 @@ qshell abfetch -i <URLKeyFile> <Bucket>
 qshell acheck <Bucket> <Id> --zone <Zone>
 
 # 从 AWS S3 列举
-qshell awslist <AwsBucket> --access-key <AK> --secret-key <SK> --region <Region>
+qshell awslist -A <AwsID> -S <AwsSecretKey> <AwsBucket> <AwsRegion>
 
 # 从 AWS S3 迁移到七牛
-qshell awsfetch <AwsBucket> <QiniuBucket> --access-key <AK> --secret-key <SK>
+qshell awsfetch -A <AwsID> -S <AwsSecretKey> <AwsBucket> <AwsRegion> <QiniuBucket>
 
 # 从阿里云 OSS 列举
-qshell alilistbucket <AliBucket> --access-key <AK> --secret-key <SK> --endpoint <Endpoint>
+qshell alilistbucket <DataCenter> <Bucket> <AccessKeyId> <AccessKeySecret> [Prefix] <ListBucketResultFile>
 ```
 
 ### 12. 文件分享

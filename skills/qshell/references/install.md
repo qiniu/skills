@@ -45,26 +45,41 @@ if [ -z "$SUFFIX" ]; then
 fi
 
 URL="https://kodo-toolbox-new.qiniu.com/qshell-v${VERSION}-${SUFFIX}.tar.gz"
-curl -sL -e https://developer.qiniu.com -o /tmp/qshell.tar.gz "$URL"
+curl -fSL -e https://developer.qiniu.com -o /tmp/qshell.tar.gz "$URL" || {
+  echo "Error: Download failed: $URL" >&2
+  exit 1
+}
 ```
 
 ### 3. 解压并安装到用户目录
 
 ```bash
 tar -xzf /tmp/qshell.tar.gz -C /tmp/
-chmod +x /tmp/qshell
+
+# 查找解压出的 qshell 二进制（可能在子目录中）
+QSHELL_BIN=$(find /tmp -maxdepth 2 -name qshell -type f 2>/dev/null | head -1)
+if [ -z "$QSHELL_BIN" ]; then
+  echo "Error: qshell binary not found after extraction" >&2
+  exit 1
+fi
+chmod +x "$QSHELL_BIN"
 
 # 安装到用户目录
 mkdir -p "$HOME/.local/bin"
-mv /tmp/qshell "$HOME/.local/bin/qshell"
+mv "$QSHELL_BIN" "$HOME/.local/bin/qshell"
 
 rm -f /tmp/qshell.tar.gz
 ```
 
 如果 `$HOME/.local/bin` 不在 PATH 中，需要将其添加到 shell 配置文件：
 ```bash
-echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc   # bash
-echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc    # zsh
+# 仅在尚未配置时添加，避免重复
+if ! grep -qF 'export PATH="$HOME/.local/bin:$PATH"' ~/.bashrc 2>/dev/null; then
+  echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+fi
+if ! grep -qF 'export PATH="$HOME/.local/bin:$PATH"' ~/.zshrc 2>/dev/null; then
+  echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
+fi
 ```
 
 ### 4. 验证安装
