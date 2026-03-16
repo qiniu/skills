@@ -4,6 +4,21 @@ description: >
   Operate Qiniu Cloud KODO object storage via qshell CLI. Covers file CRUD,
   batch operations, CDN refresh/prefetch, data processing, file sharing,
   M3U8 operations, and sandbox management.
+type: tool
+best_for:
+  - "Managing Qiniu Cloud KODO object storage resources"
+  - "Batch file operations (upload, download, copy, move, delete)"
+  - "CDN cache refresh and prefetch"
+  - "Cloud sandbox environment management"
+  - "File sharing and private link generation"
+scenarios:
+  - "Upload local files to a Qiniu bucket"
+  - "List and query files in a bucket with prefix filtering"
+  - "Batch delete expired files from storage"
+  - "Refresh CDN cache after updating resources"
+  - "Create and manage sandbox environments"
+  - "Generate private download links for restricted files"
+  - "Migrate data from AWS S3 or Alibaba Cloud OSS to Qiniu"
 ---
 
 # 七牛 KODO 资源操作 (qshell)

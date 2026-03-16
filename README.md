@@ -1,41 +1,59 @@
 # Qiniu Skills
 
-AI Skill 定义文件集合，为 AI 编程助手（如 Claude Code、Cursor 等）提供七牛云产品的操作能力，实现自然语言驱动的云资源管理。
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
+[![Skills](https://img.shields.io/badge/skills-1-informational?style=flat-square)](#available-skills)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square)](CONTRIBUTING.md)
 
-## 目录结构
+AI Skill definitions for coding agents (Claude Code, Cursor, Codex, etc.) to operate Qiniu Cloud products via natural language.
 
+## Quick Start
+
+```bash
+# Install all skills
+npx skills add qiniu/skills
+
+# Install to a specific agent
+npx skills add qiniu/skills -a claude-code
+
+# List available skills without installing
+npx skills add qiniu/skills --list
 ```
-skills/
-└── qshell/                    # qshell CLI 操作七牛云 KODO 对象存储
-    ├── SKILL.md               # 主 Skill 定义文件（命令速查、意图映射、安全规则、输出格式等）
-    └── references/
-        ├── install.sh         # 安装脚本（自动检测平台并下载安装 qshell）
-        └── install.md         # 安装说明（脚本行为说明、账号配置等）
-```
 
-## 已收录 Skills
+> Powered by the [skills.sh](https://skills.sh) open agent skills ecosystem.
 
-| Skill | 说明 | 命令数 |
-|-------|------|--------|
-| [qshell](skills/qshell/SKILL.md) | 七牛云 KODO 对象存储 CLI 操作 | 98 个命令，15 大类 |
+## Available Skills
 
-## 使用方式
+| Skill | Description | Commands |
+|-------|-------------|----------|
+| [qshell](skills/qshell/SKILL.md) | Qiniu Cloud KODO object storage CLI | 98 commands, 15 categories |
 
-将对应的 `skills/<name>/` 目录配置到 AI 编程助手的 Skill 搜索路径中，助手即可根据自然语言意图自动调用相关命令。
+## What Can You Do
 
-### 示例
+Talk to your AI agent in natural language:
 
 - "列一下 my-bucket 里的文件" → `qshell listbucket2 my-bucket`
 - "上传 test.png 到 my-bucket" → `qshell fput my-bucket test.png ./test.png`
 - "创建一个沙箱" → `qshell sandbox create <template>`
 - "刷新 CDN 缓存" → `qshell cdnrefresh -i <urls.txt>`
+- "生成私有链接" → `qshell privateurl <URL>`
+- "批量下载 logs/ 前缀的文件" → `qshell qdownload2 --bucket <Bucket> --dest-dir ./logs --prefix logs/`
 
-## 贡献
+## Repository Structure
 
-欢迎为更多七牛云产品添加 AI Skill 定义。每个 Skill 应包含：
+```
+skills/
+└── qshell/                       # Qiniu KODO object storage via qshell CLI
+    ├── SKILL.md                  # Skill definition (commands, intent mapping, safety rules)
+    ├── references/
+    │   ├── install.sh            # Auto-install script (platform detection + download)
+    │   └── install.md            # Install guide and account setup
+    └── examples/
+        └── conversation-flow.md  # Typical interaction examples
+```
 
-1. `SKILL.md` — 主定义文件，包含 YAML frontmatter、命令速查、意图映射、安全规则和输出格式
-2. `references/` — 辅助参考文档（如安装指南、配置说明等）
+## Contributing
+
+We welcome contributions for more Qiniu Cloud product skills. See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## License
 
