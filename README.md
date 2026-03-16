@@ -9,7 +9,8 @@ skills/
 └── qshell/                    # qshell CLI 操作七牛云 KODO 对象存储
     ├── SKILL.md               # 主 Skill 定义文件（命令速查、意图映射、安全规则、输出格式等）
     └── references/
-        └── install.md         # 安装指南（自动检测平台并下载安装 qshell）
+        ├── install.sh         # 安装脚本（自动检测平台并下载安装 qshell）
+        └── install.md         # 安装说明（脚本行为说明、账号配置等）
 ```
 
 ## 已收录 Skills

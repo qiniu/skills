@@ -26,7 +26,7 @@ qshell 通过系统 PATH 查找，直接使用 `qshell` 命令调用。
 
 ### 使用策略
 
-**不要提前检查 qshell 是否安装。** 直接执行用户请求的 qshell 命令。仅当命令执行失败（如 `command not found`、`no such file or directory`、exit code 127）时，告知用户 qshell 未安装，并询问是否需要自动安装。获得用户同意后，阅读 `references/install.md` 按步骤下载安装，然后重新执行命令。
+**不要提前检查 qshell 是否安装。** 直接执行用户请求的 qshell 命令。仅当命令执行失败（如 `command not found`、`no such file or directory`、exit code 127）时，告知用户 qshell 未安装，并询问是否需要自动安装。获得用户同意后，执行 `references/install.sh` 安装（如需了解脚本细节可阅读 `references/install.md`），然后重新执行命令。
 
 ### 账号未配置时
 
@@ -582,7 +582,7 @@ qshell sandbox template init --name my-api --language typescript --path ./my-api
 
 | 错误 | 处理方式 |
 |------|----------|
-| `command not found` / exit 127 | qshell 未安装，参考 `references/install.md` 安装 |
+| `command not found` / exit 127 | qshell 未安装，执行 `references/install.sh` 安装 |
 | `no such file or directory` | 检查本地文件路径 |
 | `no such bucket` / `631` | 检查 bucket 名称，用 `qshell buckets` 列出可用 bucket |
 | `no such file or key` / `612` | 检查文件 key 是否正确 |

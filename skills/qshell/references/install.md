@@ -1,121 +1,43 @@
-# qshell 下载与安装指南
+# qshell 安装指南
 
-> **Windows 用户：** 本脚本仅支持 macOS 和 Linux。Windows 用户请从 [GitHub Releases](https://github.com/qiniu/qshell/releases) 手动下载对应的 `.zip` 包并将 `qshell.exe` 添加到 PATH 中。
+## 快速安装
 
-## 安装步骤
-
-### 1. 获取最新版本号
-
-通过 GitHub API 获取最新版本号：
-```bash
-VERSION=$(curl -s "https://api.github.com/repos/qiniu/qshell/releases/latest" | grep '"tag_name":' | sed -E 's/.*"v([^"]+)".*/\1/')
-if [ -z "$VERSION" ]; then
-  echo "Error: Failed to detect latest version. Please check https://github.com/qiniu/qshell/releases manually." >&2
-  exit 1
-fi
-echo "最新版本: v${VERSION}"
-```
-
-### 2. 检测平台和架构，下载二进制
-
-下载地址：`https://kodo-toolbox-new.qiniu.com/qshell-v${VERSION}-${SUFFIX}.tar.gz`（必须带 Referer `-e https://developer.qiniu.com`）
+运行 [`install.sh`](install.sh) 即可自动完成检测平台、下载、安装和配置 PATH：
 
 ```bash
-OS=$(uname -s | tr '[:upper:]' '[:lower:]')
-ARCH=$(uname -m)
-
-if [ "$OS" = "darwin" ]; then
-  if [ "$ARCH" = "arm64" ]; then
-    SUFFIX="darwin-arm64"
-  else
-    SUFFIX="darwin-amd64"
-  fi
-elif [ "$OS" = "linux" ]; then
-  if [ "$ARCH" = "x86_64" ]; then
-    SUFFIX="linux-amd64"
-  elif [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
-    SUFFIX="linux-arm64"
-  elif [ "$ARCH" = "i386" ] || [ "$ARCH" = "i686" ]; then
-    SUFFIX="linux-386"
-  fi
-fi
-
-if [ -z "$SUFFIX" ]; then
-  echo "Error: Unsupported platform: $OS/$ARCH" >&2
-  echo "Please download manually from https://github.com/qiniu/qshell/releases" >&2
-  exit 1
-fi
-
-URL="https://kodo-toolbox-new.qiniu.com/qshell-v${VERSION}-${SUFFIX}.tar.gz"
-curl -fSL -e https://developer.qiniu.com -o /tmp/qshell.tar.gz "$URL" || {
-  echo "Error: Download failed: $URL" >&2
-  exit 1
-}
+bash references/install.sh
 ```
 
-### 3. 解压并安装到用户目录
+> **Windows 用户：** 安装脚本仅支持 macOS 和 Linux。Windows 用户请从 [GitHub Releases](https://github.com/qiniu/qshell/releases) 手动下载对应的 `.zip` 包并将 `qshell.exe` 添加到 PATH 中。
 
-```bash
-TMPDIR=$(mktemp -d)
-tar -xzf /tmp/qshell.tar.gz -C "$TMPDIR"
+## 脚本行为说明
 
-# 查找解压出的 qshell 二进制（可能在子目录中）
-QSHELL_BIN=$(find "$TMPDIR" -maxdepth 2 -name qshell -type f 2>/dev/null | head -1)
-if [ -z "$QSHELL_BIN" ]; then
-  echo "Error: qshell binary not found after extraction" >&2
-  rm -rf "$TMPDIR" /tmp/qshell.tar.gz
-  exit 1
-fi
-chmod +x "$QSHELL_BIN"
-
-# 安装到用户目录
-mkdir -p "$HOME/.local/bin"
-mv "$QSHELL_BIN" "$HOME/.local/bin/qshell"
-
-# 清理临时文件
-rm -rf "$TMPDIR" /tmp/qshell.tar.gz
-```
-
-如果 `$HOME/.local/bin` 不在 PATH 中，需要将其添加到 shell 配置文件：
-```bash
-# 仅在尚未配置时添加，避免重复
-if ! grep -qF 'export PATH="$HOME/.local/bin:$PATH"' ~/.bashrc 2>/dev/null; then
-  echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
-fi
-if ! grep -qF 'export PATH="$HOME/.local/bin:$PATH"' ~/.zshrc 2>/dev/null; then
-  echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
-fi
-```
-
-### 4. 验证安装
-
-```bash
-qshell version
-```
+1. **获取版本** — 通过 GitHub API 查询 [qiniu/qshell](https://github.com/qiniu/qshell/releases) 最新 release 版本号
+2. **检测平台** — 自动识别 macOS/Linux + amd64/arm64/386 架构
+3. **下载** — 从 `kodo-toolbox-new.qiniu.com` 下载（需带 Referer `https://developer.qiniu.com`，脚本已内置）
+4. **安装** — 解压到临时目录，将二进制移动到 `$HOME/.local/bin/qshell`（可通过 `QSHELL_INSTALL_DIR` 环境变量自定义安装路径）
+5. **配置 PATH** — 如果安装目录不在 PATH 中，自动追加到 `~/.bashrc` 和 `~/.zshrc`（防重复）
+6. **验证** — 执行 `qshell version` 确认安装成功
 
 ## 配置账号
 
 安装完成后配置七牛账号：
+
 ```bash
 qshell account <AccessKey> <SecretKey> <Name>
 ```
 
-- `AccessKey` 和 `SecretKey`：从七牛控制台获取（https://portal.qiniu.com/user/key）
+- `AccessKey` 和 `SecretKey`：从[七牛控制台](https://portal.qiniu.com/user/key)获取
 - `Name`：自定义名称，用于本地区分多个账号
 
 ### 账号管理
 
 ```bash
-# 查看当前账号
-qshell account
-
-# 列出所有已配置账号
-qshell user ls
-
-# 切换账号
-qshell user cu <Name>
+qshell account          # 查看当前账号
+qshell user ls          # 列出所有已配置账号
+qshell user cu <Name>   # 切换账号
 ```
 
 ## 更新 qshell
 
-重新执行上述安装步骤即可覆盖更新，会自动获取最新版本。
+重新执行安装脚本即可覆盖更新，会自动获取最新版本。
