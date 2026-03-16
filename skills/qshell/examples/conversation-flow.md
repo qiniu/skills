@@ -118,10 +118,10 @@ qshell sandbox template list
 | tmpl-def456 | python-3.11 |
 
 ```bash
-qshell sandbox create tmpl-abc123 -t 600
+qshell sandbox create tmpl-abc123 -d -t 600
 ```
 
-Sandbox `sb-xyz789` created and terminal connected. Timeout: 600s.
+Sandbox `sb-xyz789` created (detached mode). Timeout: 600s.
 
 ---
 

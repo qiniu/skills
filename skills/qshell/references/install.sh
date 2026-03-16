@@ -62,11 +62,17 @@ tar -xzf "$WORK_DIR/qshell.tar.gz" -C "$WORK_DIR" || {
 }
 
 # 查找解压出的 qshell 二进制（可能在子目录中）
-QSHELL_BIN=$(find "$WORK_DIR" -maxdepth 2 -name qshell -type f -perm +111 2>/dev/null | head -1)
-if [ -z "$QSHELL_BIN" ]; then
+QSHELL_BIN_CANDIDATES=$(find "$WORK_DIR" -maxdepth 2 -name qshell -type f -perm +111 2>/dev/null)
+if [ -z "$QSHELL_BIN_CANDIDATES" ]; then
   echo "Error: qshell binary not found after extraction" >&2
   exit 1
 fi
+CANDIDATE_COUNT=$(echo "$QSHELL_BIN_CANDIDATES" | wc -l | tr -d ' ')
+if [ "$CANDIDATE_COUNT" -ne 1 ]; then
+  echo "Error: Expected to find exactly one 'qshell' executable, but found ${CANDIDATE_COUNT}." >&2
+  exit 1
+fi
+QSHELL_BIN="$QSHELL_BIN_CANDIDATES"
 chmod +x "$QSHELL_BIN"
 
 mkdir -p "$INSTALL_DIR"

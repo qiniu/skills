@@ -30,7 +30,7 @@ skills/
 ---
 name: skill-name
 description: >
-  One-line description of what the skill does. Keep it concise for
+  A short description of what the skill does. Keep it concise for
   leaderboard display on skills.sh.
 type: tool
 best_for:

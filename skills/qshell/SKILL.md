@@ -40,7 +40,7 @@ qshell 通过系统 PATH 查找，直接使用 `qshell` 命令调用。
 qshell account <AccessKey> <SecretKey> <Name>
 ```
 
-> **安全提示：** AccessKey 和 SecretKey 会出现在 shell 历史记录中。建议执行前在命令前加一个空格（需 `HISTCONTROL=ignorespace`），或执行后运行 `history -d <行号>` 删除该条记录。
+> **安全规则：** 当执行 `qshell account` 设置凭据时，**必须** 在命令前加一个空格，以防止 AccessKey 和 SecretKey 被记录在 shell 历史中。例如：` qshell account <AK> <SK> <Name>`
 
 ### 沙箱功能鉴权
 
