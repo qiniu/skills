@@ -1,5 +1,7 @@
 # qshell 下载与安装指南
 
+> **Windows 用户：** 本脚本仅支持 macOS 和 Linux。Windows 用户请从 [GitHub Releases](https://github.com/qiniu/qshell/releases) 手动下载对应的 `.zip` 包并将 `qshell.exe` 添加到 PATH 中。
+
 ## 安装步骤
 
 ### 1. 获取最新版本号
@@ -54,12 +56,14 @@ curl -fSL -e https://developer.qiniu.com -o /tmp/qshell.tar.gz "$URL" || {
 ### 3. 解压并安装到用户目录
 
 ```bash
-tar -xzf /tmp/qshell.tar.gz -C /tmp/
+TMPDIR=$(mktemp -d)
+tar -xzf /tmp/qshell.tar.gz -C "$TMPDIR"
 
 # 查找解压出的 qshell 二进制（可能在子目录中）
-QSHELL_BIN=$(find /tmp -maxdepth 2 -name qshell -type f 2>/dev/null | head -1)
+QSHELL_BIN=$(find "$TMPDIR" -maxdepth 2 -name qshell -type f 2>/dev/null | head -1)
 if [ -z "$QSHELL_BIN" ]; then
   echo "Error: qshell binary not found after extraction" >&2
+  rm -rf "$TMPDIR" /tmp/qshell.tar.gz
   exit 1
 fi
 chmod +x "$QSHELL_BIN"
@@ -68,7 +72,8 @@ chmod +x "$QSHELL_BIN"
 mkdir -p "$HOME/.local/bin"
 mv "$QSHELL_BIN" "$HOME/.local/bin/qshell"
 
-rm -f /tmp/qshell.tar.gz
+# 清理临时文件
+rm -rf "$TMPDIR" /tmp/qshell.tar.gz
 ```
 
 如果 `$HOME/.local/bin` 不在 PATH 中，需要将其添加到 shell 配置文件：

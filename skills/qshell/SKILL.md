@@ -129,14 +129,16 @@ Key    FileSize    Hash    PutTime    MimeType    FileType    EndUser
 
 ### 3. 文件上传
 
+**选择策略：** 文件 < 100MB 使用 `fput`（表单上传），>= 100MB 使用 `rput`（分片上传）。
+
 ```bash
-# 表单上传（适合小文件，建议 < 100MB）
+# 表单上传（适合 < 100MB 的文件）
 qshell fput <Bucket> <Key> <LocalFile>
 qshell fput <Bucket> <Key> <LocalFile> --overwrite            # 覆盖同名
 qshell fput <Bucket> <Key> <LocalFile> --file-type 1          # 上传为低频存储
 qshell fput <Bucket> <Key> <LocalFile> -t image/png           # 指定 MIME 类型
 
-# 分片上传（适合大文件）
+# 分片上传（>= 100MB 的文件，支持断点续传）
 qshell rput <Bucket> <Key> <LocalFile>
 qshell rput <Bucket> <Key> <LocalFile> --overwrite
 qshell rput <Bucket> <Key> <LocalFile> --resumable-api-v2     # 使用 v2 分片
@@ -292,8 +294,8 @@ qshell saveas <PublicUrlWithFop> <SaveBucket> <SaveKey>
 # 批量签名（从文件读取 URL 列表）
 qshell batchsign -i <URLListFile>
 
-# 生成各类七牛 Token
-qshell token                                       # 交互式生成 token
+# 生成各类七牛 Token（交互式，AI 助手无法直接调用，需提示用户手动运行）
+qshell token
 ```
 
 ### 10. 工具命令
@@ -337,7 +339,6 @@ qshell func <ParamsJson> <FuncTemplate>
 
 # 查看版本
 qshell version
-
 ```
 
 ### 11. 异步抓取与云迁移
@@ -407,11 +408,11 @@ qshell sandbox list -m key=value                   # 按元数据过滤
 qshell sandbox list -f json                        # JSON 格式输出
 
 # 创建沙箱（默认自动连接终端）
-qshell sandbox create <TemplateID>
-qshell sbx cr <TemplateID>
-qshell sandbox create <TemplateID> -t 300          # 设置超时 300 秒
-qshell sandbox create <TemplateID> -d              # 分离模式（不连接终端）
-qshell sandbox create <TemplateID> -m env=dev      # 添加元数据
+# ⚠ AI 助手应始终使用 -d（分离模式），避免交互式终端阻塞
+qshell sandbox create <TemplateID> -d
+qshell sbx cr <TemplateID> -d
+qshell sandbox create <TemplateID> -d -t 300          # 设置超时 300 秒
+qshell sandbox create <TemplateID> -d -m env=dev      # 添加元数据
 
 # 连接到已有沙箱终端
 qshell sandbox connect <SandboxID>
@@ -487,61 +488,24 @@ qshell sandbox template init --name my-api --language typescript --path ./my-api
 
 ## 用户意图到操作的映射
 
-| 用户说 | 操作 |
-|--------|------|
-| "列一下 bucket 里的文件" | `qshell listbucket2 <Bucket>` |
-| "看看这个文件信息" | `qshell stat <Bucket> <Key>` |
-| "上传文件到七牛" | `qshell fput` / `qshell rput`（大文件） |
-| "批量上传" | `qshell qupload2` |
-| "下载这个文件" | `qshell get <Bucket> <Key>` |
-| "批量下载" | `qshell qdownload2` |
-| "复制文件到另一个 bucket" | `qshell copy` |
-| "删除这个文件" | `qshell delete` |
-| "重命名文件" | `qshell rename` |
-| "改一下存储类型" | `qshell chtype` |
-| "设置文件生命周期" / "lifecycle" | `qshell chlifecycle` |
-| "刷新 CDN" | `qshell cdnrefresh` |
-| "预热 CDN" | `qshell cdnprefetch` |
-| "生成私有链接" | `qshell privateurl` |
-| "解冻归档文件" | `qshell restorear` |
-| "解码 reqid" | `qshell reqid` |
-| "算一下 qetag" | `qshell qetag` |
-| "有哪些 bucket" | `qshell buckets` |
-| "创建 bucket" | `qshell mkbucket` |
-| "这个 bucket 绑定了什么域名" | `qshell domains <Bucket>` |
-| "批量删除" | `qshell batchdelete`（默认需验证码确认，`-y` 跳过） |
-| "转码这个视频" | `qshell pfop` |
-| "查一下处理进度" | `qshell prefop` |
-| "同步一个大文件到七牛" | `qshell sync` |
-| "从远程 URL 抓取文件" | `qshell fetch`（小文件） / `qshell sync`（大文件） |
-| "异步抓取" | `qshell abfetch` |
-| "从 S3 迁移" | `qshell awsfetch` |
-| "从阿里云迁移" | `qshell alilistbucket` + `qshell batchfetch` |
-| "分享文件" / "创建分享链接" | `qshell create-share` |
-| "查看分享内容" | `qshell share-ls` |
-| "从分享链接下载" | `qshell share-cp` |
-| "删除 m3u8 和切片" | `qshell m3u8delete` |
-| "替换 m3u8 域名" | `qshell m3u8replace` |
-| "创建沙箱" / "sandbox" | `qshell sandbox create` |
-| "列出沙箱" | `qshell sandbox list` |
-| "连接沙箱" | `qshell sandbox connect` |
-| "在沙箱里执行命令" | `qshell sandbox exec` |
-| "终止沙箱" | `qshell sandbox kill` |
-| "暂停沙箱" | `qshell sandbox pause` |
-| "恢复沙箱" | `qshell sandbox resume` |
-| "查看沙箱日志" | `qshell sandbox logs` |
-| "管理沙箱模板" | `qshell sandbox template` |
-| "构建模板" | `qshell sandbox template build` |
-| "初始化模板项目" | `qshell sandbox template init` |
-| "生成 token" | `qshell token` |
-| "解压 zip" | `qshell unzip` |
-| "base64 编码" | `qshell b64encode` |
-| "url 编码" | `qshell urlencode` |
-| "时间戳转日期" | `qshell ts2d` / `qshell tms2d` / `qshell tns2d` |
-| "查 IP" | `qshell ip` |
-| "禁用文件" | `qshell forbidden` |
-| "设置过期时间" | `qshell expire` |
-| "切换账号" | `qshell user cu` |
+下表仅列出存在歧义或需要判断的场景，简单的一对一映射请参考命令速查部分。
+
+| 用户说 | 操作 | 判断依据 |
+|--------|------|----------|
+| "上传文件到七牛" | `qshell fput`（< 100MB）/ `qshell rput`（>= 100MB） | 根据文件大小选择 |
+| "批量上传" | `qshell qupload2` | 上传整个目录 |
+| "从远程 URL 抓取文件" | `qshell fetch`（小文件） / `qshell sync`（大文件或需断点续传） | fetch 适合小文件，sync 支持分片和断点续传 |
+| "同步文件到七牛" | `qshell sync` | 大文件或需断点续传时优先 |
+| "从 S3 迁移" | `qshell awsfetch` | 需要 AWS 凭据 |
+| "从阿里云迁移" | `qshell alilistbucket` + `qshell batchfetch` | 先列举再批量抓取 |
+| "刷新 CDN" | `qshell cdnrefresh` | URL 刷新 |
+| "预热 CDN" | `qshell cdnprefetch` | URL 预取 |
+| "改一下存储类型" | `qshell chtype`（单文件） / `qshell batchchtype`（批量） | 根据操作规模选择 |
+| "设置文件生命周期" | `qshell chlifecycle`（单文件） / `qshell batchchlifecycle`（批量） | 根据操作规模选择 |
+| "移动文件" / "重命名文件" | `qshell rename`（同 bucket）/ `qshell move`（跨 bucket） | 根据是否跨 bucket 选择 |
+| "删除 m3u8" | `qshell m3u8delete` | 会同时删除所有切片文件 |
+| "创建沙箱" | `qshell sandbox create <TemplateID> -d` | AI 助手必须使用 -d 分离模式 |
+| "生成 token" | `qshell token` | 交互式命令，提示用户手动运行 |
 
 ---
 
@@ -549,6 +513,7 @@ qshell sandbox template init --name my-api --language typescript --path ./my-api
 
 ### 危险操作（必须与用户确认后再执行）
 
+- `qshell account <AK> <SK> <Name>` — 会覆盖当前账号配置，涉及凭据安全
 - `qshell delete` / `qshell batchdelete` — 删除文件不可恢复
 - `qshell move` / `qshell batchmove` — 源文件会被删除
 - `qshell rename` / `qshell batchrename` — 重命名实质是移动
@@ -556,13 +521,15 @@ qshell sandbox template init --name my-api --language typescript --path ./my-api
 - `qshell batchexpire` — 批量设置过期可能导致数据丢失
 - `qshell m3u8delete` — 删除 M3U8 及所有切片文件
 - `qshell sandbox kill` / `qshell sandbox kill -a` — 终止沙箱
+- `qshell sandbox connect` — 交互式终端，AI 助手无法操作，需提示用户手动执行
 - `qshell sandbox template delete` — 删除模板
 - 任何带 `--overwrite` 的上传/复制/同步操作
+- `qshell token` — 交互式命令，AI 助手无法操作，需提示用户手动执行
 
 ### 安全操作（可直接执行）
 
 - 所有查询类：`stat`、`listbucket2`、`buckets`、`bucket`、`domains`、`prefop`、`batchstat`
-- 工具类：`reqid`、`qetag`、`match`、`b64encode`、`b64decode`、`urlencode`、`urldecode`、`rpcencode`、`rpcdecode`、`ip`、`d2ts`、`tms2d`、`tns2d`、`ts2d`、`func`、`dircache`、`token`、`unzip`、`version`
+- 工具类：`reqid`、`qetag`、`match`、`b64encode`、`b64decode`、`urlencode`、`urldecode`、`rpcencode`、`rpcdecode`、`ip`、`d2ts`、`tms2d`、`tns2d`、`ts2d`、`func`、`dircache`、`unzip`、`version`
 - 链接生成：`privateurl`、`saveas`、`batchsign`、`create-share`
 - 分享查看：`share-ls`
 - 沙箱查询：`sandbox list`、`sandbox logs`、`sandbox metrics`、`sandbox template list`、`sandbox template get`、`sandbox template builds`、`sandbox template init`
