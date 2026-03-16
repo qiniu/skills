@@ -1,19 +1,9 @@
 ---
 name: qshell
-description: |
-  使用 qshell CLI 操作七牛云 KODO 对象存储资源。支持文件查询、上传、下载、复制、移动、
-  删除、属性修改、生命周期管理、CDN 刷新/预取、数据处理、文件分享、M3U8 操作、
-  沙箱环境管理、沙箱模板管理等全部存储和计算操作。
-  当用户想操作七牛存储、管理 bucket/文件、上传下载、CDN 操作、查看文件信息、
-  管理沙箱环境、分享文件时使用此 skill。
-  触发短语包括："查一下这个 bucket"、"列一下文件"、"上传文件到七牛"、"下载七牛文件"、
-  "刷新 CDN"、"看看文件信息"、"stat 一下"、"qshell"、"七牛存储"、"kodo"、
-  "bucket 里有什么"、"批量删除"、"改一下文件类型"、"生成私有链接"、"解冻归档文件"、
-  "解码 reqid"、"算一下 qetag"、"创建沙箱"、"sandbox"、"沙箱模板"、
-  "分享文件"、"share"、"m3u8"、"生命周期"、"lifecycle"、"同步大文件"、"sync"、
-  "token"、"unzip"。
-  当用户提到 qshell 命令、七牛 bucket 名称、或任何对象存储操作时也应触发。
-  当用户说「安装 qshell」、「下载 qshell」、「配置 qshell」、「qshell 怎么装」时也应触发。
+description: >
+  Operate Qiniu Cloud KODO object storage via qshell CLI. Covers file CRUD,
+  batch operations, CDN refresh/prefetch, data processing, file sharing,
+  M3U8 operations, and sandbox management.
 ---
 
 # 七牛 KODO 资源操作 (qshell)
