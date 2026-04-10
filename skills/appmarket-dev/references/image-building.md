@@ -157,8 +157,8 @@ python3 scripts/vm-cli.py delete-vm --instance-id i-xxxxx
 | `--image-desc` | 自动生成 | 镜像描述 |
 | `--region` | `ap-northeast-1` | 区域，自定义镜像绑定创建时的区域 |
 | `--instance-type` | 自动选最小 | VM 规格，可通过 `list-types` 查看 |
-| `--disk-type` | `local.ssd` | 磁盘类型（`local.ssd` 或 `cloud.ssd`） |
-| `--disk-size` | `40` | 系统盘大小 GB，镜像大小 = 实际使用量 |
+| `--disk-type` | `cloud.ssd` | 磁盘类型（`local.ssd` 或 `cloud.ssd`） |
+| `--disk-size` | `20` | 系统盘大小 GB，范围 20–500（LAS 平台限制），镜像大小 = 实际使用量 |
 | `--bandwidth` | `100` | 峰值带宽 Mbps，可选 50/100/200 |
 | `--base-image` | 自动查询 Ubuntu 24.04 | 基础镜像 ID |
 | `--password` | 随机生成 | VM 密码 |
@@ -198,6 +198,28 @@ log "验证..."
 
 log "安装完成"
 ```
+
+### 3.1.1 非交互式原则（必须遵守）
+
+安装脚本由 `image-cli.py` 通过 SSH 执行，**stdin 已重定向到 `/dev/null`**。任何等待用户输入的命令都会立即收到 EOF 并可能导致脚本失败或行为异常。
+
+**必须在脚本顶部设置以下环境变量：**
+
+```bash
+export DEBIAN_FRONTEND=noninteractive   # 禁止 apt/dpkg 弹出 debconf 配置界面（如 tzdata 时区选择）
+export NEEDRESTART_MODE=a               # Ubuntu 22.04+ 自动重启受影响的服务，跳过交互提示
+export UCF_FORCE_CONFFOLD=1             # apt 升级时配置文件冲突自动保留旧版本
+```
+
+**第三方安装脚本（`curl | bash` 类）的处理方式：**
+
+| 情况 | 处理方式 |
+|------|---------|
+| 支持 `--yes` / `--non-interactive` / `--skip-setup` 等标志 | 在调用命令中显式传入 |
+| 支持环境变量控制 | 查阅文档，提前 `export` 相应变量 |
+| 不支持任何静默模式 | 不应使用此安装脚本；需找替代安装方式或手动分解安装步骤 |
+
+**验证方法**：可以用 `bash -n script.sh` 做本地语法检查。功能验证必须在 VM 上进行——用 `--keep-vm` 保留构建 VM，或用 `run-script` 在已有 VM 上重跑脚本，不要在本地直接执行安装脚本（会污染本地环境）。
 
 ### 3.2 示例：应用安装脚本
 
@@ -309,7 +331,7 @@ Host: ap-northeast-1-ecs.qiniuapi.com
     "regionID": "ap-northeast-1",
     "imageID": "<官方镜像 ID>",
     "instanceType": "ecs.t1.c2m4",
-    "systemDisk": { "diskType": "local.ssd", "size": 40 },
+    "systemDisk": { "diskType": "cloud.ssd", "size": 20 },
     "internetMaxBandwidth": 100,
     "password": "<密码>",
     "clientToken": "<UUID>",
@@ -404,6 +426,56 @@ Host: ap-northeast-1-ecs.qiniuapi.com
 | 镜像创建响应 | 返回 HTTP 202，异步操作 |
 | 区域绑定 | 自定义镜像绑定创建时的 regionID，仅该区域可用 |
 | 镜像大小 | 取决于系统盘实际使用量，建议控制在 10GB 以内 |
+| **最小磁盘约束** | 镜像会记录制作时的磁盘大小作为 min disk；后续用该镜像创建实例时，`system_disk_size` **必须 ≥ 镜像的 min disk**，否则 API 返回 `instance disk is less than image min disk [400]`。LAS 系统盘范围 **20–500 GB**，`image-cli.py build` 默认 20 GB |
+
+> **实践建议**：制作镜像时记录所用的磁盘大小（如 60GB），然后在 `variables.tf` 中将 `system_disk_size` 变量的 `minimum` 设为同一数值，并确保 `deploy-meta.json` 所有 preset 的 `system_disk_size` 也不低于该值。
+
+### 4.9 构建 manifest 留档
+
+`image-cli.py build` 和 `image-cli.py create-image` 完成后，会在安装脚本同级目录（或当前目录）自动写出一份构建 manifest：
+
+```
+my-app-v1.0.0-build-20260410-090000.json
+```
+
+manifest 内容：
+
+```json
+{
+  "builtAt": "2026-04-10T09:00:00Z",
+  "region": "ap-northeast-1",
+  "baseImage": {
+    "id": "img-official-ubuntu2404",
+    "name": "Ubuntu 24.04 LTS",
+    "osDistribution": "Ubuntu",
+    "osVersion": "24.04"
+  },
+  "builderVM": {
+    "instanceId": "i-xxxxxxx",
+    "instanceType": "ecs.t1.c2m4",
+    "diskSize": 20,
+    "diskType": "cloud.ssd",
+    "bandwidth": 100
+  },
+  "installScript": {
+    "path": "/abs/path/to/setup-image.sh",
+    "sha256": "abc123..."
+  },
+  "outputImage": {
+    "id": "image-xxxxxxxxx",
+    "name": "my-app-v1.0.0",
+    "minDisk": 20,
+    "minCPU": 2,
+    "minMemory": 4
+  }
+}
+```
+
+**约定：**
+- manifest 文件应提交进版本控制，与 `setup-image.sh` 放在同一目录
+- `sha256` 字段记录安装脚本的哈希，便于确认镜像和脚本的对应关系
+- 若安装脚本内部通过 `curl ... | bash` 安装非固定版本，需在脚本注释或 manifest 旁附加说明，以便人工审阅
+- 每次重新制作镜像都会生成新的 manifest，旧的 manifest 可作为变更历史保留
 
 ---
 

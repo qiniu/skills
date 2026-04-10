@@ -434,8 +434,8 @@ def main():
     p.add_argument("--name", default="", help="VM 名称 (默认: image-builder)")
     p.add_argument("--region", default="ap-northeast-1", help="区域 (默认: ap-northeast-1)")
     p.add_argument("--instance-type", help="VM 规格 (默认: 自动选择最小可用机型)")
-    p.add_argument("--disk-type", default="local.ssd", choices=["local.ssd", "cloud.ssd"],
-                   help="磁盘类型 (默认: local.ssd)")
+    p.add_argument("--disk-type", default="cloud.ssd", choices=["local.ssd", "cloud.ssd"],
+                   help="磁盘类型 (默认: cloud.ssd)")
     p.add_argument("--disk-size", type=int, default=40, help="系统盘大小 GB (默认: 40)")
     p.add_argument("--bandwidth", type=int, default=100, choices=[50, 100, 200],
                    help="峰值带宽 Mbps，可选 50/100/200 (默认: 100)")

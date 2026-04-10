@@ -274,9 +274,12 @@ class AppMarketClient:
 # ---------------------------------------------------------------------------
 
 def cmd_create_app(client: AppMarketClient, args):
+    print(f"创建应用: {args.name}...")
     result = client.create_app(args.name, args.desc, args.type)
     app_id = result.get("appID", "")
-    print(f"应用创建成功！AppID: {app_id}")
+    info = client.get_app(app_id)
+    print(f"\n应用创建成功！")
+    print(json.dumps(info, indent=2, ensure_ascii=False))
     print(f"\n下一步: appmarket-cli.py create-version --app-id {app_id} --deploy-meta deploy-meta.json")
 
 
@@ -288,12 +291,11 @@ def cmd_update_app(client: AppMarketClient, args):
     if not args.name and not args.desc:
         print("错误: 请至少提供 --name 或 --desc 中的一个", file=sys.stderr)
         sys.exit(1)
+    print(f"更新应用: {args.app_id}...")
     client.patch_app(args.app_id, name=args.name or "", description=args.desc or "")
-    print(f"应用更新成功！App: {args.app_id}")
-    if args.name:
-        print(f"  名称: {args.name}")
-    if args.desc:
-        print(f"  描述: {args.desc[:60]}{'...' if len(args.desc) > 60 else ''}")
+    info = client.get_app(args.app_id)
+    print(f"\n应用更新成功！")
+    print(json.dumps(info, indent=2, ensure_ascii=False))
 
 
 def cmd_list_apps(client: AppMarketClient, _args):
@@ -366,6 +368,8 @@ def cmd_test_version(client: AppMarketClient, args):
     inst = client.create_instance(args.app_id, args.version, inputs, region)
     instance_id = inst.get("appInstanceID", "") or inst.get("instanceID", "")
     print(f"实例 ID: {instance_id}")
+    print("\n实例初始信息:")
+    print(json.dumps(inst, indent=2, ensure_ascii=False))
 
     # 轮询状态（最多 10 分钟）
     print("\n等待部署完成...")
@@ -395,13 +399,16 @@ def cmd_test_version(client: AppMarketClient, args):
     else:
         print("\n超时: 实例在 600 秒内未完成部署", file=sys.stderr)
 
-    # 清理
-    if args.cleanup:
+    # 清理 —— 失败时强制保留实例供人工排查
+    if args.cleanup and final_status not in ("Failed", "DeployFailed", ""):
         print(f"\n清理: 删除实例 {instance_id}...")
         client.delete_instance(args.app_id, instance_id, region)
         print("实例已删除")
     else:
-        print(f"\n测试实例保留中，手动删除:")
+        if final_status in ("Failed", "DeployFailed"):
+            print(f"\n⚠️  部署失败，实例已保留供人工排查:")
+        else:
+            print(f"\n测试实例保留中，手动删除:")
         print(f"  appmarket-cli.py delete-instance --app-id {args.app_id} --instance-id {instance_id}")
 
     if final_status in ("Failed", "DeployFailed"):
@@ -456,6 +463,32 @@ def cmd_get_instance(client: AppMarketClient, args):
     print(json.dumps(client.get_instance(args.app_id, args.instance_id), indent=2, ensure_ascii=False))
 
 
+def cmd_wait_instance(client: AppMarketClient, args):
+    """对已有实例恢复轮询，直到达到终态（Running/Failed）。用于 test-version 超时或中断后继续监控。"""
+    print(f"轮询实例: {args.instance_id} (最多 {args.timeout}s)...")
+    for i in range(args.timeout // 10):
+        time.sleep(10)
+        info = client.get_instance(args.app_id, args.instance_id, args.region)
+        st = info.get("status", "")
+        print(f"  [{(i + 1) * 10}s] {st}")
+        if st in ("Running", "Deployed"):
+            print(f"\n实例部署成功！状态: {st}")
+            outputs = info.get("outputs", {})
+            if outputs:
+                print("\n实例输出:")
+                for k, v in outputs.items():
+                    print(f"  {k} = {v}")
+            else:
+                print(json.dumps(info, indent=2, ensure_ascii=False))
+            return
+        if st in ("Failed", "DeployFailed"):
+            print(f"\n实例部署失败！", file=sys.stderr)
+            print(json.dumps(info, indent=2, ensure_ascii=False), file=sys.stderr)
+            sys.exit(1)
+    print(f"\n超时: 实例在 {args.timeout}s 内未完成部署", file=sys.stderr)
+    sys.exit(1)
+
+
 def cmd_delete_instance(client: AppMarketClient, args):
     client.delete_instance(args.app_id, args.instance_id)
     print(f"实例已删除: {args.instance_id}")
@@ -468,6 +501,43 @@ def cmd_list_instances(client: AppMarketClient, args):
         print("没有找到 AppInstance")
         return
     print(json.dumps({"items": items}, indent=2, ensure_ascii=False))
+
+
+def _rfs_base(region_id: str) -> str:
+    """构造 RFS API base（如 https://ap-northeast-1-rfs.qiniuapi.com）"""
+    return f"https://{region_id}-rfs.qiniuapi.com"
+
+
+def cmd_get_stack(client: AppMarketClient, args):
+    """查询资源栈详情（包含 Terraform outputs 和物理资源 ID）。"""
+    base = _rfs_base(args.region)
+    resp = client._request("GET", f"/v1/stacks/{args.stack}", base_override=base)
+    data = client._check(resp)
+    print(json.dumps(data, indent=2, ensure_ascii=False))
+
+
+def cmd_list_stacks(client: AppMarketClient, args):
+    """列举资源栈。"""
+    base = _rfs_base(args.region)
+    params = []
+    if args.status:
+        for s in args.status:
+            params.append(f"status={s}")
+    if args.limit:
+        params.append(f"limit={args.limit}")
+    qs = ("?" + "&".join(params)) if params else ""
+    resp = client._request("GET", f"/v1/stacks/{qs}", base_override=base)
+    data = client._check(resp)
+    items = data.get("items", [])
+    if not items:
+        print("没有找到资源栈")
+        return
+    print(f"{'Stack ID':<35}  {'状态':<20}  {'名称'}")
+    print("-" * 75)
+    for item in items:
+        print(f"  {item.get('id',''):<33}  {item.get('status',''):<20}  {item.get('name','')}")
+    if data.get("nextMarker"):
+        print(f"\n(下一页 marker: {data['nextMarker']})")
 
 
 # ---------------------------------------------------------------------------
@@ -571,6 +641,14 @@ def main():
     p = sub.add_parser("get-instance", help="获取实例详情")
     p.add_argument("--app-id", required=True, help="应用 ID")
     p.add_argument("--instance-id", required=True, help="实例 ID")
+    p.add_argument("--region", default="ap-northeast-1", help="区域（默认: ap-northeast-1）")
+
+    # wait-instance
+    p = sub.add_parser("wait-instance", help="对已有实例恢复轮询直到终态（test-version 超时或中断后用）")
+    p.add_argument("--app-id", required=True, help="应用 ID")
+    p.add_argument("--instance-id", required=True, help="实例 ID")
+    p.add_argument("--region", default="ap-northeast-1", help="区域（默认: ap-northeast-1）")
+    p.add_argument("--timeout", type=int, default=600, help="最长等待秒数（默认 600）")
 
     # delete-instance
     p = sub.add_parser("delete-instance", help="删除实例")
@@ -581,6 +659,17 @@ def main():
     p = sub.add_parser("list-instances", help="列出实例")
     p.add_argument("--app-id", help="应用 ID（可选）")
     p.add_argument("--region", default="ap-northeast-1", help="区域（默认: ap-northeast-1）")
+
+    # get-stack
+    p = sub.add_parser("get-stack", help="查询 RFS 资源栈详情（含 Terraform outputs 和物理资源 ID）")
+    p.add_argument("--stack", required=True, help="资源栈名称或 ID")
+    p.add_argument("--region", default="ap-northeast-1", help="区域（默认: ap-northeast-1）")
+
+    # list-stacks
+    p = sub.add_parser("list-stacks", help="列举 RFS 资源栈")
+    p.add_argument("--region", default="ap-northeast-1", help="区域（默认: ap-northeast-1）")
+    p.add_argument("--status", action="append", help="按状态过滤（可多次指定，如 --status CreateFailed）")
+    p.add_argument("--limit", type=int, default=20, help="返回条数（默认 20，最大 100）")
 
     args = parser.parse_args()
     if not args.command:
@@ -603,8 +692,11 @@ def main():
         "test-version": cmd_test_version,
         "publish-version": cmd_publish_version,
         "get-instance": cmd_get_instance,
+        "wait-instance": cmd_wait_instance,
         "delete-instance": cmd_delete_instance,
         "list-instances": cmd_list_instances,
+        "get-stack": cmd_get_stack,
+        "list-stacks": cmd_list_stacks,
     }
 
     handler = commands.get(args.command)

@@ -227,9 +227,11 @@ terraform destroy -auto-approve
 # 使用插件提供的测试脚本
 scripts/test-module.sh path/to/terraform-module
 
-# 或指定测试变量
-scripts/test-module.sh path/to/terraform-module test.tfvars
+# 或指定测试变量（注意：路径必须是绝对路径）
+scripts/test-module.sh path/to/terraform-module /absolute/path/to/test.tfvars
 ```
+
+> **tfvars 路径必须使用绝对路径**：`test-module.sh` 内部会 `cd` 进模块目录后再调用 `terraform`，导致相对路径失效。使用 `$(pwd)/test.tfvars` 或 `$(realpath test.tfvars)` 转换为绝对路径。
 
 ### 3.2 验证实例功能
 
@@ -576,7 +578,7 @@ An input variable with the name "instace_name" has not been declared.
 ```
 Error: Failed to query available provider packages
 
-Could not retrieve the list of available versions for provider qiniu/qiniu
+Could not retrieve the list of available versions for provider hashicorp/qiniu
 ```
 
 **解决方法**：
@@ -587,6 +589,8 @@ rm -rf .terraform .terraform.lock.hcl
 # 重新初始化
 terraform init -upgrade
 ```
+
+> **本地环境额外步骤**：`hashicorp/qiniu` 无法从公网 registry 下载，需先配置 filesystem mirror（见 [Terraform 模块规范 → versions.tf 本地测试](terraform-module.md)），再运行 `terraform init`。
 
 ### 6.4 部署失败排查
 

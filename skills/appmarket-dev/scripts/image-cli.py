@@ -288,8 +288,9 @@ def _scp_cmd_base(password: str) -> list[str]:
 
 
 def _ssh_exec(ip: str, password: str, user: str, cmd: str, timeout: int = 600) -> int:
+    """在远端 VM 上执行命令。stdin 始终重定向到 /dev/null，确保不会因交互式提示挂住。"""
     full_cmd = _ssh_cmd_base(ip, password, user) + [cmd]
-    result = subprocess.run(full_cmd, timeout=timeout)
+    result = subprocess.run(full_cmd, stdin=subprocess.DEVNULL, timeout=timeout)
     return result.returncode
 
 
@@ -344,7 +345,7 @@ def _wait_image_available(client: LASClient, region: str, image_id: str,
         state = info.get("state", "")
         print(f"  [{(i + 1) * 10}s] {state}")
         if state == "Available":
-            return
+            return info
         if state in ("Failed", "Error"):
             print(f"错误: 镜像创建失败 ({state})", file=sys.stderr)
             sys.exit(1)
@@ -399,6 +400,56 @@ def _ssh_cleanup(ip: str, password: str, user: str):
 # 公共辅助
 # ---------------------------------------------------------------------------
 
+def _write_build_manifest(
+    *,
+    region: str,
+    base_image: dict,
+    builder_vm: dict,
+    install_script_path: str | None,
+    output_image: dict,
+    manifest_dir: str = ".",
+) -> str:
+    """写出镜像构建 manifest（JSON），返回写入的文件路径。
+
+    manifest 记录构建上下文，应提交进版本控制，以便：
+    - 人工审阅镜像内容的确定性
+    - 在需要时复现相同镜像
+    """
+    import datetime
+
+    script_info: dict = {}
+    if install_script_path and os.path.isfile(install_script_path):
+        with open(install_script_path, "rb") as f:
+            content_bytes = f.read()
+        sha256 = hashlib.sha256(content_bytes).hexdigest()
+        script_info = {
+            "path": os.path.abspath(install_script_path),
+            "sha256": sha256,
+        }
+
+    manifest = {
+        "builtAt": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "region": region,
+        "baseImage": base_image,
+        "builderVM": builder_vm,
+        "installScript": script_info,
+        "outputImage": output_image,
+    }
+
+    ts = datetime.datetime.utcnow().strftime("%Y%m%d-%H%M%S")
+    image_name = output_image.get("name", "image")
+    safe_name = "".join(c if c.isalnum() or c in "-_." else "_" for c in image_name)
+    filename = f"{safe_name}-build-{ts}.json"
+    filepath = os.path.join(manifest_dir, filename)
+
+    os.makedirs(manifest_dir, exist_ok=True)
+    with open(filepath, "w", encoding="utf-8") as f:
+        json.dump(manifest, f, indent=2, ensure_ascii=False)
+        f.write("\n")
+
+    return filepath
+
+
 def _make_client() -> LASClient:
     ak = os.environ.get("QINIU_ACCESS_KEY", "")
     sk = os.environ.get("QINIU_SECRET_KEY", "")
@@ -418,6 +469,22 @@ def _pick_smallest_type(client: LASClient, region: str) -> str:
         sys.exit(1)
     available.sort(key=lambda t: (t.get("cpu", 0), t.get("memory", 0)))
     return available[0]["instanceType"]
+
+
+def _check_ssh_deps() -> None:
+    """前置检查 SSH 相关依赖，在任何 VM 操作前调用，fail-fast 避免资源浪费。"""
+    missing = []
+    if not shutil.which("ssh"):
+        missing.append("ssh")
+    if not shutil.which("scp"):
+        missing.append("scp")
+    if not shutil.which("sshpass"):
+        missing.append("sshpass  # apt install sshpass  /  brew install sshpass")
+    if missing:
+        print("错误: 以下命令未找到，请先安装后重试：", file=sys.stderr)
+        for m in missing:
+            print(f"  {m}", file=sys.stderr)
+        sys.exit(1)
 
 
 # ---------------------------------------------------------------------------
@@ -477,8 +544,45 @@ def cmd_update_image(args):
         print(f"  {k}: {v}")
 
 
+def cmd_run_script(args):
+    """在已有 VM 上重新执行安装脚本（用于 build 失败后迭代修复，无需重建 VM）。"""
+    _check_ssh_deps()
+    client = _make_client()
+    region = args.region
+
+    print(f"查询 VM: {args.instance_id}...")
+    info = client.get_instance(region, args.instance_id)
+    state = info.get("state", "")
+    pub_ips = info.get("publicIPAddresses", [])
+    public_ip = pub_ips[0].get("ipv4", "") if pub_ips else ""
+
+    if state != "Running":
+        print(f"错误: VM 状态为 {state}，需要 Running", file=sys.stderr)
+        sys.exit(1)
+    if not public_ip:
+        print("错误: VM 没有公网 IP", file=sys.stderr)
+        sys.exit(1)
+
+    print(f"VM 就绪: {args.instance_id}, IP: {public_ip}")
+    _wait_ssh(public_ip, args.password, args.ssh_user)
+    _ssh_run_script(public_ip, args.password, args.ssh_user, args.install_script)
+    print(f"\n脚本执行完成！")
+    print(f"  VM:  {args.instance_id} ({public_ip})")
+    print(f"  下一步（创建镜像）: python3 image-cli.py create-image \\")
+    print(f"    --instance-id {args.instance_id} --region {region} \\")
+    print(f"    --image-name <名称> --password '{args.password}'")
+
+
+def cmd_get_image(args):
+    """查询单个镜像详情。"""
+    client = _make_client()
+    info = client.get_image(args.region, args.image_id)
+    print(json.dumps(info, indent=2, ensure_ascii=False))
+
+
 def cmd_create_image(args):
     """从已有 VM 创建镜像（配合 vm-cli.py create-vm 分步制作）。"""
+    _check_ssh_deps()
     client = _make_client()
     region = args.region
     instance_id = args.instance_id
@@ -511,12 +615,42 @@ def cmd_create_image(args):
 
     _wait_image_available(client, region, image_id)
 
+    # 查询镜像最终元数据
+    img_info = client.get_image(region, image_id)
+    min_disk = img_info.get("minDisk", args.disk_size)
+    min_cpu  = img_info.get("minCPU", "?")
+    min_mem  = img_info.get("minMemory", "?")
+
     print(f"\n{'=' * 50}")
     print(f"  镜像制作完成！")
-    print(f"  Image ID:  {image_id}")
-    print(f"  Name:      {args.image_name}")
-    print(f"  Region:    {region}")
     print(f"{'=' * 50}")
+    print(json.dumps(img_info, indent=2, ensure_ascii=False))
+    print(f"\n⚠  请在 variables.tf 中同步以下约束，否则创建实例时可能报 400：")
+    print(f"   system_disk_size  minimum = {min_disk}")
+    print(f"   instance_type     （需满足 CPU ≥ {min_cpu} 核、内存 ≥ {min_mem} GB）")
+
+    # 写出构建 manifest（install_script 未知，仅记录 VM 和镜像信息）
+    manifest_dir = os.getcwd()
+    manifest_path = _write_build_manifest(
+        region=region,
+        base_image={"id": info.get("imageID", ""), "note": "分步制作，基础镜像信息来自 VM 元数据"},
+        builder_vm={
+            "instanceId": instance_id,
+            "instanceType": info.get("instanceType", ""),
+            "publicIP": public_ip,
+        },
+        install_script_path=getattr(args, "install_script", None),
+        output_image={
+            "id": image_id,
+            "name": args.image_name,
+            "minDisk": img_info.get("minDisk"),
+            "minCPU": img_info.get("minCPU"),
+            "minMemory": img_info.get("minMemory"),
+        },
+        manifest_dir=manifest_dir,
+    )
+    print(f"\n📄 构建 manifest 已写出: {manifest_path}")
+    print(f"   建议将此文件提交进版本控制，以便追溯镜像构建上下文。")
 
     if not args.keep_vm:
         print(f"\n删除 VM: {instance_id}...")
@@ -531,6 +665,7 @@ def cmd_create_image(args):
 
 def cmd_build(args):
     """一键制作自定义镜像：创建 VM → SSH 安装 → 清理 → 创建镜像 → 删除 VM。"""
+    _check_ssh_deps()
     client = _make_client()
     region = args.region
     password = args.password or _generate_password()
@@ -541,9 +676,11 @@ def cmd_build(args):
         instance_type = _pick_smallest_type(client, region)
         print(f"自动选择机型: {instance_type}")
 
+    base_image_meta: dict = {}
     if args.base_image:
         base_image = args.base_image
         print(f"使用指定基础镜像: {base_image}")
+        base_image_meta = {"id": base_image}
     else:
         print("查询 Ubuntu 24.04 官方镜像...")
         images = client.list_images(region, image_type="Official")
@@ -554,6 +691,12 @@ def cmd_build(args):
             print("错误: 未找到 Ubuntu 24.04 官方镜像", file=sys.stderr)
             sys.exit(1)
         base_image = ubuntu[0]["id"]
+        base_image_meta = {
+            "id": base_image,
+            "name": ubuntu[0].get("name", ""),
+            "osDistribution": ubuntu[0].get("osDistribution", ""),
+            "osVersion": ubuntu[0].get("osVersion", ""),
+        }
         print(f"基础镜像: {base_image} ({ubuntu[0].get('name', '')})")
 
     builder_name = f"{args.image_name}-builder"
@@ -565,6 +708,8 @@ def cmd_build(args):
     print(f"VM 创建成功: {instance_id}")
 
     public_ip = ""
+    image_id = ""
+    img_info: dict = {}
     try:
         public_ip = _wait_vm_running(client, region, instance_id)
         _wait_ssh(public_ip, password, args.ssh_user)
@@ -578,13 +723,44 @@ def cmd_build(args):
         print(f"镜像创建中: {image_id}")
 
         _wait_image_available(client, region, image_id)
+        img_info = client.get_image(region, image_id)
+
+        min_disk = img_info.get("minDisk", args.disk_size)
+        min_cpu  = img_info.get("minCPU", "?")
+        min_mem  = img_info.get("minMemory", "?")
 
         print(f"\n{'=' * 50}")
         print(f"  镜像制作完成！")
-        print(f"  Image ID:  {image_id}")
-        print(f"  Name:      {args.image_name}")
-        print(f"  Region:    {region}")
         print(f"{'=' * 50}")
+        print(json.dumps(img_info, indent=2, ensure_ascii=False))
+        print(f"\n⚠  请在 variables.tf 中同步以下约束，否则创建实例时可能报 400：")
+        print(f"   system_disk_size  minimum = {min_disk}")
+        print(f"   instance_type     （需满足 CPU ≥ {min_cpu} 核、内存 ≥ {min_mem} GB）")
+
+        # 写出构建 manifest
+        manifest_dir = os.path.dirname(os.path.abspath(args.install_script))
+        manifest_path = _write_build_manifest(
+            region=region,
+            base_image=base_image_meta,
+            builder_vm={
+                "instanceId": instance_id,
+                "instanceType": instance_type,
+                "diskSize": args.disk_size,
+                "diskType": args.disk_type,
+                "bandwidth": args.bandwidth,
+            },
+            install_script_path=args.install_script,
+            output_image={
+                "id": image_id,
+                "name": args.image_name,
+                "minDisk": img_info.get("minDisk"),
+                "minCPU": img_info.get("minCPU"),
+                "minMemory": img_info.get("minMemory"),
+            },
+            manifest_dir=manifest_dir,
+        )
+        print(f"\n📄 构建 manifest 已写出: {manifest_path}")
+        print(f"   建议将此文件提交进版本控制，以便追溯镜像构建上下文。")
 
     finally:
         if not args.keep_vm:
@@ -633,6 +809,17 @@ def main():
     sub = parser.add_subparsers(dest="command", help="子命令")
 
     # build
+    p = sub.add_parser("run-script", help="在已有 VM 上重新执行安装脚本（build 失败后迭代修复用）")
+    p.add_argument("--instance-id", required=True, help="VM 实例 ID")
+    p.add_argument("--install-script", required=True, help="安装脚本路径")
+    p.add_argument("--password", required=True, help="SSH 密码")
+    p.add_argument("--region", default="ap-northeast-1", help="区域（默认: ap-northeast-1）")
+    p.add_argument("--ssh-user", default="root", help="SSH 用户（默认: root）")
+
+    p = sub.add_parser("get-image", help="查询单个镜像详情")
+    p.add_argument("--image-id", required=True, help="镜像 ID")
+    p.add_argument("--region", default="ap-northeast-1", help="区域（默认: ap-northeast-1）")
+
     p = sub.add_parser("build", help="一键制作自定义镜像（VM→安装→镜像→删除VM）",
                        formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--install-script", required=True,
@@ -641,9 +828,9 @@ def main():
     p.add_argument("--image-desc", help="镜像描述")
     p.add_argument("--region", default="ap-northeast-1", help="区域 (默认: ap-northeast-1)")
     p.add_argument("--instance-type", help="VM 规格 (默认: 自动选择最小可用机型)")
-    p.add_argument("--disk-type", default="local.ssd", choices=["local.ssd", "cloud.ssd"],
-                   help="磁盘类型 (默认: local.ssd)")
-    p.add_argument("--disk-size", type=int, default=40, help="系统盘大小 GB (默认: 40)")
+    p.add_argument("--disk-type", default="cloud.ssd", choices=["local.ssd", "cloud.ssd"],
+                   help="磁盘类型 (默认: cloud.ssd)")
+    p.add_argument("--disk-size", type=int, default=20, help="系统盘大小 GB，范围 20-500（默认: 20）")
     p.add_argument("--bandwidth", type=int, default=100, choices=[50, 100, 200],
                    help="峰值带宽 Mbps，可选 50/100/200 (默认: 100)")
     p.add_argument("--base-image", help="基础镜像 ID (默认: 自动查询 Ubuntu 24.04)")
@@ -696,6 +883,8 @@ def main():
 
     commands = {
         "build":         cmd_build,
+        "run-script":    cmd_run_script,
+        "get-image":     cmd_get_image,
         "create-image":  cmd_create_image,
         "update-image":  cmd_update_image,
         "list-images":   cmd_list_images,
