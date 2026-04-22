@@ -1,0 +1,3143 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "七牛云 MaaS API 文档",
+    "description": "本 API 提供基于七牛云 MaaS 平台的 AI 视频生成、API Key 管理、用量与账单查询等能力。所有接口均需通过 Bearer Token（AK/SK 签名，格式为 Bearer Qiniu AK:Signature）进行认证。适用于开发者集成七牛云 AI 视频及相关服务。",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.qiniu.com/ai",
+      "description": "七牛云线上生产环境"
+    }
+  ],
+  "security": [
+    { "QiniuBearerAuth": [] }
+  ],
+  "paths": {
+    "/inapi/v2/apikey/enabled": {
+      "put": {
+        "summary": "启用或禁用 API Key",
+        "deprecated": false,
+        "description": "变更指定 API Key 的启用状态。\n\n**使用说明：**\n- `enabled: true`：启用 API Key，启用后该 Key 可正常用于鉴权调用\n- `enabled: false`：禁用 API Key，禁用后该 Key 将立即失效，所有使用该 Key 的请求均会被拒绝\n\n**注意事项：**\n- 禁用操作立即生效，请确认业务侧不再依赖该 Key 后再执行\n- 已禁用的 Key 可重新启用，历史用量记录不会丢失",
+        "tags": [
+          "/inapi/v2/apikey"
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "七牛 AK/SK 签名鉴权，格式：Bearer Qiniu &lt;AccessKey&gt;:&lt;EncodedSign&gt;",
+            "required": false,
+            "example": "Bearer Qiniu YOUR_ACCESS_KEY:BASE64_ENCODED_SIGN",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "key": {
+                    "type": "string",
+                    "description": "要操作的 API Key 值，格式为 `sk-` 开头的字符串",
+                    "example": "sk-2019c55114cdb233bd2202c9273d4cc677ec76b04682a4b2ebbc11ab316636e2"
+                  },
+                  "enabled": {
+                    "type": "boolean",
+                    "description": "目标启用状态。`true` 为启用，`false` 为禁用",
+                    "example": false
+                  }
+                },
+                "required": [
+                  "key",
+                  "enabled"
+                ]
+              },
+              "examples": {
+                "禁用 Key": {
+                  "value": {
+                    "key": "sk-2019c55114cdb233bd2202c9273d4cc677ec76b04682a4b2ebbc11ab316636e2",
+                    "enabled": false
+                  }
+                },
+                "重新启用 Key": {
+                  "value": {
+                    "key": "sk-2019c55114cdb233bd2202c9273d4cc677ec76b04682a4b2ebbc11ab316636e2",
+                    "enabled": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "",
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "boolean",
+                      "description": "操作是否成功，`true` 表示成功",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {},
+                      "description": "无实际数据，操作结果以 `status` 字段为准"
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "data"
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "QiniuBearerAuth": []
+          }
+        ]
+      }
+    },
+    "/inapi/v2/apikey": {
+      "delete": {
+        "summary": "删除 API Key",
+        "deprecated": false,
+        "description": "永久删除指定的 API Key。\n\n**前置条件：**\n- API Key 必须处于**禁用状态**才可删除。若 Key 当前为启用状态，请先调用 `PUT /inapi/v2/apikey/enabled` 将其禁用。\n\n**注意事项：**\n- 删除操作**不可逆**，删除后该 Key 将无法恢复\n- 删除后，历史用量和账单数据仍会保留，不受影响",
+        "tags": [
+          "/inapi/v2/apikey"
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "七牛 AK/SK 签名鉴权，格式：Bearer Qiniu &lt;AccessKey&gt;:&lt;EncodedSign&gt;",
+            "required": false,
+            "example": "Bearer Qiniu YOUR_ACCESS_KEY:BASE64_ENCODED_SIGN",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "key": {
+                    "type": "string",
+                    "description": "要删除的 API Key 完整值，必须为已禁用状态的 Key"
+                  }
+                },
+                "required": [
+                  "key"
+                ]
+              },
+              "example": {
+                "key": "sk-2019c55114cdb233bd2202c9273d4cc677ec76b04682a4b2ebbc11ab316636e2"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "删除成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "boolean",
+                      "description": "操作是否成功，`true` 表示已成功删除",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {},
+                      "description": "无实际数据，操作结果以 `status` 字段为准"
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "data"
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "QiniuBearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "创建 API Key",
+        "deprecated": false,
+        "description": "创建一个新的 API Key，用于调用七牛 MaaS 平台的各类 AI 模型接口。\n\n**字段说明：**\n- `name`：API Key 的名称标签，便于管理和区分，长度限制为 1 到 20 个字符\n- `type`：Key 类型，不传或为空时创建普通 API Key；传入 `member` 时创建 VIP 订阅专用 Key，该类型 Key 享有订阅计划内的专属资源配额\n\n**返回结果：**\n- 创建成功后返回完整的 Key 信息，其中 `key` 字段即为鉴权时使用的 API Key 值（**仅在创建时完整返回，后续查询接口仅返回脱敏版本，请妥善保存**）",
+        "tags": [
+          "/inapi/v2/apikey"
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "七牛 AK/SK 签名鉴权，格式：Bearer Qiniu &lt;AccessKey&gt;:&lt;EncodedSign&gt;",
+            "required": false,
+            "example": "Bearer Qiniu YOUR_ACCESS_KEY:BASE64_ENCODED_SIGN",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "type": "string",
+                    "description": "允许为空，如果传入member代表创建vip订阅专用apikey",
+                    "nullable": true
+                  }
+                },
+                "required": [
+                  "name"
+                ]
+              },
+              "example": {
+                "name": "你好"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "key": {
+                          "type": "string",
+                          "description": "新创建的 API Key 完整值（格式：`sk-` 开头）。**此为唯一一次返回完整 Key，请立即保存，后续无法再次获取**",
+                          "example": "sk-2019c55114cdb233bd2202c9273d4cc677ec76b04682a4b2ebbc11ab316636e2"
+                        },
+                        "name": {
+                          "type": "string",
+                          "description": "API Key 的名称标签",
+                          "example": "我的生产环境 Key"
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "description": "Key 的创建时间，ISO 8601 格式",
+                          "example": "2026-01-01T00:00:00+08:00"
+                        },
+                        "enabled": {
+                          "type": "boolean",
+                          "description": "Key 的当前启用状态，新创建的 Key 默认为 `true`（已启用）",
+                          "example": true
+                        }
+                      },
+                      "required": [
+                        "key",
+                        "name",
+                        "createdAt",
+                        "enabled"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "data"
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "QiniuBearerAuth": []
+          }
+        ]
+      }
+    },
+    "/inapi/v3/apikeys": {
+      "get": {
+        "summary": "获取所有 API Key 列表（含配额及用量信息）",
+        "deprecated": false,
+        "description": "获取当前账户下所有 API Key 的基本信息及配额用量详情。\n\n**返回字段说明：**\n- `key`：API Key 值（已脱敏显示）\n- `name`：Key 的名称标签\n- `createdAt`：Key 的创建时间\n- `lastUsed`：Key 最近一次被使用的时间，从未使用则为空\n- `enabled`：Key 当前的启用状态\n- `totalTokens`：Key 自创建以来累计消耗的 token 总量\n- `quota`：Key 的用量配额信息，包含：\n  - `daily`：日配额（今日已用 / 日上限）\n  - `monthly`：月配额（本月已用 / 月上限）\n  - `total`：总配额（累计已用 / 总上限）\n\n若某项配额未启用（`enabled: false`），则 `used` 和 `limit` 字段不具参考意义。",
+        "tags": [
+          "/inapi/v2/apikey"
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "七牛 AK/SK 签名鉴权，格式：Bearer Qiniu &lt;AccessKey&gt;:&lt;EncodedSign&gt;",
+            "required": false,
+            "example": "Bearer Qiniu YOUR_ACCESS_KEY:BASE64_ENCODED_SIGN",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "查询成功，返回所有 API Key 列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "boolean",
+                      "description": "请求是否成功",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "array",
+                      "description": "API Key 列表",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "key": {
+                            "type": "string",
+                            "description": "API Key 值（已脱敏，仅保留前后部分字符）",
+                            "example": "sk-2019c5***36e2"
+                          },
+                          "name": {
+                            "type": "string",
+                            "description": "API Key 的名称标签",
+                            "example": "我的生产环境 Key"
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "description": "Key 的创建时间，ISO 8601 格式",
+                            "example": "2026-01-01T00:00:00+08:00"
+                          },
+                          "lastUsed": {
+                            "type": "string",
+                            "description": "Key 最近一次被使用的时间，ISO 8601 格式；若从未使用则为空字符串",
+                            "example": "2026-04-01T12:30:00+08:00"
+                          },
+                          "enabled": {
+                            "type": "boolean",
+                            "description": "Key 当前的启用状态，`true` 为已启用，`false` 为已禁用",
+                            "example": true
+                          },
+                          "totalTokens": {
+                            "type": "integer",
+                            "description": "Key 自创建以来累计消耗的 token 总量（所有模型合计）",
+                            "example": 1024000
+                          },
+                          "quota": {
+                            "type": "object",
+                            "description": "Key 的用量配额信息",
+                            "properties": {
+                              "daily": {
+                                "type": "object",
+                                "description": "日配额信息",
+                                "properties": {
+                                  "enabled": {
+                                    "type": "boolean",
+                                    "description": "日配额是否已启用"
+                                  },
+                                  "used": {
+                                    "type": "number",
+                                    "description": "今日已使用量"
+                                  },
+                                  "limit": {
+                                    "type": "number",
+                                    "description": "日使用上限，`-1` 表示未设限"
+                                  }
+                                },
+                                "required": ["enabled", "used", "limit"]
+                              },
+                              "monthly": {
+                                "type": "object",
+                                "description": "月配额信息",
+                                "properties": {
+                                  "enabled": {
+                                    "type": "boolean",
+                                    "description": "月配额是否已启用"
+                                  },
+                                  "used": {
+                                    "type": "number",
+                                    "description": "本月已使用量"
+                                  },
+                                  "limit": {
+                                    "type": "number",
+                                    "description": "月使用上限，`-1` 表示未设限"
+                                  }
+                                },
+                                "required": ["enabled", "used", "limit"]
+                              },
+                              "total": {
+                                "type": "object",
+                                "description": "累计总配额信息",
+                                "properties": {
+                                  "enables": {
+                                    "type": "boolean",
+                                    "description": "总配额是否已启用"
+                                  },
+                                  "used": {
+                                    "type": "number",
+                                    "description": "累计已使用总量"
+                                  },
+                                  "limit": {
+                                    "type": "number",
+                                    "description": "累计使用上限，`-1` 表示未设限"
+                                  }
+                                },
+                                "required": ["enables", "used", "limit"]
+                              }
+                            },
+                            "required": [
+                              "daily",
+                              "monthly",
+                              "total"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "key",
+                          "name",
+                          "createdAt",
+                          "lastUsed",
+                          "enabled",
+                          "totalTokens",
+                          "quota"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "data"
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "QiniuBearerAuth": []
+          }
+        ]
+      }
+    },
+    "/inapi/v2/apikey/name": {
+      "put": {
+        "summary": "修改 API Key 名称",
+        "deprecated": false,
+        "description": "修改指定 API Key 的名称标签。名称仅作为管理标识，不影响 Key 的鉴权功能。\n\n**字段说明：**\n- `key`：要修改的 API Key 完整值\n- `name`：新名称，长度 1 到 20 个字符\n\n**注意：** 此接口仅修改名称，不影响 Key 的启用状态、配额设置或任何调用记录。",
+        "tags": [
+          "/inapi/v2/apikey"
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "七牛 AK/SK 签名鉴权，格式：Bearer Qiniu &lt;AccessKey&gt;:&lt;EncodedSign&gt;",
+            "required": false,
+            "example": "Bearer Qiniu YOUR_ACCESS_KEY:BASE64_ENCODED_SIGN",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "API Key 的新名称，长度 1 到 20 个字符",
+                    "minLength": 1,
+                    "maxLength": 20
+                  },
+                  "key": {
+                    "type": "string",
+                    "description": "要修改名称的 API Key 完整值"
+                  }
+                },
+                "required": [
+                  "name",
+                  "key"
+                ]
+              },
+              "example": {
+                "name": "平敬彪",
+                "key": "sk-13821f6bef8c5aaa8d3254ad4f7e01ab62b4a13a95f3d3abcd04ee0718970b03"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "名称修改成功，无响应体内容",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "QiniuBearerAuth": []
+          }
+        ]
+      }
+    },
+    "/inapi/v2/apikey/quota/{api_key}": {
+      "put": {
+        "summary": "新增或更新 API Key 限额",
+        "deprecated": false,
+        "description": "新增或更新指定 API Key 的用量限额配置，支持设置日限额（daily_quota）、月限额（monthly_quota）和总限额（total_quota）。每种限额均可独立启用/禁用，并可配置告警阈值（alert_threshold，百分比）和是否抑制告警（suppress_alert）。",
+        "tags": [
+          "/inapi/v2/apikey"
+        ],
+        "parameters": [
+          {
+            "name": "api_key",
+            "in": "path",
+            "description": "要设置限额的 API Key 完整值（格式：`sk-` 开头的字符串）",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "sk-2019c55114cdb233bd2202c9273d4cc677ec76b04682a4b2ebbc11ab316636e2"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "七牛 AK/SK 签名鉴权，格式：Bearer Qiniu &lt;AccessKey&gt;:&lt;EncodedSign&gt;",
+            "required": false,
+            "example": "Bearer Qiniu YOUR_ACCESS_KEY:BASE64_ENCODED_SIGN",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "限额配置对象，三种限额均为可选，按需传入",
+                "properties": {
+                  "daily_quota": {
+                    "type": "object",
+                    "description": "日限额配置，按自然日（UTC+8）计算，每日零点重置",
+                    "properties": {
+                      "enabled": { "type": "boolean", "description": "是否启用日限额" },
+                      "limit": { "type": "number", "description": "日用量上限（token 数量，单位：个）" },
+                      "alert_threshold": { "type": "number", "description": "告警触发阈值（百分比，0-100），达到该比例时发送告警通知" },
+                      "suppress_alert": { "type": "boolean", "description": "是否抑制告警通知，`true` 时即使触发阈值也不发送告警" }
+                    }
+                  },
+                  "monthly_quota": {
+                    "type": "object",
+                    "description": "月限额配置，按自然月（UTC+8）计算，每月 1 日零点重置",
+                    "properties": {
+                      "enabled": { "type": "boolean", "description": "是否启用月限额" },
+                      "limit": { "type": "number", "description": "月用量上限（token 数量，单位：个）" },
+                      "alert_threshold": { "type": "number", "description": "告警触发阈值（百分比，0-100），达到该比例时发送告警通知" },
+                      "suppress_alert": { "type": "boolean", "description": "是否抑制告警通知" }
+                    }
+                  },
+                  "total_quota": {
+                    "type": "object",
+                    "description": "累计总限额配置，从 Key 创建起累计计算，不重置",
+                    "properties": {
+                      "enabled": { "type": "boolean", "description": "是否启用总限额" },
+                      "limit": { "type": "number", "description": "累计用量上限（token 数量，单位：个）" },
+                      "alert_threshold": { "type": "number", "description": "告警触发阈值（百分比，0-100），达到该比例时发送告警通知" },
+                      "suppress_alert": { "type": "boolean", "description": "是否抑制告警通知" }
+                    }
+                  }
+                }
+              },
+              "example": {
+                "daily_quota": {
+                  "enabled": true,
+                  "limit": 1,
+                  "alert_threshold": 10,
+                  "suppress_alert": true
+                },
+                "monthly_quota": {
+                  "enabled": true,
+                  "limit": 5,
+                  "alert_threshold": 50,
+                  "suppress_alert": false
+                },
+                "total_quota": {
+                  "enabled": true,
+                  "limit": 10000,
+                  "alert_threshold": 80,
+                  "suppress_alert": true
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "限额配置更新成功，返回当前完整的限额配置",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "boolean", "description": "操作是否成功", "example": true },
+                    "data": {
+                      "type": "object",
+                      "description": "更新后的完整限额配置，包含 daily_quota、monthly_quota、total_quota 及时间戳",
+                      "properties": {
+                        "created_at": { "type": "string", "description": "限额配置的创建时间" },
+                        "updated_at": { "type": "string", "description": "限额配置的最后更新时间" }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "status": true,
+                  "data": {
+                    "daily_quota": {
+                      "enabled": true,
+                      "limit": 1,
+                      "alert_threshold": 10,
+                      "suppress_alert": true
+                    },
+                    "monthly_quota": {
+                      "enabled": true,
+                      "limit": 5,
+                      "alert_threshold": 50,
+                      "suppress_alert": false
+                    },
+                    "total_quota": {
+                      "enabled": true,
+                      "limit": 10000,
+                      "alert_threshold": 80,
+                      "suppress_alert": true
+                    },
+                    "created_at": "2026-03-17 09:32:28",
+                    "updated_at": "2026-03-27 15:51:35"
+                  }
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "QiniuBearerAuth": []
+          }
+        ]
+      }
+    },
+    "/inapi/v3/stat/bill": {
+      "get": {
+        "summary": "查询单月账单",
+        "deprecated": false,
+        "description": "查询指定月份的账单数据，可选择查询特定 API Key 或所有 Key 的汇总数据。\n\n**适用场景：**\n- 月度账单查询\n- 单个 API Key 的费用统计\n- 按模型查看用量和费用分布\n\n\n#### 2026年4月1日更新 已上线\n\n`BillItem`结构添加了key字段，用于存储计费项key，搭配`/inapi/v3/market/pricingitems`使用\n\n#### 2026年4月3日更新\n\n`total_fee`同级添加了 `total_requests` 用于显示总请求数",
+        "operationId": "getBillByKey",
+        "tags": [
+          "/inapi/v3/stat/Bill",
+          "Bill"
+        ],
+        "parameters": [
+          {
+            "name": "month",
+            "in": "query",
+            "description": "查询月份，格式：YYYY-MM（例如：2025-11）",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}$",
+              "example": "2025-11"
+            }
+          },
+          {
+            "name": "api_key",
+            "in": "query",
+            "description": "API Key（可选）。\n- 不传：返回所有 API Key 的汇总数据\n- 传入：返回指定 API Key 的账单数据\n",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "sk-xxxxx"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "AK/SK 鉴权 token",
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回账单数据",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "models": {
+                      "type": "array",
+                      "description": "按模型分组的账单数据",
+                      "items": {
+                        "$ref": "#/components/schemas/ModelBill"
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "models": [
+                    {
+                      "model_id": "gpt-4",
+                      "items": [
+                        {
+                          "name": "文本输入 tokens",
+                          "usage": {
+                            "count": 150.5,
+                            "unit": "k/tokens"
+                          },
+                          "fee": 4.52
+                        },
+                        {
+                          "name": "文本输出 tokens",
+                          "usage": {
+                            "count": 50.2,
+                            "unit": "k/tokens"
+                          },
+                          "fee": 1.51
+                        }
+                      ],
+                      "total_fee": 6.03
+                    },
+                    {
+                      "model_id": "gpt-3.5-turbo",
+                      "items": [
+                        {
+                          "name": "文本输入 tokens",
+                          "usage": {
+                            "count": 1000,
+                            "unit": "k/tokens"
+                          },
+                          "fee": 1
+                        }
+                      ],
+                      "total_fee": 1
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "description": "请求参数错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": "invalid month format, expected format: 2025-11"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "401": {
+            "description": "鉴权失败",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器内部错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/inapi/v3/stat/bill/all_keys": {
+      "get": {
+        "summary": "查询单月所有 API Key 的账单",
+        "deprecated": false,
+        "description": "查询指定月份内所有有数据的 API Key 的账单信息。\n\n**功能特性：**\n- 自动发现该月份有使用记录的所有 API Key\n- 分别返回每个 API Key 的账单明细\n- 最后返回所有 Key 的汇总数据（api_key=\"all\"）\n\n\n#### 2026年4月1日更新 已上线\n\n`BillItem`结构添加了key字段，用于存储计费项key，搭配`/inapi/v3/market/pricingitems`使用\n\n#### 2026年4月3日更新\n\n`total_fee`同级添加了 `total_requests` 用于显示总请求数",
+        "operationId": "getBillAllKeys",
+        "tags": [
+          "/inapi/v3/stat/Bill",
+          "Bill"
+        ],
+        "parameters": [
+          {
+            "name": "month",
+            "in": "query",
+            "description": "查询月份，格式：YYYY-MM（例如：2025-11）",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}$",
+              "example": "2025-11"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "AK/SK 鉴权 token",
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回所有 API Key 的账单数据",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "api_keys": {
+                      "type": "array",
+                      "description": "按 API Key 分组的账单数据",
+                      "items": {
+                        "$ref": "#/components/schemas/ApiKeyBill"
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "api_keys": [
+                    {
+                      "api_key": "sk-key1",
+                      "models": [
+                        {
+                          "model_id": "gpt-4",
+                          "items": [
+                            {
+                              "name": "文本输入 tokens",
+                              "usage": {
+                                "count": 100,
+                                "unit": "k/tokens"
+                              },
+                              "fee": 3
+                            }
+                          ],
+                          "total_fee": 3
+                        }
+                      ]
+                    },
+                    {
+                      "api_key": "sk-key2",
+                      "models": [
+                        {
+                          "model_id": "gpt-3.5-turbo",
+                          "items": [
+                            {
+                              "name": "文本输入 tokens",
+                              "usage": {
+                                "count": 500,
+                                "unit": "k/tokens"
+                              },
+                              "fee": 0.5
+                            }
+                          ],
+                          "total_fee": 0.5
+                        }
+                      ]
+                    },
+                    {
+                      "api_key": "all",
+                      "models": [
+                        {
+                          "model_id": "gpt-4",
+                          "items": [
+                            {
+                              "name": "文本输入 tokens",
+                              "usage": {
+                                "count": 150,
+                                "unit": "k/tokens"
+                              },
+                              "fee": 4.5
+                            }
+                          ],
+                          "total_fee": 4.5
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "description": "请求参数错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "401": {
+            "description": "鉴权失败",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器内部错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/inapi/v3/stat/bill/range": {
+      "get": {
+        "summary": "查询时间范围内的账单（支持多粒度）",
+        "deprecated": false,
+        "description": "查询指定时间范围内的账单数据，支持多种时间粒度聚合。\n\n**功能特性：**\n- 支持月/天/小时/5分钟/分钟五种粒度\n- 返回按时间序列排列的数据\n- 可选择查询特定 API Key 或所有 Key\n\n**时间范围限制：**\n- 月粒度：最长 35 天\n- 天粒度：最长 35 天\n- 小时粒度：最长 7 天\n- 5分钟粒度：最长 1 天\n- 分钟粒度：最长 1 天\n\n## 接口时间范围与数据粒度说明\n\n接口根据传入的时间范围获取账单数据。时间最小分辨率为 **1 分钟**，查询范围为以传入时间为两端的**闭区间**，并会自动对结束时间进行分钟级扩展。\n\n---\n\n### 一、查询范围规则\n\n- 若传入时间不满 1 分钟，结束时间会自动补齐至该分钟的最后一秒。\n\n**示例：**\n\n- 传入：`2026-03-18T12:20:00Z` ~ `2026-03-18T12:20:30Z`  \n  实际查询范围：`2026-03-18T12:20:00Z` ~ `2026-03-18T12:20:59Z`\n\n- 传入：`2026-03-18T12:20:00Z` ~ `2026-03-18T12:25:00Z`  \n  实际查询范围：`2026-03-18T12:20:00Z` ~ `2026-03-18T12:25:59Z`\n\n---\n\n### 二、返回数据时间含义\n\n返回结果中的时间字段 `time` 表示一个时间区间，区间定义为：\n\n- **左闭右开区间**：`[time, time + 粒度)`\n\n---\n\n### 三、按 5 分钟粒度示例\n\n#### 示例 1\n\n- 传入：`2026-03-18T12:20:00Z` ~ `2026-03-18T12:24:59Z`  \n- 返回：1 个时间颗粒  \n\n| 时间（T）              | 表示区间                              |\n|----------------------|---------------------------------------|\n| 2026-03-18T12:20:00Z | 2026-03-18T12:20:00Z ~ 2026-03-18T12:24:59Z |\n\n---\n\n#### 示例 2\n\n- 传入：`2026-03-18T12:20:00Z` ~ `2026-03-18T12:25:00Z`  \n- 返回：2 个时间颗粒  \n\n| 时间（T）              | 表示区间                              |\n|----------------------|---------------------------------------|\n| 2026-03-18T12:20:00Z | 2026-03-18T12:20:00Z ~ 2026-03-18T12:24:59Z |\n| 2026-03-18T12:25:00Z | 2026-03-18T12:25:00Z ~ 2026-03-18T12:29:59Z |\n\n---\n\n### 四、重要说明\n\n需要注意的是：**返回的时间颗粒区间并不一定是完整数据区间**，其数据范围受实际查询范围限制。\n\n以示例 2 为例：\n\n- 实际查询范围为：  \n  `2026-03-18T12:20:00Z` ~ `2026-03-18T12:25:59Z`\n\n- 数据划分如下：\n  - `12:20:00Z ~ 12:24:59Z` → 完整落入第一个时间颗粒\n  - `12:25:00Z ~ 12:25:59Z` → 仅覆盖第二个时间颗粒的部分区间\n\n因此：\n\n- 第二个时间颗粒（`12:25:00Z ~ 12:29:59Z`）**仅包含其与查询范围重叠部分的数据**，并非完整 5 分钟数据。\n\n#### 2026年4月1日更新 已上线\n\n`BillItem`结构添加了key字段，用于存储计费项key，搭配`/inapi/v3/market/pricingitems`使用\n\n#### 2026年4月3日更新\n\n`total_fee`同级添加了 `total_requests` 用于显示总请求数",
+        "operationId": "getBillByRange",
+        "tags": [
+          "/inapi/v3/stat/Bill Range",
+          "Bill Range"
+        ],
+        "parameters": [
+          {
+            "name": "start",
+            "in": "query",
+            "description": "开始时间，RFC3339 格式",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "example": "2025-11-01T00:00:00+08:00"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "description": "结束时间，RFC3339 格式",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "example": "2025-11-30T23:59:59+08:00"
+            }
+          },
+          {
+            "name": "grain",
+            "in": "query",
+            "description": "时间粒度\n- `month`: 月粒度\n- `day`: 天粒度\n- `hour`: 小时粒度\n- `five_minute`: 5分钟粒度\n- `minute`: 分钟粒度\n",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "month",
+                "day",
+                "hour",
+                "five_minute",
+                "minute"
+              ],
+              "example": "day"
+            }
+          },
+          {
+            "name": "api_key",
+            "in": "query",
+            "description": "API Key（可选）。\n- 不传：返回所有 API Key 的汇总数据\n- 传入：返回指定 API Key 的账单数据\n",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "sk-xxxxx"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "AK/SK 鉴权 token",
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回时间序列账单数据",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "models": {
+                      "type": "array",
+                      "description": "按模型分组的时间序列账单数据",
+                      "items": {
+                        "$ref": "#/components/schemas/ModelBillTimeSeries"
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "models": [
+                    {
+                      "model_id": "gpt-4",
+                      "time_series": [
+                        {
+                          "time": "2025-11-01T00:00:00+08:00",
+                          "items": [
+                            {
+                              "name": "文本输入 tokens",
+                              "usage": {
+                                "count": 50.5,
+                                "unit": "k/tokens"
+                              },
+                              "fee": 1.52
+                            }
+                          ],
+                          "total_fee": 1.52
+                        },
+                        {
+                          "time": "2025-11-02T00:00:00+08:00",
+                          "items": [
+                            {
+                              "name": "文本输入 tokens",
+                              "usage": {
+                                "count": 100,
+                                "unit": "k/tokens"
+                              },
+                              "fee": 3
+                            }
+                          ],
+                          "total_fee": 3
+                        }
+                      ],
+                      "total_fee": 4.52
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "description": "请求参数错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": "time range cannot exceed 1 day for minute granularity"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "401": {
+            "description": "鉴权失败",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器内部错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/inapi/v3/stat/bill/range/all_keys": {
+      "get": {
+        "summary": "查询时间范围内所有 API Key 的账单（支持多粒度）",
+        "deprecated": false,
+        "description": "查询指定时间范围内所有有数据的 API Key 的账单信息，支持多种时间粒度。\n\n**功能特性：**\n- 自动发现有使用记录的所有 API Key\n- 分别返回每个 API Key 的时间序列账单\n- 最后返回所有 Key 的汇总数据（api_key=\"all\"）\n\n## 接口时间范围与数据粒度说明\n\n接口根据传入的时间范围获取账单数据。时间最小分辨率为 **1 分钟**，查询范围为以传入时间为两端的**闭区间**，并会自动对结束时间进行分钟级扩展。\n\n---\n\n### 一、查询范围规则\n\n- 若传入时间不满 1 分钟，结束时间会自动补齐至该分钟的最后一秒。\n\n**示例：**\n\n- 传入：`2026-03-18T12:20:00Z` ~ `2026-03-18T12:20:30Z`  \n  实际查询范围：`2026-03-18T12:20:00Z` ~ `2026-03-18T12:20:59Z`\n\n- 传入：`2026-03-18T12:20:00Z` ~ `2026-03-18T12:25:00Z`  \n  实际查询范围：`2026-03-18T12:20:00Z` ~ `2026-03-18T12:25:59Z`\n\n---\n\n### 二、返回数据时间含义\n\n返回结果中的时间字段 `time` 表示一个时间区间，区间定义为：\n\n- **左闭右开区间**：`[time, time + 粒度)`\n\n---\n\n### 三、按 5 分钟粒度示例\n\n#### 示例 1\n\n- 传入：`2026-03-18T12:20:00Z` ~ `2026-03-18T12:24:59Z`  \n- 返回：1 个时间颗粒  \n\n| 时间（T）              | 表示区间                              |\n|----------------------|---------------------------------------|\n| 2026-03-18T12:20:00Z | 2026-03-18T12:20:00Z ~ 2026-03-18T12:24:59Z |\n\n---\n\n#### 示例 2\n\n- 传入：`2026-03-18T12:20:00Z` ~ `2026-03-18T12:25:00Z`  \n- 返回：2 个时间颗粒  \n\n| 时间（T）              | 表示区间                              |\n|----------------------|---------------------------------------|\n| 2026-03-18T12:20:00Z | 2026-03-18T12:20:00Z ~ 2026-03-18T12:24:59Z |\n| 2026-03-18T12:25:00Z | 2026-03-18T12:25:00Z ~ 2026-03-18T12:29:59Z |\n\n---\n\n### 四、重要说明\n\n需要注意的是：**返回的时间颗粒区间并不一定是完整数据区间**，其数据范围受实际查询范围限制。\n\n以示例 2 为例：\n\n- 实际查询范围为：  \n  `2026-03-18T12:20:00Z` ~ `2026-03-18T12:25:59Z`\n\n- 数据划分如下：\n  - `12:20:00Z ~ 12:24:59Z` → 完整落入第一个时间颗粒\n  - `12:25:00Z ~ 12:25:59Z` → 仅覆盖第二个时间颗粒的部分区间\n\n因此：\n\n- 第二个时间颗粒（`12:25:00Z ~ 12:29:59Z`）**仅包含其与查询范围重叠部分的数据**，并非完整 5 分钟数据。\n\n\n#### 2026年4月1日更新 已上线\n\n`BillItem`结构添加了key字段，用于存储计费项key，搭配`/inapi/v3/market/pricingitems`使用\n\n#### 2026年4月3日更新\n\n`total_fee`同级添加了 `total_requests` 用于显示总请求数",
+        "operationId": "getBillAllKeysByRange",
+        "tags": [
+          "/inapi/v3/stat/Bill Range",
+          "Bill Range"
+        ],
+        "parameters": [
+          {
+            "name": "start",
+            "in": "query",
+            "description": "开始时间，RFC3339 格式",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "example": "2025-11-01T00:00:00+08:00"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "description": "结束时间，RFC3339 格式",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "example": "2025-11-30T23:59:59+08:00"
+            }
+          },
+          {
+            "name": "grain",
+            "in": "query",
+            "description": "时间粒度\n- `month`: 月粒度\n- `day`: 天粒度\n- `hour`: 小时粒度\n- `five_minute`: 5分钟粒度\n- `minute`: 分钟粒度\n",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "month",
+                "day",
+                "hour",
+                "five_minute",
+                "minute"
+              ],
+              "example": "day"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "AK/SK 鉴权 token",
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回所有 API Key 的时间序列账单数据",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "api_keys": {
+                      "type": "array",
+                      "description": "按 API Key 分组的时间序列账单数据",
+                      "items": {
+                        "$ref": "#/components/schemas/ApiKeyBillTimeSeries"
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "api_keys": [
+                    {
+                      "api_key": "sk-key1",
+                      "models": [
+                        {
+                          "model_id": "gpt-4",
+                          "time_series": [
+                            {
+                              "time": "2025-11-01T00:00:00+08:00",
+                              "items": [
+                                {
+                                  "name": "文本输入 tokens",
+                                  "usage": {
+                                    "count": 50,
+                                    "unit": "k/tokens"
+                                  },
+                                  "fee": 1.5
+                                }
+                              ],
+                              "total_fee": 1.5
+                            }
+                          ],
+                          "total_fee": 1.5
+                        }
+                      ]
+                    },
+                    {
+                      "api_key": "all",
+                      "models": [
+                        {
+                          "model_id": "gpt-4",
+                          "time_series": [
+                            {
+                              "time": "2025-11-01T00:00:00+08:00",
+                              "items": [
+                                {
+                                  "name": "文本输入 tokens",
+                                  "usage": {
+                                    "count": 150,
+                                    "unit": "k/tokens"
+                                  },
+                                  "fee": 4.5
+                                }
+                              ],
+                              "total_fee": 4.5
+                            }
+                          ],
+                          "total_fee": 4.5
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "description": "请求参数错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "401": {
+            "description": "鉴权失败",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器内部错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/inapi/v3/stat/log": {
+      "get": {
+        "summary": "请求日志接口",
+        "deprecated": false,
+        "description": "按时间范围、模型、状态码等条件分页查询请求日志。\n支持 chat / image / video 三种数据源，通过 `server_type` 参数指定，不填为尝试查询所有数据。\n\n**时间范围限制**：start 到 end 不超过 35 天。\n\n#### 260330更新\n- 方法返回的 `usage` 中，增加 `cached_input` 和 `cache_creation` 的字段\n- 新增 `bo_usage` 返回\n- 使用 [`/inapi/v3/market/pricingitems`](https://app.apifox.com/link/project/6174386/apis/api-436076957) 接口获取计费项名称",
+        "operationId": "getLogs",
+        "tags": [
+          "/inapi/v3/stat/log",
+          "log"
+        ],
+        "parameters": [
+          {
+            "name": "start",
+            "in": "query",
+            "description": "开始时间，RFC3339 格式（含时区），如 `2025-03-01T00:00:00+08:00`",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "example": "2025-03-01T00:00:00+08:00"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "description": "结束时间，RFC3339 格式（含时区），如 `2025-03-02T00:00:00+08:00`",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "example": "2025-03-02T00:00:00+08:00"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "页码，从 1 开始",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "example": 1
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "description": "每页条数，范围 1–100",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "example": 20
+            }
+          },
+          {
+            "name": "model",
+            "in": "query",
+            "description": "模型名称过滤（精确匹配），不传则不限制",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "gpt-4o"
+            }
+          },
+          {
+            "name": "code",
+            "in": "query",
+            "description": "HTTP 状态码精确过滤，0 或不传表示不限制。\n与 `status` 二选一，**`code` 优先级高于 `status`**。\n",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "example": 200
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "状态分类过滤，与 `code` 二选一，`code` 优先。\n\n| 枚举值 | 含义 |\n|---|---|\n| success | 成功：code = 200 |\n| failure | 失败：code ≠ 200 |\n| client_error | 客户端错误：4xx |\n| server_error | 服务端错误：5xx |\n",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "success",
+                "failure",
+                "client_error",
+                "server_error"
+              ],
+              "example": "success"
+            }
+          },
+          {
+            "name": "apikey",
+            "in": "query",
+            "description": "API Key 过滤（精确匹配，不含 \"Bearer \" 前缀），不传则不限制",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "sk-abc123"
+            }
+          },
+          {
+            "name": "server_type",
+            "in": "query",
+            "description": "日志数据来源类型，不传默认为 `chat`。\n`image` 和 `video` 类型暂不支持 `code`/`status` 过滤。\n",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "chat",
+                "image",
+                "video"
+              ],
+              "default": "chat",
+              "example": "chat"
+            }
+          },
+          {
+            "name": "id",
+            "in": "query",
+            "description": "制定日志id，多模态id对3月12日后数据有效",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "AK/SK 鉴权 token",
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "查询成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OKResp_StatLogPageResp"
+                },
+                "example": {
+                  "code": 0,
+                  "data": {
+                    "items": [
+                      {
+                        "id": "chatcmpl-abc123",
+                        "model_id": "gpt-4o",
+                        "api_key": "sk-ab***c123",
+                        "start_time": "2025-03-01T10:00:00.000+08:00",
+                        "end_time": "2025-03-01T10:00:02.345+08:00",
+                        "server_type": "chat",
+                        "code": 200,
+                        "errors": [],
+                        "state": "success",
+                        "usage": {
+                          "input": 512,
+                          "output": 128
+                        }
+                      }
+                    ],
+                    "total": 1,
+                    "page": 1,
+                    "page_size": 20,
+                    "total_pages": 1
+                  },
+                  "message": "ok"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": ""
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized",
+            "description": ""
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError",
+            "description": ""
+          }
+        },
+        "security": []
+      }
+    },
+    "/inapi/v3/stat/log/detail": {
+      "get": {
+        "summary": "查询单条日志详情",
+        "deprecated": false,
+        "description": "根据 `request_id` 查询单条请求日志的完整详情，包含请求体、响应体、渠道调用链路等信息。\n\n接口根据 `request_id` 前缀自动路由到对应数据源：\n- `chatcmpl-` → monitor_log（对话日志）\n- `chatimage-` → images_task（图片任务）\n- `qvideo-` → openai_video_job（视频任务）\n\n仅能查询当前用户自身的数据，跨用户查询返回 404。\n",
+        "operationId": "getLogDetail",
+        "tags": [
+          "/inapi/v3/stat/log",
+          "log"
+        ],
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "query",
+            "description": "请求 ID，由前缀决定数据来源：\n- `chatcmpl-*`：对话日志\n- `chatimage-*`：图片任务\n- `qvideo-*`：视频任务\n",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "chatcmpl-abc123def456"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "AK/SK 鉴权 token",
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "查询成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OKResp_ChatLogDetail"
+                },
+                "example": {
+                  "code": 0,
+                  "data": {
+                    "id": "chatcmpl-abc123def456",
+                    "state": "success",
+                    "code": 200,
+                    "server_type": "chat",
+                    "start_time": "2025-03-01T10:00:00.000+08:00",
+                    "end_time": "2025-03-01T10:00:02.345+08:00",
+                    "original_model": "gpt-4o",
+                    "errors": [],
+                    "cost_time": {
+                      "last_req_upstream": 50,
+                      "ttft": 320,
+                      "latency": 2345
+                    },
+                    "user": {
+                      "uid": "12345",
+                      "user_agent": "Mozilla/5.0",
+                      "client_ip": "1.2.3.4",
+                      "referer": "",
+                      "group": ""
+                    }
+                  },
+                  "message": "ok"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": ""
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized",
+            "description": ""
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound",
+            "description": ""
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError",
+            "description": ""
+          }
+        },
+        "security": []
+      }
+    },
+    "/inapi/v3/stat/new": {
+      "get": {
+        "summary": "查询用量数据（新版）",
+        "deprecated": false,
+        "description": "查询指定时间范围内的用量数据（新版格式）。支持按时间粒度（`g` 参数）聚合，可通过 `api_key` 参数过滤特定 API Key 的数据。返回按模型分组的时间序列用量，每个数据点包含名称、单位、总量及分时数值列表。",
+        "tags": [
+          "/inapi/v3/stat"
+        ],
+        "parameters": [
+          {
+            "name": "start",
+            "in": "query",
+            "description": "查询开始时间，RFC3339 格式（含时区），如 `2025-11-01T00:00:00+08:00`",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "example": "2025-11-01T00:00:00+08:00"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "description": "查询结束时间，RFC3339 格式（含时区），如 `2025-11-30T23:59:59+08:00`",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "example": "2025-11-30T23:59:59+08:00"
+            }
+          },
+          {
+            "name": "g",
+            "in": "query",
+            "description": "时间粒度。可选值：`month`（月）、`day`（天）、`hour`（小时）、`five_minute`（5分钟）、`minute`（分钟）",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["month", "day", "hour", "five_minute", "minute"],
+              "example": "day"
+            }
+          },
+          {
+            "name": "api_key",
+            "in": "query",
+            "description": "按 API Key 过滤（可选）。不传则返回账户下所有 Key 的汇总数据；传入则仅返回该 Key 的用量数据",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "sk-xxxxx"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "AK/SK 鉴权 token",
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string"
+                          },
+                          "items": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "name": {
+                                  "type": "string"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                },
+                                "total": {
+                                  "type": "number"
+                                },
+                                "values": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "time": {
+                                        "type": "string"
+                                      },
+                                      "value": {
+                                        "type": "number"
+                                      }
+                                    },
+                                    "required": [
+                                      "time",
+                                      "value"
+                                    ]
+                                  }
+                                }
+                              },
+                              "required": [
+                                "name",
+                                "unit",
+                                "total",
+                                "values"
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "items"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "data"
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/inapi/v3/market/pricingitems": {
+      "get": {
+        "summary": "获取计费项列表",
+        "deprecated": false,
+        "description": "获取平台支持的所有计费项配置信息。返回数据与管理端接口一致，可配合账单接口中的 `key` 字段使用，通过计费项 key 映射到对应计费项名称。",
+        "tags": [
+          "/inapi/v3"
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "AK/SK 鉴权 token",
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "QiniuBearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/market/models": {
+      "get": {
+        "summary": "获取模型市场列表",
+        "deprecated": false,
+        "description": "该接口使用服务域名直接访问，不需要通过接口：\n- 国内：https://api.qnaigc.com\n- 全球：https://openai.sufy.com\n\n公网暴露的模型市场接口，返回模型市场中的模型配置详情。\n支持排序和海外模型过滤（仅限 sufy.com 域名）。\n",
+        "operationId": "getMarketModels",
+        "tags": [
+          "模型列表/Models",
+          "Models"
+        ],
+        "parameters": [
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "排序字段",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "rank",
+                "id"
+              ],
+              "example": "rank"
+            }
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "description": "排序方向",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "example": "desc"
+            }
+          },
+          {
+            "name": "overseas",
+            "in": "query",
+            "description": "是否查询海外模型。仅当请求来自 sufy.com 域名时可用，\n其他域名请求海外模型将返回错误。\n",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ],
+              "default": "false"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "AK/SK 鉴权 token",
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回模型市场列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_ModelDTO"
+                },
+                "example": {
+                  "status": true,
+                  "data": [
+                    {
+                      "id": "gpt-4o",
+                      "name": "GPT-4o",
+                      "description": "OpenAI 最新的多模态模型",
+                      "created_time": "2024-05-13",
+                      "avatar": "",
+                      "hot_tags": [
+                        "多模态",
+                        "长上下文"
+                      ],
+                      "features": [
+                        "文本生成",
+                        "图片理解"
+                      ],
+                      "private": false,
+                      "model_constraints": {
+                        "context_length": 128000,
+                        "max_completion_tokens": 16384,
+                        "max_tokens": 16384,
+                        "max_default_completion_tokens": 4096,
+                        "max_chain_of_thought_length": 0
+                      },
+                      "issuer": {
+                        "name": "OpenAI",
+                        "avatar": ""
+                      },
+                      "architecture": {
+                        "input_modalities": [
+                          "text",
+                          "image"
+                        ],
+                        "output_modalities": [
+                          "text"
+                        ],
+                        "schema_output": {
+                          "supported": true,
+                          "description": "支持 JSON Schema 结构化输出"
+                        },
+                        "function_calling": {
+                          "supported": true
+                        },
+                        "reasoning": {
+                          "supported": false
+                        },
+                        "content_cache": {
+                          "supported": true
+                        }
+                      },
+                      "pricing_rules": [
+                        {
+                          "input_range": [
+                            0,
+                            -1
+                          ],
+                          "output_range": [
+                            0,
+                            -1
+                          ],
+                          "input_item_type": "token",
+                          "output_item_type": "token",
+                          "details": {
+                            "prompt_tokens": {
+                              "real_time": {
+                                "unit_name": "token",
+                                "unit_size": 1000,
+                                "unit_price": 0.05,
+                                "unit_price_usd": 0.005,
+                                "name": "输入"
+                              }
+                            },
+                            "completion_tokens": {
+                              "real_time": {
+                                "unit_name": "token",
+                                "unit_size": 1000,
+                                "unit_price": 0.15,
+                                "unit_price_usd": 0.015,
+                                "name": "输出"
+                              }
+                            }
+                          }
+                        }
+                      ],
+                      "rate_limit": {
+                        "rpm": {
+                          "name": "RPM",
+                          "quantity": 10000,
+                          "unit_name": "requests",
+                          "unit_time": 60
+                        },
+                        "tpm": {
+                          "name": "TPM",
+                          "quantity": 5000000,
+                          "unit_name": "tokens",
+                          "unit_time": 60
+                        }
+                      },
+                      "rank": 100,
+                      "retirement_at": "",
+                      "release_at": "2024-05-13",
+                      "suggested_model": ""
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "200 (error)": {
+            "description": "参数错误或域名不支持海外模型",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "invalid_param": {
+                    "summary": "排序参数非法",
+                    "value": {
+                      "status": false,
+                      "error": "rank query is illegal"
+                    }
+                  },
+                  "overseas_not_allowed": {
+                    "summary": "当前域名不支持海外模型",
+                    "value": {
+                      "status": false,
+                      "error": "current domain not support overseas model"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "QiniuBearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "QiniuBearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "Qiniu AK:Signature",
+        "description": "七牛云 AK/SK 签名，格式为 Bearer Qiniu AK:Signature"
+      }
+    },
+    "schemas": {
+      "ModelBill": {
+        "type": "object",
+        "description": "模型账单",
+        "properties": {
+          "model_id": {
+            "type": "string",
+            "description": "模型 ID",
+            "example": "gpt-4"
+          },
+          "items": {
+            "type": "array",
+            "description": "该模型下的计费项列表",
+            "items": {
+              "$ref": "#/components/schemas/BillItem"
+            }
+          },
+          "total_fee": {
+            "type": "number",
+            "format": "float",
+            "description": "该模型下所有计费项的总费用（人民币元）",
+            "example": 6.03
+          },
+          "total_requests": {
+            "type": "integer"
+          }
+        }
+      },
+      "ModelBillTimeSeries": {
+        "type": "object",
+        "description": "模型账单时间序列",
+        "properties": {
+          "model_id": {
+            "type": "string",
+            "description": "模型 ID",
+            "example": "gpt-4"
+          },
+          "time_series": {
+            "type": "array",
+            "description": "时间序列数据",
+            "items": {
+              "$ref": "#/components/schemas/TimeSeriesData"
+            }
+          },
+          "total_fee": {
+            "type": "number",
+            "format": "float",
+            "description": "整个时间序列的总费用（人民币元）",
+            "example": 6.03
+          },
+          "total_requests": {
+            "type": "integer"
+          }
+        }
+      },
+      "OKResp_StatLogPageResp": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BaseResp"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "data": {
+                "$ref": "#/components/schemas/StatLogPageResp"
+              }
+            }
+          }
+        ]
+      },
+      "ApiKeyBill": {
+        "type": "object",
+        "description": "单个 API Key 的账单数据",
+        "properties": {
+          "api_key": {
+            "type": "string",
+            "description": "API Key",
+            "example": "sk-xxxxx"
+          },
+          "models": {
+            "type": "array",
+            "description": "按模型分组的账单数据",
+            "items": {
+              "$ref": "#/components/schemas/ModelBill"
+            }
+          }
+        }
+      },
+      "ApiKeyBillTimeSeries": {
+        "type": "object",
+        "description": "单个 API Key 的时间序列账单数据",
+        "properties": {
+          "api_key": {
+            "type": "string",
+            "description": "API Key",
+            "example": "sk-xxxxx"
+          },
+          "models": {
+            "type": "array",
+            "description": "按模型分组的时间序列账单数据",
+            "items": {
+              "$ref": "#/components/schemas/ModelBillTimeSeries"
+            }
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "boolean",
+            "example": false
+          },
+          "error": {
+            "type": "string",
+            "example": "参数错误"
+          }
+        }
+      },
+      "OKResp_ChatLogDetail": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BaseResp"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "data": {
+                "$ref": "#/components/schemas/ChatLogDetail"
+              }
+            }
+          }
+        ]
+      },
+      "ErrorResp": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "HTTP 状态码"
+          },
+          "message": {
+            "type": "string",
+            "description": "错误描述"
+          }
+        }
+      },
+      "BillItem": {
+        "type": "object",
+        "description": "账单计费项详情",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "计费项中文描述",
+            "example": "文本输入 tokens"
+          },
+          "usage": {
+            "$ref": "#/components/schemas/UsageInfo"
+          },
+          "fee": {
+            "type": "number",
+            "format": "float",
+            "description": "费用（人民币元）",
+            "example": 4.52
+          },
+          "key": {
+            "type": "string",
+            "description": "计费项key"
+          }
+        }
+      },
+      "UsageInfo": {
+        "type": "object",
+        "description": "用量信息",
+        "properties": {
+          "count": {
+            "type": "number",
+            "format": "float",
+            "description": "用量数值",
+            "example": 150.5
+          },
+          "unit": {
+            "type": "string",
+            "description": "用量单位",
+            "enum": [
+              "k/tokens",
+              "百字符",
+              "分钟",
+              "秒",
+              "次",
+              "张",
+              "default"
+            ],
+            "example": "k/tokens"
+          }
+        }
+      },
+      "TimeSeriesData": {
+        "type": "object",
+        "description": "时间序列数据点",
+        "properties": {
+          "time": {
+            "type": "string",
+            "format": "date-time",
+            "description": "时间点，RFC3339 格式",
+            "example": "2025-11-01T00:00:00+08:00"
+          },
+          "items": {
+            "type": "array",
+            "description": "该时间点的计费项列表",
+            "items": {
+              "$ref": "#/components/schemas/BillItem"
+            }
+          },
+          "total_fee": {
+            "type": "number",
+            "format": "float",
+            "description": "该时间点的总费用（人民币元）",
+            "example": 3
+          },
+          "total_requests": {
+            "type": "integer"
+          }
+        }
+      },
+      "BaseResp": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "boolean"
+          }
+        }
+      },
+      "StatLogPageResp": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StatLogResp"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64",
+            "description": "满足条件的总条数",
+            "example": 100
+          },
+          "page": {
+            "type": "integer",
+            "description": "当前页码",
+            "example": 1
+          },
+          "page_size": {
+            "type": "integer",
+            "description": "每页条数",
+            "example": 20
+          },
+          "total_pages": {
+            "type": "integer",
+            "description": "总页数",
+            "example": 5
+          }
+        }
+      },
+      "StatLogResp": {
+        "type": "object",
+        "description": "单条日志摘要（列表场景）",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "请求 ID，前缀决定类型（chatcmpl- / chatimage- / qvideo-）",
+            "example": "chatcmpl-abc123"
+          },
+          "model_id": {
+            "type": "string",
+            "description": "模型 ID",
+            "example": "gpt-4o"
+          },
+          "api_key": {
+            "type": "string",
+            "description": "API Key（已脱敏，格式 xxx-ab***cdef）",
+            "example": "sk-ab***c123"
+          },
+          "start_time": {
+            "type": "string",
+            "format": "date-time",
+            "description": "请求开始时间",
+            "example": "2025-03-01T10:00:00.000+08:00"
+          },
+          "end_time": {
+            "type": "string",
+            "format": "date-time",
+            "description": "请求结束时间",
+            "example": "2025-03-01T10:00:02.345+08:00"
+          },
+          "server_type": {
+            "type": "string",
+            "enum": [
+              "chat",
+              "image",
+              "video"
+            ],
+            "description": "日志来源类型",
+            "example": "chat"
+          },
+          "code": {
+            "type": "integer",
+            "description": "HTTP 状态码",
+            "example": 200
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "错误信息列表，成功时为空数组",
+            "example": []
+          },
+          "state": {
+            "type": "string",
+            "description": "请求状态（success / fail）",
+            "example": "success"
+          },
+          "usage": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "description": "用量信息（key 为计费项名称，value 为数量）",
+            "properties": {},
+            "example": {
+              "input": 512,
+              "output": 128
+            }
+          },
+          "bo_usage": {
+            "type": "object",
+            "properties": {},
+            "description": "key为计费key，value为用量"
+          }
+        },
+        "required": [
+          "bo_usage"
+        ]
+      },
+      "ChatLogDetail": {
+        "type": "object",
+        "description": "对话日志详情（request_id 前缀 chatcmpl-）",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "chatcmpl-abc123def456"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "success",
+              "fail"
+            ],
+            "example": "success"
+          },
+          "code": {
+            "type": "integer",
+            "example": 200
+          },
+          "server_type": {
+            "type": "string",
+            "example": "chat"
+          },
+          "start_time": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-03-01T10:00:00.000+08:00"
+          },
+          "end_time": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-03-01T10:00:02.345+08:00"
+          },
+          "original_model": {
+            "type": "string",
+            "description": "用户请求的原始模型名",
+            "example": "gpt-4o"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": []
+          },
+          "cost_time": {
+            "$ref": "#/components/schemas/CostTime"
+          },
+          "user": {
+            "$ref": "#/components/schemas/RequestLogUser"
+          },
+          "chat_request": {
+            "type": "object",
+            "properties": {},
+            "description": "（当前隐藏）原始请求体（relay_form 等，结构因模型类型而异）"
+          },
+          "chat_response": {
+            "type": "object",
+            "properties": {},
+            "description": "（当前隐藏）响应摘要（relay_stream_response 等，结构因模型类型而异）"
+          }
+        }
+      },
+      "CostTime": {
+        "type": "object",
+        "description": "各阶段耗时（毫秒）",
+        "properties": {
+          "last_req_upstream": {
+            "type": "integer",
+            "format": "int64",
+            "description": "收到请求到请求上游的耗时（ms）",
+            "example": 50
+          },
+          "ttft": {
+            "type": "integer",
+            "format": "int64",
+            "description": "收到请求到首字返回的耗时（ms）",
+            "example": 320
+          },
+          "latency": {
+            "type": "integer",
+            "format": "int64",
+            "description": "收到请求到断开连接的总耗时（ms）",
+            "example": 2345
+          }
+        }
+      },
+      "RequestLogUser": {
+        "type": "object",
+        "description": "用户信息（不含 API Key）",
+        "properties": {
+          "uid": {
+            "type": "string",
+            "example": "12345"
+          },
+          "user_agent": {
+            "type": "string",
+            "example": "Mozilla/5.0"
+          },
+          "client_ip": {
+            "type": "string",
+            "example": "1.2.3.4"
+          },
+          "referer": {
+            "type": "string",
+            "example": ""
+          },
+          "group": {
+            "type": "string",
+            "example": ""
+          }
+        }
+      },
+      "SuccessResponse_ModelDTO": {
+        "type": "object",
+        "required": [
+          "status",
+          "data"
+        ],
+        "properties": {
+          "status": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ModelDTO"
+            }
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "required": [
+          "status",
+          "error"
+        ],
+        "properties": {
+          "status": {
+            "type": "boolean",
+            "example": false
+          },
+          "error": {
+            "type": "string",
+            "example": "错误信息"
+          }
+        }
+      },
+      "ModelDTO": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "description",
+          "created_time",
+          "avatar",
+          "hot_tags",
+          "features",
+          "private",
+          "model_constraints",
+          "issuer",
+          "architecture",
+          "pricing_rules",
+          "rate_limit",
+          "model_filing",
+          "supported_parameters",
+          "support_api_protocols",
+          "rank",
+          "retirement_at",
+          "release_at",
+          "suggested_model"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "模型唯一标识",
+            "example": "gpt-4o"
+          },
+          "name": {
+            "type": "string",
+            "description": "模型名称",
+            "example": "GPT-4o"
+          },
+          "description": {
+            "type": "string",
+            "description": "模型描述",
+            "example": "OpenAI 最新的多模态模型"
+          },
+          "created_time": {
+            "type": "string",
+            "description": "模型创建时间",
+            "example": "2024-05-13"
+          },
+          "avatar": {
+            "type": "string",
+            "description": "模型图标 URL",
+            "example": ""
+          },
+          "hot_tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "热门标签",
+            "example": [
+              "多模态",
+              "长上下文"
+            ]
+          },
+          "features": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "功能特性",
+            "example": [
+              "文本生成",
+              "图片理解"
+            ]
+          },
+          "private": {
+            "type": "boolean",
+            "description": "是否为私有模型",
+            "example": false
+          },
+          "model_constraints": {
+            "$ref": "#/components/schemas/ModelConstraints"
+          },
+          "issuer": {
+            "$ref": "#/components/schemas/Issuer"
+          },
+          "architecture": {
+            "$ref": "#/components/schemas/ModelArchitecture"
+          },
+          "pricing_rules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PricingRule"
+            },
+            "description": "定价规则列表",
+            "deprecated": true
+          },
+          "pricing_rules_v2": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PricingRule"
+            },
+            "description": "定价规则 V2 列表"
+          },
+          "rate_limit": {
+            "type": "object",
+            "properties": {},
+            "description": "限流配置，key 为限流类型（rpm/tpm/ipm/qpm）",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/RateLimitItem"
+            },
+            "deprecated": true,
+            "example": {
+              "rpm": {
+                "name": "RPM",
+                "quantity": 10000,
+                "unit_name": "requests",
+                "unit_time": 60
+              }
+            }
+          },
+          "model_filing": {
+            "$ref": "#/components/schemas/ModelFiling"
+          },
+          "supported_parameters": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "支持的请求参数列表",
+            "deprecated": true,
+            "example": [
+              "temperature",
+              "top_p",
+              "max_tokens",
+              "stream"
+            ]
+          },
+          "support_api_protocols": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "支持的 API 协议列表",
+            "example": [
+              "openai",
+              "anthropic"
+            ]
+          },
+          "rank": {
+            "type": "integer",
+            "description": "模型排序权重",
+            "example": 100
+          },
+          "retirement_at": {
+            "type": "string",
+            "description": "模型退役时间（日期格式：2006-01-02），空字符串表示未设定",
+            "example": ""
+          },
+          "release_at": {
+            "type": "string",
+            "description": "模型发布时间（日期格式：2006-01-02）",
+            "example": "2024-05-13"
+          },
+          "suggested_model": {
+            "type": "string",
+            "description": "模型退役后建议使用的新模型 ID",
+            "example": ""
+          }
+        }
+      },
+      "ModelConstraints": {
+        "type": "object",
+        "description": "模型约束参数",
+        "required": [
+          "context_length",
+          "max_completion_tokens",
+          "max_tokens",
+          "max_default_completion_tokens",
+          "max_chain_of_thought_length"
+        ],
+        "properties": {
+          "context_length": {
+            "type": "integer",
+            "description": "模型上下文长度",
+            "example": 128000
+          },
+          "max_completion_tokens": {
+            "type": "integer",
+            "description": "模型最大输出 token 数",
+            "example": 16384
+          },
+          "max_tokens": {
+            "type": "integer",
+            "description": "模型最大输出 token 数（与 max_completion_tokens 可能存在差异）",
+            "example": 16384
+          },
+          "max_default_completion_tokens": {
+            "type": "integer",
+            "description": "模型默认最大输出 token 数",
+            "example": 4096
+          },
+          "max_chain_of_thought_length": {
+            "type": "integer",
+            "description": "模型最大思考链长度",
+            "example": 0
+          }
+        }
+      },
+      "Issuer": {
+        "type": "object",
+        "description": "模型发行方",
+        "required": [
+          "name",
+          "avatar"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "发行方名称",
+            "example": "OpenAI"
+          },
+          "avatar": {
+            "type": "string",
+            "description": "发行方图标 URL",
+            "example": ""
+          },
+          "model_page": {
+            "type": "string",
+            "description": "模型主页链接",
+            "nullable": true
+          }
+        }
+      },
+      "ModelArchitecture": {
+        "type": "object",
+        "description": "模型架构信息",
+        "required": [
+          "input_modalities",
+          "output_modalities"
+        ],
+        "properties": {
+          "input_modalities": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "输入模态列表",
+            "example": [
+              "text",
+              "image"
+            ]
+          },
+          "output_modalities": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "输出模态列表",
+            "example": [
+              "text"
+            ]
+          },
+          "schema_output": {
+            "$ref": "#/components/schemas/ModelAbility"
+          },
+          "function_calling": {
+            "$ref": "#/components/schemas/ModelAbility"
+          },
+          "reasoning": {
+            "$ref": "#/components/schemas/ModelAbility"
+          },
+          "content_cache": {
+            "$ref": "#/components/schemas/ModelAbility"
+          }
+        }
+      },
+      "ModelAbility": {
+        "type": "object",
+        "description": "模型能力标记",
+        "required": [
+          "supported"
+        ],
+        "properties": {
+          "supported": {
+            "type": "boolean",
+            "description": "是否支持该能力",
+            "example": true
+          },
+          "description": {
+            "type": "string",
+            "description": "能力描述（支持 Markdown 格式）"
+          }
+        }
+      },
+      "PricingRule": {
+        "type": "object",
+        "description": "定价规则",
+        "required": [
+          "input_range",
+          "output_range",
+          "input_item_type",
+          "output_item_type",
+          "details",
+          "details_v2"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "成本渠道名称（仅成本项使用）",
+            "nullable": true
+          },
+          "input_range": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "description": "输入区间左右边界，`-1` 表示无上限",
+            "example": [
+              0,
+              -1
+            ]
+          },
+          "output_range": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "description": "输出区间左右边界，`-1` 表示无上限",
+            "example": [
+              0,
+              -1
+            ]
+          },
+          "input_item_type": {
+            "type": "string",
+            "description": "输入计费项类型",
+            "example": "token"
+          },
+          "output_item_type": {
+            "type": "string",
+            "description": "输出计费项类型",
+            "example": "token"
+          },
+          "details": {
+            "$ref": "#/components/schemas/UsageItem",
+            "deprecated": true
+          },
+          "details_v2": {
+            "$ref": "#/components/schemas/UsageItemV2"
+          }
+        }
+      },
+      "UsageItem": {
+        "type": "object",
+        "description": "用量计费明细（V1 格式）。\n包含 total_prompt_tokens、total_completion_tokens、prompt_tokens、\ncompletion_tokens、reasoning_prompt_tokens、reasoning_completion_tokens\n等多种计费项，每个字段均为 PricingMode 类型。\n",
+        "properties": {
+          "total_prompt_tokens": {
+            "$ref": "#/components/schemas/PricingMode"
+          },
+          "total_completion_tokens": {
+            "$ref": "#/components/schemas/PricingMode"
+          },
+          "prompt_tokens": {
+            "$ref": "#/components/schemas/PricingMode"
+          },
+          "completion_tokens": {
+            "$ref": "#/components/schemas/PricingMode"
+          },
+          "reasoning_prompt_tokens": {
+            "$ref": "#/components/schemas/PricingMode"
+          },
+          "reasoning_completion_tokens": {
+            "$ref": "#/components/schemas/PricingMode"
+          },
+          "tts_bytes": {
+            "$ref": "#/components/schemas/PricingMode"
+          },
+          "asr_minutes": {
+            "$ref": "#/components/schemas/PricingMode"
+          },
+          "image_req_count": {
+            "$ref": "#/components/schemas/PricingMode"
+          },
+          "cached_hit": {
+            "$ref": "#/components/schemas/PricingMode"
+          },
+          "cache_storage": {
+            "$ref": "#/components/schemas/PricingMode"
+          }
+        }
+      },
+      "PricingMode": {
+        "type": "object",
+        "description": "定价模式（区分实时推理和批量推理）",
+        "properties": {
+          "real_time": {
+            "$ref": "#/components/schemas/PricingItem"
+          },
+          "batch": {
+            "$ref": "#/components/schemas/PricingItem"
+          }
+        }
+      },
+      "PricingItem": {
+        "type": "object",
+        "description": "定价详情项",
+        "required": [
+          "unit_name",
+          "unit_size",
+          "unit_price",
+          "unit_price_usd",
+          "name"
+        ],
+        "properties": {
+          "unit_name": {
+            "type": "string",
+            "description": "定价单位名称",
+            "example": "token"
+          },
+          "unit_size": {
+            "type": "integer",
+            "format": "int64",
+            "description": "定价单位量",
+            "example": 1000
+          },
+          "unit_price": {
+            "type": "number",
+            "format": "double",
+            "description": "每单位定价（人民币）",
+            "example": 0.05
+          },
+          "unit_price_usd": {
+            "type": "number",
+            "format": "double",
+            "description": "每单位定价（美元）",
+            "example": 0.005
+          },
+          "name": {
+            "type": "string",
+            "description": "计费项中文名称",
+            "example": "输入"
+          }
+        }
+      },
+      "UsageItemV2": {
+        "type": "object",
+        "description": "用量计费明细（V2 格式）。\n包含 input、output、cache、th_input、th_output 等计费项，\n每个字段均为 PricingItem 类型。\n",
+        "properties": {
+          "input": {
+            "$ref": "#/components/schemas/PricingItem"
+          },
+          "output": {
+            "$ref": "#/components/schemas/PricingItem"
+          },
+          "cache": {
+            "$ref": "#/components/schemas/PricingItem"
+          },
+          "th_input": {
+            "$ref": "#/components/schemas/PricingItem"
+          },
+          "th_output": {
+            "$ref": "#/components/schemas/PricingItem"
+          },
+          "nth_input": {
+            "$ref": "#/components/schemas/PricingItem"
+          },
+          "nth_output": {
+            "$ref": "#/components/schemas/PricingItem"
+          },
+          "i_input": {
+            "$ref": "#/components/schemas/PricingItem"
+          },
+          "i_output": {
+            "$ref": "#/components/schemas/PricingItem"
+          },
+          "a_input": {
+            "$ref": "#/components/schemas/PricingItem"
+          },
+          "a_output": {
+            "$ref": "#/components/schemas/PricingItem"
+          },
+          "v_duration": {
+            "$ref": "#/components/schemas/PricingItem"
+          },
+          "av_duration": {
+            "$ref": "#/components/schemas/PricingItem"
+          },
+          "minute": {
+            "$ref": "#/components/schemas/PricingItem"
+          },
+          "hbyte": {
+            "$ref": "#/components/schemas/PricingItem"
+          },
+          "req": {
+            "$ref": "#/components/schemas/PricingItem"
+          }
+        }
+      },
+      "RateLimitItem": {
+        "type": "object",
+        "description": "限流项明细",
+        "required": [
+          "name",
+          "quantity",
+          "unit_name",
+          "unit_time"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "限流项名称",
+            "example": "RPM"
+          },
+          "quantity": {
+            "type": "integer",
+            "format": "int64",
+            "description": "限流数量",
+            "example": 10000
+          },
+          "unit_name": {
+            "type": "string",
+            "description": "限流单位名称",
+            "example": "requests"
+          },
+          "unit_time": {
+            "type": "integer",
+            "format": "int64",
+            "description": "限流单位时间（秒）",
+            "example": 60
+          }
+        }
+      },
+      "ModelFiling": {
+        "type": "object",
+        "description": "模型备案信息",
+        "required": [
+          "filing_no"
+        ],
+        "properties": {
+          "filing_no": {
+            "type": "string",
+            "description": "模型备案号",
+            "example": ""
+          }
+        }
+      }
+    },
+    "responses": {
+      "Unauthorized": {
+        "description": "",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResp"
+            },
+            "examples": {
+              "成功示例": {
+                "summary": "成功示例",
+                "value": {
+                  "code": 401,
+                  "message": "unauthorized"
+                }
+              }
+            }
+          }
+        }
+      },
+      "BadRequest": {
+        "description": "",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResp"
+            },
+            "examples": {
+              "invalidDate": {
+                "summary": "invalidDate",
+                "value": {
+                  "code": 400,
+                  "message": "开始日期格式错误"
+                }
+              },
+              "queryToday": {
+                "summary": "queryToday",
+                "value": {
+                  "code": 400,
+                  "message": "仅支持查询历史数据，不能查询当天"
+                }
+              },
+              "rangeTooLarge": {
+                "summary": "rangeTooLarge",
+                "value": {
+                  "code": 400,
+                  "message": "查询范围不能超过 31 天"
+                }
+              }
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResp"
+            },
+            "examples": {
+              "成功示例": {
+                "summary": "成功示例",
+                "value": {
+                  "code": 404,
+                  "message": "log not found"
+                }
+              }
+            }
+          }
+        }
+      },
+      "ServerError": {
+        "description": "",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResp"
+            },
+            "examples": {
+              "成功示例": {
+                "summary": "成功示例",
+                "value": {
+                  "code": 500,
+                  "message": "server error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
