@@ -11,6 +11,9 @@ set -e
 MODULE_DIR="${1:-.}"
 TFVARS_FILE="${2:-}"
 RUN_INTEGRATION_TEST=false
+INIT_LOG="$(mktemp /tmp/terraform-init.XXXXXX.log)"
+PLAN_LOG="$(mktemp /tmp/terraform-plan.XXXXXX.log)"
+trap 'rm -f "$INIT_LOG" "$PLAN_LOG"' EXIT
 
 # 解析命令行参数
 for arg in "$@"; do
@@ -66,7 +69,7 @@ check_prerequisites() {
         log "请访问 https://www.terraform.io/downloads 安装 Terraform"
         exit 1
     fi
-    log_success "Terraform $(terraform version -json | jq -r '.terraform_version')"
+    log_success "Terraform $(terraform version | head -n1 | awk '{print $2}')"
 
     # 检查 TFLint（可选）
     if command -v tflint &> /dev/null; then
@@ -112,11 +115,11 @@ test_validate() {
 
     # 初始化
     log "初始化 Terraform..."
-    if terraform init -upgrade > /tmp/terraform-init.log 2>&1; then
+    if terraform init -upgrade -input=false > "$INIT_LOG" 2>&1; then
         log_success "初始化成功"
     else
         log_error "初始化失败"
-        cat /tmp/terraform-init.log
+        cat "$INIT_LOG"
         return 1
     fi
 
@@ -189,19 +192,8 @@ test_plan() {
         done
     fi
 
-    # 如果没有变量文件，检查是否有必需变量
-    if [ ${#plan_args[@]} -eq 0 ]; then
-        log "未找到测试变量文件，检查必需变量..."
-        local required_vars=$(grep -r "^variable" variables.tf | grep -v "default\s*=" | wc -l)
-        if [ "$required_vars" -gt 0 ]; then
-            log_error "模块有必需变量但未提供变量文件"
-            log "请提供 tfvars 文件或创建 test.tfvars"
-            return 1
-        fi
-    fi
-
     log "生成执行计划..."
-    if terraform plan "${plan_args[@]}" -out=tfplan > /tmp/terraform-plan.log 2>&1; then
+    if terraform plan -input=false "${plan_args[@]}" -out=tfplan > "$PLAN_LOG" 2>&1; then
         log_success "执行计划生成成功"
 
         # 显示计划摘要
@@ -212,7 +204,7 @@ test_plan() {
         return 0
     else
         log_error "执行计划生成失败"
-        cat /tmp/terraform-plan.log
+        cat "$PLAN_LOG"
         return 1
     fi
 }

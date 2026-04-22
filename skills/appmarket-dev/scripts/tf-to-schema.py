@@ -110,60 +110,66 @@ def parse_default(raw: str | None, json_type: str):
     return strip_quotes(raw)
 
 
-def extract_validation_block(body: str) -> str:
-    """提取 validation { ... } 块内容。"""
-    vm = re.search(r"validation\s*\{", body)
-    if not vm:
-        return ""
-    start = vm.end()
-    depth = 1
-    i = start
-    while i < len(body) and depth > 0:
-        if body[i] == "{":
-            depth += 1
-        elif body[i] == "}":
-            depth -= 1
-        i += 1
-    return body[start:i - 1]
+def extract_validation_blocks(body: str) -> list[str]:
+    """提取所有 validation { ... } 块内容。"""
+    blocks = []
+    pos = 0
+    while pos < len(body):
+        vm = re.search(r"validation\s*\{", body[pos:])
+        if not vm:
+            break
+        start = pos + vm.end()
+        depth = 1
+        i = start
+        while i < len(body) and depth > 0:
+            if body[i] == "{":
+                depth += 1
+            elif body[i] == "}":
+                depth -= 1
+            i += 1
+        blocks.append(body[start:i - 1])
+        pos = i
+    return blocks
 
 
 def extract_validation_constraints(body: str) -> dict:
     """从 validation 块提取 enum、minimum/maximum、minLength/maxLength。"""
-    val_body = extract_validation_block(body)
-    if not val_body:
+    val_blocks = extract_validation_blocks(body)
+    if not val_blocks:
         return {}
 
     constraints: dict = {}
+    enum_items: set[str] = set()
 
-    # contains(["a", "b", "c"], var.xxx) -> enum
-    cm = re.search(r"contains\(\s*\[([^\]]*)\]", val_body)
-    if cm:
-        items_raw = cm.group(1)
-        items = [s.strip().strip('"').strip("'") for s in items_raw.split(",") if s.strip()]
-        if items:
-            constraints["enum"] = items
+    for val_body in val_blocks:
+        # contains(["a", "b", "c"], var.xxx) -> enum
+        cm = re.search(r"contains\(\s*\[([^\]]*)\]", val_body)
+        if cm:
+            items_raw = cm.group(1)
+            items = [s.strip().strip('"').strip("'") for s in items_raw.split(",") if s.strip()]
+            enum_items.update(items)
 
-    # 提取 condition 行
-    cond = ""
-    for line in val_body.split("\n"):
-        if "condition" in line:
-            cond = line
-            break
+        # var.xxx >= N -> minimum
+        for m in re.finditer(r"var\.\w+\s*>=\s*(\d+(?:\.\d+)?)", val_body):
+            v = m.group(1)
+            value = float(v) if "." in v else int(v)
+            constraints["minimum"] = value if "minimum" not in constraints else max(constraints["minimum"], value)
+        # var.xxx <= N -> maximum
+        for m in re.finditer(r"var\.\w+\s*<=\s*(\d+(?:\.\d+)?)", val_body):
+            v = m.group(1)
+            value = float(v) if "." in v else int(v)
+            constraints["maximum"] = value if "maximum" not in constraints else min(constraints["maximum"], value)
+        # length(var.xxx) >= N -> minLength
+        for m in re.finditer(r"length\(var\.\w+\)\s*>=\s*(\d+)", val_body):
+            value = int(m.group(1))
+            constraints["minLength"] = value if "minLength" not in constraints else max(constraints["minLength"], value)
+        # length(var.xxx) <= N -> maxLength
+        for m in re.finditer(r"length\(var\.\w+\)\s*<=\s*(\d+)", val_body):
+            value = int(m.group(1))
+            constraints["maxLength"] = value if "maxLength" not in constraints else min(constraints["maxLength"], value)
 
-    # var.xxx >= N -> minimum
-    for m in re.finditer(r"var\.\w+\s*>=\s*(\d+(?:\.\d+)?)", cond):
-        v = m.group(1)
-        constraints["minimum"] = float(v) if "." in v else int(v)
-    # var.xxx <= N -> maximum
-    for m in re.finditer(r"var\.\w+\s*<=\s*(\d+(?:\.\d+)?)", cond):
-        v = m.group(1)
-        constraints["maximum"] = float(v) if "." in v else int(v)
-    # length(var.xxx) >= N -> minLength
-    for m in re.finditer(r"length\(var\.\w+\)\s*>=\s*(\d+)", cond):
-        constraints["minLength"] = int(m.group(1))
-    # length(var.xxx) <= N -> maxLength
-    for m in re.finditer(r"length\(var\.\w+\)\s*<=\s*(\d+)", cond):
-        constraints["maxLength"] = int(m.group(1))
+    if enum_items:
+        constraints["enum"] = sorted(enum_items)
 
     return constraints
 

@@ -9,10 +9,10 @@
 - [1. 镜像制作概述](#1-镜像制作概述)
 - [2. 一键制作镜像（推荐）](#2-一键制作镜像推荐)
 - [3. 编写安装脚本](#3-编写安装脚本)
-- [4. 手动制作镜像](#4-手动制作镜像)
-- [5. 初始化脚本开发](#5-初始化脚本开发)
+- [5. 服务启动策略与初始化脚本](#5-服务启动策略与初始化脚本)
 - [6. 在 Terraform 模块中引用镜像](#6-在-terraform-模块中引用镜像)
 - [7. 最佳实践](#7-最佳实践)
+- [8. 镜像管理常用命令](#8-镜像管理常用命令)
 
 ---
 
@@ -136,7 +136,59 @@ python3 scripts/image-cli.py build \
 python3 scripts/vm-cli.py delete-vm --instance-id i-xxxxx
 ```
 
-### 2.5 排查残留 VM
+### 2.5 常见报错与绕过
+
+#### EBSNotEnabled [403]
+
+```
+Error: EBSNotEnabled [403]
+```
+
+账号未开通 EBS（弹性块存储）功能，无法使用 `cloud.ssd` 磁盘类型（默认值）。解决方法：改用本地 SSD：
+
+```bash
+python3 scripts/image-cli.py build \
+  --install-script path/to/install.sh \
+  --image-name MyApp-v1.0.0 \
+  --disk-type local.ssd   # 加上这一行
+```
+
+#### build 命令 SSH 连接超时
+
+```
+Waiting for SSH...
+Timeout waiting for SSH connection
+```
+
+`image-cli.py build` 内部等待 SSH 就绪有 120 秒限制，某些区域/机型启动较慢时会触发。绕过方式：把三步分开执行：
+
+```bash
+# 第 1 步：手动创建 VM，等待真正就绪
+python3 scripts/vm-cli.py create-vm \
+  --instance-type ecs.t1.c2m4 \
+  --disk-type local.ssd \
+  --image-name MyApp-v1.0.0
+
+# 记录输出的 instance_id、ip、password
+
+# 第 2 步：在已运行的 VM 上跑安装脚本
+python3 scripts/image-cli.py run-script \
+  --instance-id i-xxxxxxxx \
+  --host <ip> \
+  --password <password> \
+  --script path/to/install.sh
+
+# 第 3 步：对 VM 打快照，制作镜像
+python3 scripts/image-cli.py create-image \
+  --instance-id i-xxxxxxxx \
+  --image-name MyApp-v1.0.0 \
+  --image-desc "Ubuntu 24.04 + MyApp 1.0.0"
+
+# 完成后手动删除 VM
+python3 scripts/vm-cli.py delete-vm --instance-id i-xxxxxxxx
+```
+
+### 2.6 排查残留 VM
 
 如果脚本被强制终止导致 VM 未清理：
 
@@ -148,7 +200,7 @@ python3 scripts/vm-cli.py list-vms --region ap-northeast-1
 python3 scripts/vm-cli.py delete-vm --instance-id i-xxxxx
 ```
 
-### 2.6 完整参数
+### 2.7 完整参数
 
 | 参数 | 默认值 | 说明 |
 |------|--------|------|
@@ -311,294 +363,49 @@ chown -R appuser:appuser /home/appuser
 
 ---
 
-## 4. 手动制作镜像
+## 5. 服务启动策略与初始化脚本
 
-如果不使用 `image-cli.py` / `vm-cli.py`，也可以手动完成镜像制作。
+自定义镜像负责预装软件，实例启动时的个性化配置（API Key、密码等）通过 Terraform `user_data` 注入，服务如何启动取决于镜像制作时选定的策略。
 
-### 4.1 创建基础云主机
+### 5.1 服务自启动策略（必须与用户确认）
 
-**方式一：七牛云控制台（Portal）**
+**在编写安装脚本之前，必须先与用户明确以下决策，因为它直接决定安装脚本和 user_data 的写法：**
 
-在控制台界面操作：**云主机** → **创建实例**，选择官方基础镜像。
+| 策略 | 镜像里 | user_data 里 | 适用场景 |
+|------|--------|--------------|---------|
+| **A：user_data 中 enable + start**（推荐） | 只安装，**不 enable** | 写完配置后 `systemctl enable --now` | 服务依赖 user_data 注入的配置（API Key、密码等）才能正常启动 |
+| **B：镜像中 enable，user_data 只注入配置** | `systemctl enable` | 写完配置后 `systemctl restart` | 服务有合理的默认配置，缺少配置时能优雅等待或报错而不崩溃循环 |
 
-**方式二：LAS API**
+> **策略 A 的关键风险**：直接从镜像手动建 VM（不经过 AppMarket/user_data）时，服务**不会自启动**——这是预期行为。用户若需手动启动，需先手写配置文件，再 `systemctl enable --now <service>`。
+>
+> **策略 B 的关键风险**：镜像中 enable 后，实例首次启动时服务在 user_data 执行前就已运行，此时配置文件尚未写入，服务会以空/默认配置启动（或失败重启）。仅当服务在无配置时能优雅处理（如等待配置文件出现、或仅以降级模式运行）时才适合。
 
-```
-POST /v1/instances
-Host: ap-northeast-1-ecs.qiniuapi.com
+**确认原则**：询问用户——"服务是否依赖 user_data 注入的参数才能正常运行？" 
+- **是** → 选策略 A，安装脚本中**不加** `systemctl enable`
+- **否（服务有默认配置，可独立启动）** → 询问是否希望镜像中启用自启动，选策略 B
 
-{
-    "regionID": "ap-northeast-1",
-    "imageID": "<官方镜像 ID>",
-    "instanceType": "ecs.t1.c2m4",
-    "systemDisk": { "diskType": "cloud.ssd", "size": 20 },
-    "internetMaxBandwidth": 100,
-    "password": "<密码>",
-    "clientToken": "<UUID>",
-    "names": ["image-builder"]
-}
-```
+确认后，在安装脚本末尾按下表执行：
 
-> **注意**：`systemDisk` 必须包含 `diskType` 字段（`local.ssd` 或 `cloud.ssd`），否则 API 返回 400 错误。
+| 策略 | 安装脚本末尾 | user_data 末尾 |
+|------|-------------|----------------|
+| A | `systemctl daemon-reload`（不 enable） | `systemctl enable --now <service>` |
+| B | `systemctl daemon-reload && systemctl enable <service>` | `systemctl restart <service>` |
 
-查询可用机型：`GET /v1/instance-types`，返回各机型的 CPU、内存、支持区域等信息。应选择满足需求的最小机型，避免镜像绑定过高资源需求。
-
-### 4.2 等待 VM 就绪
-
-轮询实例状态直到 `state`（注意不是 `status`）变为 `Running`：
-
-```
-GET /v1/instances/{instanceID}
-Host: ap-northeast-1-ecs.qiniuapi.com
-```
-
-### 4.3 SSH 安装软件
+**策略 A 的手动部署说明**（应写入应用文档或 README，供直接建 VM 的用户参考）：
 
 ```bash
-ssh root@<公网IP>
-# 执行安装脚本...
+# 直接从镜像建 VM 后，手动配置并启动服务
+cat > /path/to/app.env <<EOF
+API_KEY=your-key
+# ... 其他必填配置
+EOF
+chmod 600 /path/to/app.env
+
+systemctl enable --now <service-name>
 ```
 
-### 4.4 清理环境
 
-制作镜像前**必须清理**以下内容：
-
-```bash
-apt-get clean && apt-get autoremove -y
-rm -rf /var/lib/apt/lists/*
-journalctl --vacuum-time=1d
-rm -rf /tmp/* /var/tmp/*
-rm -f /etc/ssh/ssh_host_*
-cloud-init clean --logs
-rm -f /root/.bash_history /home/*/.bash_history
-```
-
-> **关键**：`cloud-init clean` 是必须的，否则新实例不会执行 user_data 脚本。
-
-### 4.5 创建自定义镜像
-
-实例必须处于 **Running** 状态。API 返回 HTTP **202**（异步操作）：
-
-```
-POST /v1/images
-Host: ap-northeast-1-ecs.qiniuapi.com
-
-{
-    "instanceID": "i-xxxxxxxxxxxx",
-    "regionID": "ap-northeast-1",
-    "name": "ubuntu-24.04-mysql-8.0",
-    "description": "Ubuntu 24.04 + MySQL 8.0 预装镜像"
-}
-
-# 返回 202
-{
-    "imageID": "image-xxxxxxxxxxxx"
-}
-```
-
-### 4.6 等待镜像就绪
-
-轮询镜像 `state` 直到 `Available`：
-
-```
-GET /v1/images/{imageID}
-Host: ap-northeast-1-ecs.qiniuapi.com
-```
-
-状态流转：`Creating` → `Available`
-
-### 4.7 删除临时 VM
-
-镜像就绪后删除临时 VM：
-
-```
-DELETE /v1/instances/{instanceID}
-Host: ap-northeast-1-ecs.qiniuapi.com
-```
-
-### 4.8 注意事项
-
-| 项目 | 说明 |
-|------|------|
-| API Host | 必须使用 region 前缀域名 `{regionID}-ecs.qiniuapi.com` |
-| 实例状态字段 | API 返回的字段名是 `state`（不是 `status`） |
-| systemDisk | 必须包含 `diskType`（`local.ssd` 或 `cloud.ssd`） |
-| 镜像创建响应 | 返回 HTTP 202，异步操作 |
-| 区域绑定 | 自定义镜像绑定创建时的 regionID，仅该区域可用 |
-| 镜像大小 | 取决于系统盘实际使用量，建议控制在 10GB 以内 |
-| **最小磁盘约束** | 镜像会记录制作时的磁盘大小作为 min disk；后续用该镜像创建实例时，`system_disk_size` **必须 ≥ 镜像的 min disk**，否则 API 返回 `instance disk is less than image min disk [400]`。LAS 系统盘范围 **20–500 GB**，`image-cli.py build` 默认 20 GB |
-
-> **实践建议**：制作镜像时记录所用的磁盘大小（如 60GB），然后在 `variables.tf` 中将 `system_disk_size` 变量的 `minimum` 设为同一数值，并确保 `deploy-meta.json` 所有 preset 的 `system_disk_size` 也不低于该值。
-
-### 4.9 构建 manifest 留档
-
-`image-cli.py build` 和 `image-cli.py create-image` 完成后，会在安装脚本同级目录（或当前目录）自动写出一份构建 manifest：
-
-```
-my-app-v1.0.0-build-20260410-090000.json
-```
-
-manifest 内容：
-
-```json
-{
-  "builtAt": "2026-04-10T09:00:00Z",
-  "region": "ap-northeast-1",
-  "baseImage": {
-    "id": "img-official-ubuntu2404",
-    "name": "Ubuntu 24.04 LTS",
-    "osDistribution": "Ubuntu",
-    "osVersion": "24.04"
-  },
-  "builderVM": {
-    "instanceId": "i-xxxxxxx",
-    "instanceType": "ecs.t1.c2m4",
-    "diskSize": 20,
-    "diskType": "cloud.ssd",
-    "bandwidth": 100
-  },
-  "installScript": {
-    "path": "/abs/path/to/setup-image.sh",
-    "sha256": "abc123..."
-  },
-  "outputImage": {
-    "id": "image-xxxxxxxxx",
-    "name": "my-app-v1.0.0",
-    "minDisk": 20,
-    "minCPU": 2,
-    "minMemory": 4
-  }
-}
-```
-
-**约定：**
-- manifest 文件应提交进版本控制，与 `setup-image.sh` 放在同一目录
-- `sha256` 字段记录安装脚本的哈希，便于确认镜像和脚本的对应关系
-- 若安装脚本内部通过 `curl ... | bash` 安装非固定版本，需在脚本注释或 manifest 旁附加说明，以便人工审阅
-- 每次重新制作镜像都会生成新的 manifest，旧的 manifest 可作为变更历史保留
-
----
-
-## 5. 初始化脚本开发
-
-自定义镜像提供「预装环境」，但每个实例的个性化配置（密码、数据库名等）通过 Terraform `user_data` 在首次启动时注入。
-
-### 5.1 user_data 工作原理
-
-```
-                       Terraform 模块
-                            │
-                    templatefile() 渲染
-                            │
-                    user_data 脚本
-                            │
-                  cloud-init 首次启动执行
-                            │
-                  配置密码 / 创建数据库 / 启动服务
-```
-
-Terraform 模块中的引用方式：
-
-**方式 A：内联 heredoc（moduleContent 模式必须使用）**
-
-```hcl
-resource "qiniu_compute_instance" "mysql" {
-  image_id      = local.mysql_image_id
-  instance_type = var.instance_type
-
-  user_data = base64encode(<<-USERDATA
-#!/bin/bash
-set -euo pipefail
-MYSQL_USERNAME="${var.mysql_username}"
-MYSQL_PASSWORD="${var.mysql_password}"
-MYSQL_DB_NAME="${var.mysql_db_name}"
-# ... 初始化逻辑
-USERDATA
-  )
-}
-```
-
-**方式 B：templatefile（仅 gitSource 模式可用）**
-
-```hcl
-resource "qiniu_compute_instance" "mysql" {
-  image_id      = local.mysql_image_id
-  instance_type = var.instance_type
-
-  user_data = base64encode(templatefile("${path.module}/scripts/init-mysql.sh", {
-    mysql_username = var.mysql_username
-    mysql_password = var.mysql_password
-    mysql_db_name  = var.mysql_db_name
-  }))
-}
-```
-
-> **注意**：`bundle-module.sh` 只打包 `*.tf` 文件，不包含子目录。使用 `moduleContent` 方式发布时不能用 `templatefile()` 引用外部脚本文件。
-
-### 5.2 初始化脚本示例（MySQL）
-
-```bash
-#!/bin/bash
-set -e
-
-# 变量由 Terraform templatefile 注入
-MYSQL_USERNAME="${mysql_username}"
-MYSQL_PASSWORD="${mysql_password}"
-MYSQL_DB_NAME="${mysql_db_name}"
-
-LOG_FILE="/var/log/appmarket/mysql-init.log"
-mkdir -p "$(dirname "$LOG_FILE")"
-
-log() {
-    echo "[$(date +'%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG_FILE"
-}
-
-log "Starting MySQL initialization..."
-
-# 等待 MySQL 服务就绪
-for i in $(seq 1 30); do
-    if mysqladmin ping -h localhost --silent 2>/dev/null; then
-        log "MySQL service is ready"
-        break
-    fi
-    if [ "$i" -eq 30 ]; then
-        log "ERROR: MySQL service failed to start"
-        exit 1
-    fi
-    sleep 2
-done
-
-# 创建管理员用户
-log "Creating admin user: $MYSQL_USERNAME"
-mysql -u root <<SQL
-CREATE USER IF NOT EXISTS '$MYSQL_USERNAME'@'%' IDENTIFIED BY '$MYSQL_PASSWORD';
-GRANT ALL PRIVILEGES ON *.* TO '$MYSQL_USERNAME'@'%' WITH GRANT OPTION;
-FLUSH PRIVILEGES;
-SQL
-
-# 创建数据库
-if [ -n "$MYSQL_DB_NAME" ]; then
-    log "Creating database: $MYSQL_DB_NAME"
-    mysql -u root <<SQL
-CREATE DATABASE IF NOT EXISTS \`$MYSQL_DB_NAME\`
-  CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-GRANT ALL PRIVILEGES ON \`$MYSQL_DB_NAME\`.* TO '$MYSQL_USERNAME'@'%';
-FLUSH PRIVILEGES;
-SQL
-fi
-
-# 安全加固
-mysql -u root <<SQL
-DELETE FROM mysql.user WHERE User='';
-DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');
-DROP DATABASE IF EXISTS test;
-FLUSH PRIVILEGES;
-SQL
-
-log "MySQL initialization completed"
-```
-
-### 5.3 脚本规范
+### 5.2 脚本规范
 
 | 规范 | 说明 |
 |------|------|
@@ -645,7 +452,58 @@ locals {
 }
 ```
 
-### 6.2 直接引用镜像 ID
+### 6.2 多区域部署：命名前缀 + data source 动态查找（推荐）
+
+自定义镜像**绑定制作时的区域**，不同区域的镜像 ID 不同。推荐使用「名称前缀 + 区域后缀」的命名约定，配合 data source 动态查找，避免硬编码 image ID：
+
+**命名约定**：`<AppName>-v<Version>-<region-suffix>`，区域后缀用于区分，前缀保持一致。
+
+```bash
+# 在 cn-hongkong-1 制作
+python3 scripts/image-cli.py build \
+  --install-script path/to/install.sh \
+  --image-name MyApp-v1.0.0-hkg \
+  --region cn-hongkong-1
+
+# 在 ap-northeast-1 制作（相同安装脚本）
+python3 scripts/image-cli.py build \
+  --install-script path/to/install.sh \
+  --image-name MyApp-v1.0.0-tyo \
+  --region ap-northeast-1
+```
+
+**Terraform 模块：用名称前缀匹配，自动适配当前部署区域**
+
+```hcl
+variable "image_name_prefix" {
+  type        = string
+  description = "预装镜像名称前缀，在当前区域自动匹配唯一镜像（不暴露给用户）"
+  default     = "MyApp-v1.0.0"
+}
+
+data "qiniu_compute_images" "app" {
+  type  = "Custom"
+  state = "Available"
+}
+
+locals {
+  resolved_image_id = one([
+    for item in data.qiniu_compute_images.app.items : item.id
+    if startswith(item.name, var.image_name_prefix)
+  ])
+}
+
+resource "qiniu_compute_instance" "app" {
+  image_id = local.resolved_image_id
+  # ...
+}
+```
+
+> **工作原理**：data source 查询的是 provider 配置的当前区域，每个区域只有一个匹配前缀的镜像，`one()` 确保精确匹配（多个或零个都会报错）。部署到不同区域时，Terraform 自动找到该区域对应的镜像，无需维护 image ID 映射或多份 deploy-meta。
+
+**升级新版本镜像时**：更新 `image_name_prefix` 的 `default` 值（如 `MyApp-v1.0.0` → `MyApp-v1.1.0`），并在各目标区域重新制作同前缀的新镜像。
+
+### 6.4 直接引用镜像 ID（单区域）
 
 ```hcl
 resource "qiniu_compute_instance" "app" {
@@ -655,7 +513,7 @@ resource "qiniu_compute_instance" "app" {
 }
 ```
 
-### 6.3 data source 参数
+### 6.5 data source 参数
 
 `qiniu_compute_images` 支持的过滤参数：
 
@@ -707,7 +565,7 @@ sudo ufw --force enable
 **软件和服务**：
 - [ ] 目标应用软件已安装且版本正确
 - [ ] 必需软件已保留（cloud-init、curl、ca-certificates）
-- [ ] 应用服务已设置开机自启（`systemctl is-enabled <service>`）
+- [ ] 服务启动策略已按 §5.1 与用户确认，安装脚本中是否 enable 与策略一致
 - [ ] 初始化脚本已放置且可执行
 
 **清理**：
@@ -719,9 +577,9 @@ sudo ufw --force enable
 - [ ] 无敏感信息残留（密码、密钥等）
 
 **功能验证**：
-- [ ] 基于新镜像创建实例后，cloud-init 正常执行 user_data
-- [ ] 应用服务正常启动
-- [ ] 初始化脚本正确完成配置
+- [ ] 服务进程以预期用户身份运行（`ps aux | grep <service>`）
+- [ ] 按约定策略验证自启动行为（策略 A：直接从镜像建 VM 后服务**不自启**为预期；策略 B：重启后服务自动拉起）
+- [ ] 若非 root 用户且策略 B：确认 `loginctl show-user <username> | grep Linger` 输出 `Linger=yes`
 
 ---
 

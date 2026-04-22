@@ -171,6 +171,13 @@ python3 scripts/image-cli.py build \
 
 ### 3. 编写 Terraform 模块
 
+> ⛔ **预装镜像策略前置检查**：开始编写 Terraform 之前，必须确认：
+> - [ ] 步骤 2 已完成，已拿到真实镜像 ID（如 `image-xxxxxxxxxxxxxxxx`）
+> - [ ] `image_id` 的 `default` 值使用真实镜像 ID，**不要用占位符**
+>
+> **如果镜像还没制作完，停在步骤 2，拿到真实镜像 ID 后再来写 Terraform。**
+> 如果工作目录已有旧的 Terraform 文件，先检查 `image_id` 的 `default` 是否仍为占位符（如 `image-xxx`），是则不能继续，必须先完成镜像制作。
+
 **在动手写代码之前，先列出具体的参数表格与用户确认：**
 
 **步骤：**
@@ -220,17 +227,40 @@ my-app/
 
 详见 [Terraform 模块规范](references/terraform-module.md)。
 
-### 4. 测试模块
+### 4. 本地验证 Terraform 模块（必须，不可跳过）
+
+**在生成 DeployMeta 或创建版本之前，必须先通过本地 Terraform 验证。** 跳过此步骤直接上传的模块若在 AppMarket 侧部署时才报错，排查成本极高。
 
 ```bash
-# 本地验证（格式、语法、plan）
-scripts/test-module.sh path/to/my-app test.tfvars
+cd path/to/my-app
 
-# 集成测试（需要真实凭证）
-scripts/test-module.sh path/to/my-app test.tfvars --integration
+# 1. 格式检查
+terraform fmt -check -recursive
+
+# 2. 初始化并验证语法（必须通过）
+terraform init
+terraform validate
+
+# 3. 生成执行计划验证资源配置（必须能 plan 成功）
+#    先准备包含所有 required 变量的 tfvars
+terraform plan -var-file=test.tfvars
 ```
 
+**✅ 本地验证通过检查点**（全部打勾才能继续步骤 5）：
+- [ ] `terraform fmt -check` 无报错（或已格式化）
+- [ ] `terraform validate` 输出 `Success! The configuration is valid.`
+- [ ] `terraform plan` 能正常生成计划，resource 字段无意外报错
+
 > **注意**：本地 `terraform init` / `terraform apply` 依赖的 provider 安装方式、可用版本以及资源栈白名单，以 `qiniu/terraform-module` 仓库 README 为准；若本地验证失败，先检查 provider 版本、网络和该 README 中的白名单说明，再排查模块本身。
+
+```bash
+# 也可使用封装脚本一步完成上述检查
+# 注意：test-module.sh 内部会 cd 进模块目录，tfvars 路径必须用绝对路径
+scripts/test-module.sh path/to/my-app $(pwd)/test.tfvars
+
+# 集成测试（需要真实凭证，可选）
+scripts/test-module.sh path/to/my-app $(pwd)/test.tfvars --integration
+```
 
 详见 [模块测试指南](references/module-testing.md)。
 
@@ -259,6 +289,14 @@ scripts/generate-deploy-meta.sh path/to/my-app
 
 ### 6. 创建应用
 
+> ⛔ **先检查是否已有同名应用，不要重复创建。** 在执行 `create-app` 之前，必须先：
+>
+> ```bash
+> python3 scripts/appmarket-cli.py list-apps
+> ```
+>
+> 如果已有同名或功能相同的 App，**默认复用**——在现有 App 上创建新版本号（如 `1.1.0`、`2.0.0`）即可。如需新建，**必须先询问用户确认**，并说明已有 App 的信息（ID、名称、现有版本）。用户明确确认后方可执行 `create-app`。
+
 ```bash
 python3 scripts/appmarket-cli.py create-app \
   --name "MyApp" \
@@ -272,12 +310,15 @@ python3 scripts/appmarket-cli.py create-app \
 ### 7. 创建版本并测试
 
 ```bash
-# 创建 Draft 版本
+# 创建 Draft 版本（--desc 必填，且至少 50 个字符，否则 API 返回 400）
 python3 scripts/appmarket-cli.py create-version \
   --app-id app-xxxxxxxxxxxx --version 1.0.0 \
-  --deploy-meta path/to/deploy-meta.json
+  --deploy-meta path/to/deploy-meta.json \
+  --desc "初始版本，包含预装镜像和 Terraform 模块，支持香港区域部署"
 
 # 测试（创建真实实例验证部署，--cleanup 测完自动删除）
+# 注意：如果报 RFSNotEnabled [403]，说明当前区域不支持该 App 部署
+# → 换其他区域重试，如 cn-hongkong-1
 python3 scripts/appmarket-cli.py test-version \
   --app-id app-xxxxxxxxxxxx --version 1.0.0 \
   --region ap-northeast-1 --cleanup
@@ -365,7 +406,7 @@ python3 scripts/appmarket-cli.py publish-version \
 
 | 工具 | 说明 |
 |------|------|
-| `scripts/appmarket-cli.py` | CLI 工具，封装 AppMarket API（零依赖，AK/SK 从环境变量获取） |
+| `scripts/appmarket-cli.py` | CLI 工具，封装 AppMarket API（零依赖，AK/SK 从环境变量获取）；`wait-instance` 可在 `test-version` 超时或中断后恢复轮询 |
 | `scripts/vm-cli.py` | VM 管理工具（创建/删除/列出 VM、查询机型） |
 | `scripts/image-cli.py` | 镜像制作工具（一键制作：VM → 安装 → 镜像 → 删除VM；以及列出/删除镜像） |
 | `scripts/generate-deploy-meta.sh` | 从 Terraform 模块生成 DeployMeta |

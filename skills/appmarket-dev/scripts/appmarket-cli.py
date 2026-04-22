@@ -30,7 +30,9 @@ import hashlib
 import hmac
 import json
 import os
+import secrets
 import ssl
+import string
 import sys
 import time
 import uuid
@@ -96,12 +98,14 @@ class _Response:
 def _http_request(method: str, url: str, headers: dict, body_bytes: bytes | None = None) -> _Response:
     """使用 urllib 发送 HTTP 请求。"""
     req = urllib.request.Request(url, data=body_bytes, headers=headers, method=method)
-    ctx = ssl.create_default_context()
     try:
-        with urllib.request.urlopen(req, context=ctx) as resp:
+        with urllib.request.urlopen(req, context=_SSL_CONTEXT) as resp:
             return _Response(resp.status, resp.read())
     except urllib.error.HTTPError as e:
         return _Response(e.code, e.read())
+
+
+_SSL_CONTEXT = ssl.create_default_context()
 
 
 # ---------------------------------------------------------------------------
@@ -355,7 +359,7 @@ def cmd_test_version(client: AppMarketClient, args):
                 continue
             # 只传 required 且无 default 的字段（通常是 sensitive 字段）
             if name in required and "default" not in prop:
-                placeholder = "Test@1234" if "password" in name.lower() else f"test-{name}"
+                placeholder = _generate_random_value(name)
                 inputs[name] = placeholder
                 print(f"  需要手动提供: {name} (当前使用占位值 '{placeholder}')")
         print(f"使用 InputPreset '{presets[0]['name'] if presets else 'N/A'}' + 补充 inputs: {json.dumps(inputs, ensure_ascii=False)}")
@@ -410,6 +414,9 @@ def cmd_test_version(client: AppMarketClient, args):
         else:
             print(f"\n测试实例保留中，手动删除:")
         print(f"  appmarket-cli.py delete-instance --app-id {args.app_id} --instance-id {instance_id}")
+
+    if not final_status:
+        sys.exit(1)
 
     if final_status in ("Failed", "DeployFailed"):
         sys.exit(1)
@@ -554,6 +561,13 @@ def _load_json_file(path: str) -> dict:
     except json.JSONDecodeError as e:
         print(f"错误: JSON 解析失败: {path}: {e}", file=sys.stderr)
         sys.exit(1)
+
+
+def _generate_random_value(name: str, length: int = 20) -> str:
+    charset = string.ascii_letters + string.digits + "@#$%&*"
+    if "password" in name.lower():
+        length = max(length, 24)
+    return "".join(secrets.choice(charset) for _ in range(length))
 
 
 def _get_env_or_exit(name: str) -> str:

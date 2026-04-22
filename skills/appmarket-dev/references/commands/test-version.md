@@ -1,6 +1,12 @@
-# /test-version 命令
+# test-version
 
 测试 AppMarket Draft 版本，创建测试实例并验证部署功能。
+
+> **命令说明**：`/test-version` 是 Claude Code 斜杠命令的简写，底层调用的是：
+> ```bash
+> python3 scripts/appmarket-cli.py test-version --app-id <appID> --version <version> [options]
+> ```
+> 两种方式等价，本文档中的 `/test-version` 示例均可替换为上述 CLI 命令。
 
 ---
 
@@ -36,11 +42,8 @@
 命令会自动：
 1. 检查版本是否为 Draft 状态
 2. 使用 InputSchema 中的默认值创建测试实例
-3. 监控部署进度
-4. 显示实例输出
-5. 等待用户确认后删除实例
-
-> 这里的“创建测试实例”就是内部调用 `POST /v1/app-instances/` 创建 AppInstance。
+3. 监控部署进度，输出实例状态和 outputs
+4. 部署完成（或失败）后打印摘要；**实例不会自动删除**，需手动调用 `delete-instance` 清理，或在测试时加 `--cleanup`
 
 ### 2. 自定义参数测试
 
@@ -71,239 +74,11 @@ EOF
 /test-version app-xxxxxxxxxxxx 1.0.0 --cleanup
 ```
 
----
-
-## 工作流程
-
-```mermaid
-graph TD
-    A[执行 /test-version] --> B{检查版本状态}
-    B -->|Draft| C[准备输入参数]
-    B -->|非 Draft| X[错误：只能测试 Draft 版本]
-
-    C --> D[创建测试实例]
-    D --> E[监控部署状态]
-
-    E --> F{部署状态}
-    F -->|Running| G[显示实例输出]
-    F -->|Failed| Y[显示错误信息]
-    F -->|Deploying| E
-
-    G --> H{用户确认删除?}
-    H -->|是| I[删除测试实例]
-    H -->|否| J[保留实例]
-
-    I --> K[测试完成]
-    J --> K
-
-    style C fill:#e1f5ff
-    style G fill:#e1ffe1
-    style Y fill:#ffe1e1
-```
-
----
-
-## 输出示例
-
-### 成功场景
-
-```
-🧪 测试 Draft 版本
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-应用 ID: app-xxxxxxxxxxxx
-版本号: 1.0.0
-状态: Draft ✓
-
-📝 准备输入参数
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-使用默认值:
-  instance_name: my-mysql
-  instance_type: ecs.c1.c2m4
-  system_disk_size: 50
-  mysql_username: admin
-  mysql_password: **********
-  mysql_db_name: testdb
-
-🚀 创建测试实例
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-实例 ID: appi-xxxxxxxxxxxx
-区域: ap-northeast-1
-状态: Deploying
-
-⏳ 部署进度
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-[00:30] Initializing...
-[01:15] Creating compute instance...
-[02:30] Configuring network...
-[03:45] Running initialization scripts...
-[04:20] Running ✓
-
-✓ 实例部署成功！
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-📊 实例输出
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-mysql_endpoint     = "10.0.1.100:3306"
-mysql_username     = "admin"
-mysql_password     = "<YourPassword>" (sensitive)
-instance_id        = "i-xxxxxxxxxxxx"
-instance_ip        = "10.0.1.100"
-
-🔍 验证建议
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-1. 连接测试:
-   mysql -h 10.0.1.100 -u admin -p'<YourPassword>'
-
-2. 健康检查:
-   mysqladmin ping -h 10.0.1.100 -u admin -p'<YourPassword>'
-
-3. 查看日志:
-   ssh ubuntu@10.0.1.100 "tail -f /var/log/mysql-init.log"
-
-🗑️  清理资源
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-是否删除测试实例？[Y/n]: Y
-
-删除中...
-✓ 实例已删除
-
-测试完成！
-```
-
-### 失败场景
-
-```
-🧪 测试 Draft 版本
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-应用 ID: app-xxxxxxxxxxxx
-版本号: 1.0.0
-状态: Draft ✓
-
-🚀 创建测试实例
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-实例 ID: appi-xxxxxxxxxxxx
-区域: ap-northeast-1
-状态: Deploying
-
-⏳ 部署进度
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-[00:30] Initializing...
-[01:15] Creating compute instance...
-[01:45] Failed ✗
-
-✗ 实例部署失败
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-错误信息:
-  Instance type 'ecs.c1.c2m4' is not available in region 'ap-northeast-1'
-
-📋 排查建议
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-1. 检查实例规格是否在指定区域可用
-2. 查看完整日志:
-   curl https://ap-northeast-1-ecs.qiniuapi.com/v1/app-instances/appi-xxx
-3. 查看 Terraform State:
-   通过 RFS API 查询 Stack 状态
-
-🗑️  清理资源
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-是否删除失败的实例？[Y/n]: Y
-✓ 实例已删除
-```
-
----
-
-## API 调用示例
-
-命令内部使用以下 API 调用：
-
-### 1. 检查版本状态
-
-```bash
-GET /v1/apps/{appID}/versions/{version}
-```
-
-**响应**：
-```json
-{
-  "appID": "app-xxxxxxxxxxxx",
-  "version": "1.0.0",
-  "status": "Draft",
-  "deployMeta": {
-    "inputSchema": {...},
-    "terraformModule": {...},
-    "inputPresets": [...]
-  }
-}
-```
-
-### 2. 创建测试实例
-
-> **注意**：实例 API 必须使用 region 前缀域名 `{regionID}-ecs.qiniuapi.com`，regionID 通过 Host header 提取。
-
-```bash
-POST https://{regionID}-ecs.qiniuapi.com/v1/app-instances/
-```
-
-**请求体**：
-```json
-{
-  "appID": "app-xxxxxxxxxxxx",
-  "appVersion": "1.0.0",
-  "inputPresetName": "starter",
-  "clientToken": "unique-idempotency-token-uuid",
-  "inputs": {
-    "mysql_password": "<YourPassword>"
-  }
-}
-```
-
-> **inputs 说明**：使用 `inputPresetName` 时，`inputs` 中**只需传 preset 未覆盖的 required 字段**（通常是 `writeOnly`/`sensitive` 字段如密码、API Key）。传入 preset 已有的字段会导致冲突。
-
-**响应**：
-```json
-{
-  "appInstanceID": "appi-xxxxxxxxxxxx"
-}
-```
-
-### 3. 查询实例状态
-
-```bash
-GET https://{regionID}-ecs.qiniuapi.com/v1/app-instances/{appInstanceID}
-```
-
-**响应**：
-```json
-{
-  "appInstanceID": "appi-xxxxxxxxxxxx",
-  "status": "Running",
-  "outputs": {
-    "mysql_endpoint": "10.0.1.100:3306",
-    "mysql_username": "admin",
-    "instance_id": "i-xxxxxxxxxxxx",
-    "instance_ip": "10.0.1.100"
-  }
-}
-```
-
-### 4. 删除实例
-
-```bash
-DELETE https://{regionID}-ecs.qiniuapi.com/v1/app-instances/{appInstanceID}
-```
+> **注意**：`--cleanup` 仅在部署**成功**后自动删除实例。部署失败时始终保留实例，供 SSH 进去查看 cloud-init 日志排查问题；排查完毕后用 `delete-instance` 手动清理：
+> ```bash
+> python3 scripts/appmarket-cli.py delete-instance \
+>   --instance-id appi-xxxxxxxxxxxx --region ap-northeast-1
+> ```
 
 ---
 
@@ -366,9 +141,21 @@ DELETE https://{regionID}-ecs.qiniuapi.com/v1/app-instances/{appInstanceID}
   2. 联系技术支持申请配额提升
 ```
 
+### RFSNotEnabled [403]
+
+```
+Error: RFSNotEnabled [403]
+```
+
+当前区域不支持该 App 部署。处理方式：
+
+- **换一个支持的区域**重试（见"支持区域"列表）。
+- 如果所有目标区域均报此错误，说明该账号所在区域暂不支持 AppMarket，联系七牛技术支持确认。
+- 如果急于上线且无法等待，可以在确认本地 `terraform validate/plan` 通过、DeployMeta 结构正确后，**由负责人确认跳过 test-version**，直接 `publish-version`。但此选项风险自担：用户部署时若失败，已是 Published 状态，只能发新版本修复。
+
 ---
 
-## 最佳实践
+## 使用场景
 
 ### 1. 测试不同规格
 
@@ -420,10 +207,23 @@ EOF
 # 不自动删除，手动验证功能
 /test-version app-xxx 1.0.0
 
-# 验证后手动删除（注意使用 region 前缀域名）
-curl -X DELETE "https://ap-northeast-1-ecs.qiniuapi.com/v1/app-instances/appi-xxx" \
-  -H "Authorization: Qiniu $ACCESS_KEY:$SIGNATURE"
+# 验证后手动删除
+python3 scripts/appmarket-cli.py delete-instance \
+  --instance-id appi-xxxxxxxxxxxx --region ap-northeast-1
 ```
+
+### 4. test-version 超时或被中断后恢复
+
+`test-version` 如果在轮询中超时或被 Ctrl-C 中断，实例仍在继续部署。此时可用 `wait-instance` 恢复轮询而无需重新部署：
+
+```bash
+python3 scripts/appmarket-cli.py wait-instance \
+  --app-id app-xxxxxxxxxxxx \
+  --instance-id appi-xxxxxxxxxxxx \
+  --region ap-northeast-1
+```
+
+> `--timeout` 参数可调整最长等待秒数（默认 600 秒）。恢复轮询成功后，结果同 `test-version` 正常完成。
 
 ---
 

@@ -49,7 +49,7 @@ import hashlib
 import hmac
 import json
 import os
-import random
+import secrets
 import shutil
 import ssl
 import string
@@ -104,12 +104,14 @@ class _Response:
 
 def _http_request(method: str, url: str, headers: dict, body_bytes: bytes | None = None) -> _Response:
     req = urllib.request.Request(url, data=body_bytes, headers=headers, method=method)
-    ctx = ssl.create_default_context()
     try:
-        with urllib.request.urlopen(req, context=ctx) as resp:
+        with urllib.request.urlopen(req, context=_SSL_CONTEXT) as resp:
             return _Response(resp.status, resp.read())
     except urllib.error.HTTPError as e:
         return _Response(e.code, e.read())
+
+
+_SSL_CONTEXT = ssl.create_default_context()
 
 
 # ---------------------------------------------------------------------------
@@ -225,10 +227,21 @@ class LASClient:
     # ---- Instance ----
 
     def list_instance_types(self, region_id: str, family: str = ""):
-        query = "/v1/instance-types?limit=100"
-        if family:
-            query += f"&family={family}"
-        return self._check(self._request("GET", region_id, query))
+        items = []
+        marker = ""
+        while True:
+            query = "/v1/instance-types?limit=100"
+            if family:
+                query += f"&family={family}"
+            if marker:
+                query += f"&marker={marker}"
+            resp = self._check(self._request("GET", region_id, query))
+            batch = resp if isinstance(resp, list) else resp.get("items", resp.get("data", []))
+            items.extend(batch)
+            marker = resp.get("nextMarker", "") if isinstance(resp, dict) else ""
+            if not marker:
+                break
+        return {"items": items}
 
     def create_instance(self, region_id: str, instance_type: str, image_id: str,
                         disk_type: str, disk_size: int, bandwidth: int,
@@ -259,38 +272,56 @@ class LASClient:
 # SSH / 清理辅助函数
 # ---------------------------------------------------------------------------
 
+SSH_CONNECT_TIMEOUT = 10
+SSH_EXEC_TIMEOUT = int(os.environ.get("APPMARKET_SSH_EXEC_TIMEOUT", "1800"))
+SSH_CLEANUP_TIMEOUT = int(os.environ.get("APPMARKET_SSH_CLEANUP_TIMEOUT", "900"))
+
+
 def _generate_password() -> str:
     """生成符合 LAS 密码策略的随机密码。"""
-    upper = random.choices(string.ascii_uppercase, k=4)
-    lower = random.choices(string.ascii_lowercase, k=4)
-    digits = random.choices(string.digits, k=4)
-    special = random.choices("@#$%&*", k=2)
-    pool = upper + lower + digits + special
-    random.shuffle(pool)
+    rng = secrets.SystemRandom()
+    pool = [
+        rng.choice(string.ascii_uppercase) for _ in range(4)
+    ] + [
+        rng.choice(string.ascii_lowercase) for _ in range(4)
+    ] + [
+        rng.choice(string.digits) for _ in range(4)
+    ] + [
+        rng.choice("@#$%&*") for _ in range(2)
+    ]
+    rng.shuffle(pool)
     return "".join(pool)
 
 
+def _sshpass_env(password: str) -> dict[str, str] | None:
+    if not password:
+        return None
+    env = os.environ.copy()
+    env["SSHPASS"] = password
+    return env
+
+
 def _ssh_cmd_base(ip: str, password: str, user: str) -> list[str]:
-    ssh_opts = ["-o", "StrictHostKeyChecking=no", "-o", "ConnectTimeout=10"]
+    ssh_opts = ["-o", "StrictHostKeyChecking=no", "-o", f"ConnectTimeout={SSH_CONNECT_TIMEOUT}"]
     if password:
         if not shutil.which("sshpass"):
             print("错误: 需要安装 sshpass (apt install sshpass / brew install sshpass)", file=sys.stderr)
             sys.exit(1)
-        return ["sshpass", "-p", password, "ssh"] + ssh_opts + [f"{user}@{ip}"]
+        return ["sshpass", "-e", "ssh"] + ssh_opts + [f"{user}@{ip}"]
     return ["ssh"] + ssh_opts + [f"{user}@{ip}"]
 
 
 def _scp_cmd_base(password: str) -> list[str]:
-    scp_opts = ["-o", "StrictHostKeyChecking=no", "-o", "ConnectTimeout=10"]
+    scp_opts = ["-o", "StrictHostKeyChecking=no", f"-o", f"ConnectTimeout={SSH_CONNECT_TIMEOUT}"]
     if password:
-        return ["sshpass", "-p", password, "scp"] + scp_opts
+        return ["sshpass", "-e", "scp"] + scp_opts
     return ["scp"] + scp_opts
 
 
-def _ssh_exec(ip: str, password: str, user: str, cmd: str, timeout: int = 600) -> int:
+def _ssh_exec(ip: str, password: str, user: str, cmd: str, timeout: int = SSH_EXEC_TIMEOUT) -> int:
     """在远端 VM 上执行命令。stdin 始终重定向到 /dev/null，确保不会因交互式提示挂住。"""
     full_cmd = _ssh_cmd_base(ip, password, user) + [cmd]
-    result = subprocess.run(full_cmd, stdin=subprocess.DEVNULL, timeout=timeout)
+    result = subprocess.run(full_cmd, stdin=subprocess.DEVNULL, timeout=timeout, env=_sshpass_env(password))
     return result.returncode
 
 
@@ -324,7 +355,7 @@ def _wait_ssh(ip: str, password: str, user: str, timeout: int = 120):
         time.sleep(5)
         try:
             full_cmd = _ssh_cmd_base(ip, password, user) + ["echo ok"]
-            result = subprocess.run(full_cmd, capture_output=True, timeout=10)
+            result = subprocess.run(full_cmd, capture_output=True, timeout=10, env=_sshpass_env(password))
             if result.returncode == 0:
                 print("SSH 连接成功")
                 return
@@ -362,7 +393,7 @@ def _ssh_run_script(ip: str, password: str, user: str, script_path: str):
     remote_path = "/root/_install.sh"
     print(f"\n上传安装脚本: {script_path} -> {remote_path}")
     scp_cmd = _scp_cmd_base(password) + [script_path, f"{user}@{ip}:{remote_path}"]
-    rc = subprocess.run(scp_cmd).returncode
+    rc = subprocess.run(scp_cmd, env=_sshpass_env(password), timeout=SSH_EXEC_TIMEOUT).returncode
     if rc != 0:
         print("错误: 上传安装脚本失败", file=sys.stderr)
         sys.exit(1)
@@ -390,7 +421,7 @@ def _ssh_cleanup(ip: str, password: str, user: str):
         "cloud-init clean --logs",
         "rm -f /root/.bash_history /home/*/.bash_history",
     ])
-    rc = _ssh_exec(ip, password, user, cleanup_cmds)
+    rc = _ssh_exec(ip, password, user, cleanup_cmds, timeout=SSH_CLEANUP_TIMEOUT)
     if rc != 0:
         print("警告: 部分清理命令失败，继续制作镜像", file=sys.stderr)
     print("清理完成")
@@ -775,7 +806,7 @@ def cmd_build(args):
             print(f"  Instance ID: {instance_id}")
             print(f"  IP:          {public_ip}")
             print(f"  Password:    {password}")
-            print(f"  SSH:         sshpass -p '{password}' ssh {args.ssh_user}@{public_ip}")
+            print(f"  SSH:         SSHPASS='{password}' sshpass -e ssh {args.ssh_user}@{public_ip}")
             print(f"  删除VM:      python3 vm-cli.py delete-vm --instance-id {instance_id} --region {region}")
 
 

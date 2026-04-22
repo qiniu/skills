@@ -359,7 +359,7 @@ A: Draft 状态的版本，App 所有者可以创建测试实例进行验证。
 **方法 2：使用 API**
 
 ```bash
-curl -X POST "https://ap-northeast-1-ecs.qiniuapi.com/v1/app-instances/" \
+curl -X POST "https://{regionID}-ecs.qiniuapi.com/v1/app-instances/" \
   -H "Authorization: Qiniu $ACCESS_KEY:$SIGNATURE" \
   -H "Content-Type: application/json" \
   -d '{
@@ -409,7 +409,7 @@ A: 登录七牛云控制台 → 个人中心 → 密钥管理。
 
 ## 相关资源
 
-- [七牛云 Terraform Provider (https://github.com/qiniu/terraform-module/)
+- [七牛云 Terraform Provider](https://github.com/qiniu/terraform-module/)
 - [OpenTofu 语法文档](https://opentofu.org/docs/)
 - [七牛云开发者文档（LAS）](https://developer.qiniu.com/las)
 - [JSON Schema 规范](https://json-schema.org/)

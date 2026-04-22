@@ -52,10 +52,10 @@
           "prices": [
             {
               "costPeriodUnit": "Month",
-              "originalPriceCNY": 99,
-              "priceCNY": 99,
-              "originalPriceUSD": 15,
-              "priceUSD": 15
+              "originalPriceCNY": "99.00",
+              "priceCNY": "99.00",
+              "originalPriceUSD": "15.00",
+              "priceUSD": "15.00"
             }
           ]
         }

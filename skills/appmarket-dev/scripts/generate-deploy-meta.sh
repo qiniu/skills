@@ -31,17 +31,17 @@ echo "正在处理 Terraform 模块: $MODULE_DIR"
 
 # 1. 合并所有 .tf 文件
 echo "  -> 打包 Terraform 文件..."
-TMPDIR=$(mktemp -d)
-trap 'rm -rf "$TMPDIR"' EXIT
-cat "$MODULE_DIR"/*.tf > "$TMPDIR/module-content.txt" 2>/dev/null
+WORK_DIR=$(mktemp -d)
+trap 'rm -rf "$WORK_DIR"' EXIT
+cat "$MODULE_DIR"/*.tf > "$WORK_DIR/module-content.txt" 2>/dev/null
 
 # 2. 生成 InputSchema
 echo "  -> 生成 InputSchema..."
-"$SCRIPT_DIR/tf-to-schema.sh" "$MODULE_DIR/variables.tf" > "$TMPDIR/schema.json"
+"$SCRIPT_DIR/tf-to-schema.sh" "$MODULE_DIR/variables.tf" > "$WORK_DIR/schema.json"
 
 # 3. 组装 DeployMeta
 echo "  -> 组装 DeployMeta..."
-python3 "$SCRIPT_DIR/assemble-deploy-meta.py" "$TMPDIR/schema.json" "$TMPDIR/module-content.txt" "$OUTPUT_FILE"
+python3 "$SCRIPT_DIR/assemble-deploy-meta.py" "$WORK_DIR/schema.json" "$WORK_DIR/module-content.txt" "$OUTPUT_FILE"
 
 echo "已生成: $OUTPUT_FILE"
 echo ""
