@@ -26,6 +26,7 @@ npx skills add qiniu/skills --list
 | Skill | Description | Commands |
 |-------|-------------|----------|
 | [qshell](skills/qshell/SKILL.md) | Qiniu Cloud KODO object storage CLI | 98 commands, 15 categories |
+| [appmarket-dev](skills/appmarket-dev/SKILL.md) | Qiniu AppMarket app development & publishing | create/version/image/deploy |
 | [maas](skills/maas/SKILL.md) | 七牛云 MaaS 平台管理（API Key、用量账单、请求日志、模型市场） | REST API |
 | [miku-live](skills/miku-live/SKILL.md) | Intent resolution, parameter validation, and signed execution for Qiniu Miku Live management APIs | 40+ action keys across buckets, streams, domains, certificates, recording, relay, statistics, and API keys |
 
@@ -39,6 +40,8 @@ Talk to your AI agent in natural language:
 - "刷新 CDN 缓存" → `qshell cdnrefresh -i <urls.txt>`
 - "生成私有链接" → `qshell privateurl <URL>`
 - "批量下载 logs/ 前缀的文件" → `qshell qdownload2 --bucket <Bucket> --dest-dir ./logs --prefix logs/`
+- "帮我在 AppMarket 上架一个 MySQL 应用" → runs `appmarket-dev` skill
+- "创建 AppMarket 应用版本并测试" → `appmarket-cli.py create-version / test-version`
 - "创建一个新的 MaaS API Key" → `POST /v1/apikeys`
 - "查看上个月所有 API Key 的费用和用量" → `GET /v1/statistics/bills`
 - "禁用一个不再使用的 API Key" → `PUT /v1/apikeys/{id}/disable`
@@ -59,6 +62,12 @@ skills/
 │   │   └── install.md            # Install guide and account setup
 │   └── examples/
 │       └── conversation-flow.md  # Typical interaction examples
+└── appmarket-dev/                # Qiniu AppMarket app development & publishing
+    ├── SKILL.md                  # Skill definition
+    ├── README.md                 # Usage guide
+    ├── assets/                   # Templates (deploy-meta, setup-image)
+    ├── scripts/                  # CLI tools (appmarket-cli, vm-cli, image-cli, tf-to-schema)
+    └── references/               # Guides (terraform-module, image-building, testing, etc.)
 └── maas/                         # 七牛云 MaaS 平台管理
     ├── SKILL.md                  # Skill definition (API Key、用量账单、请求日志、模型市场)
     ├── references/

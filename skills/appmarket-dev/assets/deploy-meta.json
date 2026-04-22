@@ -1,0 +1,65 @@
+{
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "instance_type": {
+        "type": "string",
+        "title": "实例规格",
+        "enum": ["small", "medium", "large"],
+        "enumNames": ["小型(1C2G)", "中型(2C4G)", "大型(4C8G)"],
+        "default": "medium"
+      },
+      "storage_size": {
+        "type": "integer",
+        "title": "存储容量(GB)",
+        "minimum": 20,
+        "maximum": 2000,
+        "default": 100
+      },
+      "admin_password": {
+        "type": "string",
+        "title": "管理员密码",
+        "minLength": 8,
+        "maxLength": 32
+      }
+    },
+    "required": ["instance_type", "admin_password"],
+    "x-input-groups": [
+      {
+        "name": "基础配置",
+        "inputs": ["instance_type", "storage_size"]
+      },
+      {
+        "name": "安全配置",
+        "inputs": ["admin_password"]
+      }
+    ]
+  },
+  "terraformModule": {
+    "moduleContent": "# Terraform 代码"
+  },
+  "inputPresets": [
+    {
+      "name": "starter",
+      "title": "入门版",
+      "inputs": {
+        "instance_type": "small",
+        "storage_size": 20
+      },
+      "regionPrices": [
+        {
+          "regionIDs": ["ap-northeast-1"],
+          "prices": [
+            {
+              "costPeriodUnit": "Month",
+              "originalPriceCNY": "99.00",
+              "priceCNY": "99.00",
+              "originalPriceUSD": "15.00",
+              "priceUSD": "15.00"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
