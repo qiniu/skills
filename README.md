@@ -27,6 +27,7 @@ npx skills add qiniu/skills --list
 |-------|-------------|----------|
 | [qshell](skills/qshell/SKILL.md) | Qiniu Cloud KODO object storage CLI | 98 commands, 15 categories |
 | [maas](skills/maas/SKILL.md) | 七牛云 MaaS 平台管理（API Key、用量账单、请求日志、模型市场） | REST API |
+| [miku-live](skills/miku-live/SKILL.md) | Intent resolution, parameter validation, and signed execution for Qiniu Miku Live management APIs | 40+ action keys across buckets, streams, domains, certificates, recording, relay, statistics, and API keys |
 
 ## What Can You Do
 
@@ -42,6 +43,10 @@ Talk to your AI agent in natural language:
 - "查看上个月所有 API Key 的费用和用量" → `GET /v1/statistics/bills`
 - "禁用一个不再使用的 API Key" → `PUT /v1/apikeys/{id}/disable`
 - "查询某个模型的价格和支持参数" → `GET /v1/models/{id}`
+- "帮我获取到直播空间列表" → `bucket-management/list_buckets`
+- "禁播 bucket-a 里的 stream-1" → `stream-management/ban_stream`
+- "给 bucket-a 绑定播放域名 live.example.com" → `domain-management/bind_downstream_domain`
+- "创建一个转推任务" → `pub-relay/create_pub_task`
 
 ## Repository Structure
 
@@ -65,6 +70,12 @@ skills/
         ├── usage-panel.md        # 用量面板示例
         ├── apikey-manager/       # API Key 管理示例
         └── usage-page/           # 用量页面示例
+└── miku-live/                    # Qiniu Miku Live API mapping and execution guidance
+    ├── SKILL.md                  # Skill definition (intent mapping, safety rules, output contract)
+    └── references/
+        ├── interface-catalog.md  # Action catalog and parameter placement
+        ├── schemas.md            # Unified request/response contract
+        └── signing.md            # Signing and execution details
 ```
 
 ## Contributing
