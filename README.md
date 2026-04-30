@@ -1,7 +1,7 @@
 # Qiniu Skills
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
-[![Skills](https://img.shields.io/badge/skills-4-informational?style=flat-square)](#available-skills)
+[![Skills](https://img.shields.io/badge/skills-5-informational?style=flat-square)](#available-skills)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square)](CONTRIBUTING.md)
 
 AI Skill definitions for coding agents (Claude Code, Cursor, Codex, etc.) to operate Qiniu Cloud products via natural language.
@@ -29,6 +29,7 @@ npx skills add qiniu/skills --list
 | [appmarket-dev](skills/appmarket-dev/SKILL.md) | Qiniu AppMarket app development & publishing | create/version/image/deploy |
 | [maas](skills/maas/SKILL.md) | Qiniu MaaS platform management: request log query, usage statistics, API Key lifecycle | REST API |
 | [miku-live](skills/miku-live/SKILL.md) | Intent resolution, parameter validation, and signed execution for Qiniu Miku Live management APIs | 40+ action keys across buckets, streams, domains, certificates, recording, relay, statistics, and API keys |
+| [xfetch-web](skills/xfetch-web/SKILL.md) | 通过七牛 xfetch 抓取并抽取网页内容 | markdown/json/html |
 
 ## What Can You Do
 
@@ -50,6 +51,7 @@ Talk to your AI agent in natural language:
 - "禁播 bucket-a 里的 stream-1" → `stream-management/ban_stream`
 - "给 bucket-a 绑定播放域名 live.example.com" → `domain-management/bind_downstream_domain`
 - "创建一个转推任务" → `pub-relay/create_pub_task`
+- "读取 https://example.com/page 的页面内容" → xfetch-web skill 调用 Qiniu xfetch
 
 ## Repository Structure
 
@@ -83,6 +85,10 @@ skills/
         ├── interface-catalog.md  # Action catalog and parameter placement
         ├── schemas.md            # Unified request/response contract
         └── signing.md            # Signing and execution details
+└── xfetch-web/                   # 七牛 xfetch 网页抓取与内容抽取
+    ├── SKILL.md                  # Skill 定义
+    └── scripts/
+        └── xfetch.py             # 路径式 xfetch API 辅助脚本
 ```
 
 ## Contributing
