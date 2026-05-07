@@ -34,15 +34,6 @@
 | `live-stream-transcoding-template/get_template_info` | `GET` | `mls.cn-east-1.qiniumiku.com` | `/?codecTemplate&name=<name>` | `-` | `host` | `name` | `-` | `-` | `-` |
 | `live-stream-transcoding-template/get_template_list` | `GET` | `mls.cn-east-1.qiniumiku.com` | `/?codecTemplates[&content=<content>&limit=<limit>&offset=<offset>]` | `-` | `host` | `-` | `content`、`limit`、`offset` | `-` | `-` |
 | `live-stream-transcoding-template/update_transcoding_template` | `PATCH` | `mls.cn-east-1.qiniumiku.com` | `/?codecTemplate` | `template_body` | `host` | `-` | `-` | `-` | `-` |
-| `pub-relay/create_pub_task` | `POST` | `pub-manager.mikudns.com` | `/tasks` | `task_body` | `-` | `-` | `-` | `-` | `-` |
-| `pub-relay/delete_pub_task` | `DELETE` | `pub-manager.mikudns.com` | `/tasks/<task_id>` | `-` | `-` | `-` | `-` | `-` | `task_id` |
-| `pub-relay/edit_pub_task` | `POST` | `pub-manager.mikudns.com` | `/tasks/<task_id>` | `task_body` | `-` | `-` | `-` | `-` | `task_id` |
-| `pub-relay/get_pub_list` | `GET` | `pub-manager.mikudns.com` | `/tasks[?marker=<marker>&limit=<limit>&name=<name>]` | `-` | `-` | `-` | `marker`、`limit`、`name` | `-` | `-` |
-| `pub-relay/query_pub_task` | `GET` | `pub-manager.mikudns.com` | `/tasks/<task_id>` | `-` | `-` | `-` | `-` | `-` | `task_id` |
-| `pub-relay/query_task_history` | `GET` | `pub-manager.mikudns.com` | `/history[?marker=<marker>&limit=<limit>&name=<name>&start=<start>&end=<end>]` | `-` | `-` | `-` | `marker`、`limit`、`name`、`start`、`end` | `-` | `-` |
-| `pub-relay/query_task_log` | `GET` | `pub-manager.mikudns.com` | `/tasks/<task_id>/runinfo` | `-` | `-` | `-` | `-` | `-` | `task_id` |
-| `pub-relay/start_pub_task` | `POST` | `pub-manager.mikudns.com` | `/tasks/<task_id>/start` | `-` | `-` | `-` | `-` | `-` | `task_id` |
-| `pub-relay/stop_pub_task` | `POST` | `pub-manager.mikudns.com` | `/tasks/<task_id>/stop` | `-` | `-` | `-` | `-` | `-` | `task_id` |
 | `recording-management/create_recording` | `POST` | `<bucket_name>.mls.cn-east-1.qiniumiku.com` | `/<stream_name>?recordingFile` | `start_time`、`end_time` | `fmt`、`fname`、`pipeline`、`expire_days`、`first_segment_type`、`persistent_delete_after_days`、`notify`、`host`、`timeout` | `-` | `-` | `bucket_name` | `stream_name` |
 | `recording-management/snapshot` | `POST` | `<bucket_name>.mls.cn-east-1.qiniumiku.com` | `/<stream_name>?snapshot` | `-` | `time`、`fname`、`img_format`、`pipeline`、`notify`、`delete_after_days` | `-` | `-` | `bucket_name` | `stream_name` |
 | `statistics/query_downflow_stat` | `GET` | `miku-statd.qiniuapi.com` | `/statd/v1/traffic/stat/downflow` | `-` | `-` | `begin` | `end`、`granularity`、`group`、`hub`、`domain`、`stream_name`、`area`、`select` | `-` | `-` |

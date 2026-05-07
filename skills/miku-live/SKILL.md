@@ -1,6 +1,6 @@
 ---
 name: miku-live
-description: >
+description:
   Resolve intent into Qiniu Miku Live management API action keys, validate
   parameter placement against the API catalog, and execute signed requests
   safely.
@@ -9,7 +9,7 @@ best_for:
   - "Intent-to-action mapping for Qiniu Miku Live APIs"
 scenarios:
   - "List live buckets or inspect bucket configuration"
-  - "Manage streams, domains, relay tasks, and API keys"
+  - "Manage streams, domains, transcoding templates, and API keys"
 ---
 
 # 七牛云 Miku 快直播 API Skill
@@ -53,9 +53,9 @@ scenarios:
 | 查看或更新空间配置 | `bucket-management/get_bucket_config` / `bucket-management/update_bucket_config` |
 | 创建、查询、禁播或删除流 | `stream-management/create_stream` / `stream-management/get_stream_info` / `stream-management/ban_stream` / `stream-management/delete_stream` |
 | 绑定或解绑播放/推流域名 | `domain-management/bind_*` / `domain-management/unbind_*` |
-| 创建转推任务或查询统计 | `pub-relay/create_pub_task` / `statistics/query_*` |
+| 查询统计 | `statistics/query_*` |
 
-- 资源词决定模块：`空间/bucket -> bucket-management`；`流 -> stream-management`；`播放域名/推流域名 -> domain-management`；`证书 -> certificate-management`；`录制/截图 -> recording-management`；`转码模板 -> live-stream-transcoding-template`；`转推 -> pub-relay`；`统计/日志 -> statistics`；`API Key/播放地址/推流地址 -> utilities`。
+- 资源词决定模块：`空间/bucket -> bucket-management`；`流 -> stream-management`；`播放域名/推流域名 -> domain-management`；`证书 -> certificate-management`；`录制/截图 -> recording-management`；`转码模板 -> live-stream-transcoding-template`；`统计/日志 -> statistics`；`API Key/播放地址/推流地址 -> utilities`。
 - 动作词决定前缀：`列表 -> list_*`；`详情/配置 -> get_*`；`创建 -> create_* / add_*`；`更新 -> update_* / edit_*`；`删除 -> delete_*`；`绑定/解绑 -> bind_* / unbind_*`；`启动/停止 -> start_* / stop_*`；`禁播/解禁 -> ban_* / unban_*`。
 - 只在 `references/interface-catalog.md` 存在精确 `action_key` 时执行；资源类型或目标不明确时先追问；“列表/查询/看看有哪些”默认选只读接口。
 
