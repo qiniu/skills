@@ -50,8 +50,7 @@ Talk to your AI agent in natural language:
 - "帮我获取到直播空间列表" → `bucket-management/list_buckets`
 - "禁播 bucket-a 里的 stream-1" → `stream-management/ban_stream`
 - "给 bucket-a 绑定播放域名 live.example.com" → `domain-management/bind_downstream_domain`
-- "创建一个转推任务" → `pub-relay/create_pub_task`
-- "读取 https://example.com/page 的页面内容" → xfetch-web skill 调用 Qiniu xfetch
+- "读取 https://example.com/page 的页面内容" → xfetch-web skill 调用 Qiniu xfetch 
 
 ## Repository Structure
 
