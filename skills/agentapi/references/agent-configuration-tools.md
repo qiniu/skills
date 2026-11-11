@@ -22,9 +22,9 @@
 
 | 运行时 | 内置工具 |
 | --- | --- |
-| \`claudecode\` | Claude Code 原生工具 |
-| \`codex\` | Codex 原生工具 |
-| \`native\` | \`bash\`、\`read\`、\`write\`、\`edit\`、\`glob\`、\`grep\`、\`web\_fetch\`、\`web\_search\` |
+| `claudecode` | Claude Code 原生工具 |
+| `codex` | Codex 原生工具 |
+| `native` | `bash`、`read`、`write`、`edit`、`glob`、`grep`、`web_fetch`、`web_search` |
 
 MCP 工具通过 [MCP 连接器](agent-configuration-mcp.md)接入外部服务。自定义工具由应用执行，并通过会话事件返回结果。
 
@@ -63,7 +63,7 @@ MCP 工具通过 [MCP 连接器](agent-configuration-mcp.md)接入外部服务�
 }
 ```
 
-> 单个工具的启用和禁用配置仅对 \`native\` 生效
+> 单个工具的启用和禁用配置仅对 `native` 生效
 >
 > 上面的 `enabled` / `default_config` 逐工具配置只在 `native` 运行时被应用，对应 `bash`、`read`、`write`、`edit`、`glob`、`grep`、`web_fetch`、`web_search`。不写 `permission_policy` 时，这些工具默认直接执行。`claudecode` 和 `codex` 使用各自运行时自带的工具集，不响应这些逐工具的启用/禁用开关。
 

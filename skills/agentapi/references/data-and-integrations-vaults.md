@@ -152,9 +152,9 @@ puts vault.id # "vlt_01ABC..."
 
 | MCP 服务接受的授权 | 凭证类型 | 令牌维护责任 |
 | --- | --- | --- |
-| 业务用户通过 OAuth 授予的访问令牌 | \`mcp\_oauth\` | 应用完成授权与刷新，再更新 Vault 中的令牌 |
-| 固定 API Key 或个人访问令牌，以 Bearer 方式发送 | \`static\_bearer\` | 应用根据第三方令牌有效期安排轮换 |
-| 沙箱进程把密钥原样放进 \`Authorization: Bearer $变量\`，并访问预先列出的主机 | \`environment\_variable\` | 应用提供密钥和主机；AgentAPI 只在匹配的出站请求头中替换完整值 |
+| 业务用户通过 OAuth 授予的访问令牌 | `mcp_oauth` | 应用完成授权与刷新，再更新 Vault 中的令牌 |
+| 固定 API Key 或个人访问令牌，以 Bearer 方式发送 | `static_bearer` | 应用根据第三方令牌有效期安排轮换 |
+| 沙箱进程把密钥原样放进 `Authorization: Bearer $变量`，并访问预先列出的主机 | `environment_variable` | 应用提供密钥和主机；AgentAPI 只在匹配的出站请求头中替换完整值 |
 
 `mcp_oauth` 和 `static_bearer` 都以 `mcp_server_url` 匹配目标服务；`environment_variable` 以 `secret_name` 和 `networking.allowed_hosts` 限定替换范围，配置见下文“环境变量密钥”。凭证值（`token`、`access_token`、`refresh_token`、`client_secret`、`secret_value`）只写入、不在 API 响应中返回；应用应保存凭证 ID，用于后续更新或撤销。
 
@@ -695,8 +695,8 @@ session = client.beta.sessions.create(
 
 | 变更 | 操作 |
 | --- | --- |
-| 密钥值、\`display\_name\`、OAuth 刷新信息 | 更新原凭证 |
-| \`mcp\_server\_url\`、\`token\_endpoint\`、\`client\_id\` 等结构性字段 | 归档旧凭证，创建新凭证 |
+| 密钥值、`display_name`、OAuth 刷新信息 | 更新原凭证 |
+| `mcp_server_url`、`token_endpoint`、`client_id` 等结构性字段 | 归档旧凭证，创建新凭证 |
 
 应用完成 OAuth 刷新或取得新令牌后，使用已保存的凭证 ID 更新。运行中的会话需要异步同步；同步完成后，后续出站请求才使用新值。
 
@@ -846,11 +846,11 @@ client.beta.vaults.credentials.update(
 
 | 事件 | 触发条件 |
 | --- | --- |
-| \`vault.archived\` | Vault 已归档。同时会为每个底层凭证发出一个 \`vault\_credential.archived\` 事件。 |
-| \`vault.deleted\` | Vault 已删除。同时会为每个底层凭证发出一个 \`vault\_credential.deleted\` 事件。 |
-| \`vault\_credential.archived\` | 凭证已归档，可能是直接归档，也可能是 vault 归档的结果。 |
-| \`vault\_credential.deleted\` | 凭证已删除，可能是直接删除，也可能是 vault 删除的结果。 |
-| \`vault\_credential.refresh\_failed\` | 预留事件类型；AgentAPI 当前不执行 OAuth token 自动刷新。 |
+| `vault.archived` | Vault 已归档。同时会为每个底层凭证发出一个 `vault_credential.archived` 事件。 |
+| `vault.deleted` | Vault 已删除。同时会为每个底层凭证发出一个 `vault_credential.deleted` 事件。 |
+| `vault_credential.archived` | 凭证已归档，可能是直接归档，也可能是 vault 归档的结果。 |
+| `vault_credential.deleted` | 凭证已删除，可能是直接删除，也可能是 vault 删除的结果。 |
+| `vault_credential.refresh_failed` | 预留事件类型；AgentAPI 当前不执行 OAuth token 自动刷新。 |
 
 这些事件用于确认资源状态变化，不等同于第三方在线鉴权校验。AgentAPI 当前不提供 OAuth 在线校验接口，令牌可用性仍需通过实际服务访问确认。
 

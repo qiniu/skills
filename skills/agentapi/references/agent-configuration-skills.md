@@ -18,9 +18,9 @@ AgentAPI 支持上传自定义技能后通过智能体的 `skills` 数组附加�
 
 | 运行时 | 显式附加的自定义技能 | GitHub 仓库中的技能 |
 | --- | --- | --- |
-| \`native\` | AgentAPI 在云端按需加载 \`SKILL.md\`，并提供技能包中的辅助文件。 | 不自动发现；请先上传并附加技能。 |
-| \`claudecode\` | AgentAPI 会在云端运行环境启动前准备技能目录，供 Claude Code 使用。 | 由 Claude Code 的原生技能发现能力处理。 |
-| \`codex\` | AgentAPI 会在云端运行环境启动前准备技能目录，供 Codex 使用。 | 由 Codex 的原生技能发现能力处理。 |
+| `native` | AgentAPI 在云端按需加载 `SKILL.md`，并提供技能包中的辅助文件。 | 不自动发现；请先上传并附加技能。 |
+| `claudecode` | AgentAPI 会在云端运行环境启动前准备技能目录，供 Claude Code 使用。 | 由 Claude Code 的原生技能发现能力处理。 |
+| `codex` | AgentAPI 会在云端运行环境启动前准备技能目录，供 Codex 使用。 | 由 Codex 的原生技能发现能力处理。 |
 
 自定义技能的主体是一个包含 `SKILL.md` 的目录。要编写技能，请在 `SKILL.md` 的 YAML frontmatter 中提供 `name` 和 `description`，再加入说明正文、脚本和参考文件。
 
@@ -56,7 +56,7 @@ description: 审查代码变更并输出可执行的修改建议。
 | 每个技能版本的文件数 | 最多 200 个 |
 | 每个技能版本的文件总大小 | 最多 8 MiB，按解压后的文件计算 |
 | 单个 multipart 请求大小 | 最多 32 MiB，包含请求封装，不随技能包限制调整 |
-| \`native\` 加载的 \`SKILL.md\` 大小 | 最多 128 KiB，内容必须为 UTF-8 |
+| `native` 加载的 `SKILL.md` 大小 | 最多 128 KiB，内容必须为 UTF-8 |
 
 cURL
 
@@ -275,13 +275,13 @@ Portal 的 Skill 列表支持按名称或 ID 搜索。
 
 | 操作 | API |
 | --- | --- |
-| 列出或查看技能 | \`GET /v1/skills\`、\`GET /v1/skills/{skill\_id}\` |
-| 删除技能 | \`DELETE /v1/skills/{skill\_id}\` |
-| 创建版本 | \`POST /v1/skills/{skill\_id}/versions\`，请求格式与创建技能相同 |
-| 列出或查看版本 | \`GET /v1/skills/{skill\_id}/versions\`、\`GET /v1/skills/{skill\_id}/versions/{version}\` |
-| 下载完整技能包 | \`GET /v1/skills/{skill\_id}/versions/{version}/content\`，请求头设置 \`accept: application/zip\` |
-| 查看包内文件 | \`GET /v1/skills/{skill\_id}/versions/{version}/files\`，或通过 \`/files/content?path=...\` 下载单个文件 |
-| 删除版本 | \`DELETE /v1/skills/{skill\_id}/versions/{version}\` |
+| 列出或查看技能 | `GET /v1/skills`、`GET /v1/skills/{skill_id}` |
+| 删除技能 | `DELETE /v1/skills/{skill_id}` |
+| 创建版本 | `POST /v1/skills/{skill_id}/versions`，请求格式与创建技能相同 |
+| 列出或查看版本 | `GET /v1/skills/{skill_id}/versions`、`GET /v1/skills/{skill_id}/versions/{version}` |
+| 下载完整技能包 | `GET /v1/skills/{skill_id}/versions/{version}/content`，请求头设置 `accept: application/zip` |
+| 查看包内文件 | `GET /v1/skills/{skill_id}/versions/{version}/files`，或通过 `/files/content?path=...` 下载单个文件 |
+| 删除版本 | `DELETE /v1/skills/{skill_id}/versions/{version}` |
 
 版本号由 AgentAPI 在上传时生成：
 
@@ -305,9 +305,9 @@ Portal 的 Skill 列表支持按名称或 ID 搜索。
 
 | 字段 | 描述 |
 | --- | --- |
-| \`type\` | 当前使用 \`custom\`。\`anthropic\` 仅为请求结构兼容而保留，AgentAPI 执行时无法解析。 |
-| \`skill\_id\` | 自定义技能标识符，使用创建技能时返回的 \`skill\_\*\` ID。 |
-| \`version\` | 可固定到某个版本，也可以使用 \`latest\`；省略时使用当前最新版本。 |
+| `type` | 当前使用 `custom`。`anthropic` 仅为请求结构兼容而保留，AgentAPI 执行时无法解析。 |
+| `skill_id` | 自定义技能标识符，使用创建技能时返回的 `skill_*` ID。 |
+| `version` | 可固定到某个版本，也可以使用 `latest`；省略时使用当前最新版本。 |
 
 一个智能体最多附加 20 个技能。以下示例使用上传响应中的技能 ID，选择 `native` 运行时，并引用最新有效技能版本。请先从[七牛 MaaS 模型管理页](https://portal.qiniu.com/ai-inference/model)选择可用模型，设置 `AGENTAPI_MODEL_ID`。如需固定技能版本，将 `latest` 替换为上传响应中的版本号。
 

@@ -34,9 +34,9 @@
 | 配置项 | 负责什么 | 本例中的配置位置 |
 | --- | --- | --- |
 | 工作流提示词或 Skill | 规定先调查、后判断、再审批的处置顺序，以及报告格式 | 智能体配置或仓库中的 Skill |
-| 只读工具 | 查询日志、发布变更和运行手册，提供实时证据 | worker 注册的 \`logs\_query\`、\`changes\_list\`、\`runbook\_search\` |
-| 高风险工具 | 执行重启、回滚等会改变生产状态的动作 | worker 注册的 \`service\_restart\`，由业务服务审批 |
-| \`self\_hosted\` worker | 在内网执行工具，并回传工具结果 | 环境工作队列和 worker SDK |
+| 只读工具 | 查询日志、发布变更和运行手册，提供实时证据 | worker 注册的 `logs_query`、`changes_list`、`runbook_search` |
+| 高风险工具 | 执行重启、回滚等会改变生产状态的动作 | worker 注册的 `service_restart`，由业务服务审批 |
+| `self_hosted` worker | 在内网执行工具，并回传工具结果 | 环境工作队列和 worker SDK |
 | 记忆存储 | 保存人工确认过的根因和处置步骤 | 会话的记忆挂载 |
 
 可以把下面的流程写入智能体的 `system` 或 Skill。每次告警输入只需要补充告警 ID、服务、环境和时间窗口：
@@ -97,10 +97,10 @@ JSON
 
 | 工具 | 用途 | 执行方式 |
 | --- | --- | --- |
-| \`logs\_query\` | 按服务、时间窗和关键字查询日志 | worker 执行的只读工具 |
-| \`changes\_list\` | 查询发布、配置和 feature flag 变更 | worker 执行的只读工具 |
-| \`runbook\_search\` | 检索内部知识库和历史处置记录 | worker 执行的只读工具 |
-| \`service\_restart\` | 重启指定服务 | worker 执行，调用前由应用审批 |
+| `logs_query` | 按服务、时间窗和关键字查询日志 | worker 执行的只读工具 |
+| `changes_list` | 查询发布、配置和 feature flag 变更 | worker 执行的只读工具 |
+| `runbook_search` | 检索内部知识库和历史处置记录 | worker 执行的只读工具 |
+| `service_restart` | 重启指定服务 | worker 执行，调用前由应用审批 |
 
 应用在创建会话前校验操作者身份和服务范围；worker 在工具实现中再次校验参数、限制时间窗口、裁剪结果并脱敏。工具返回的内容会进入模型上下文，因此日志工具只返回摘要和必要行，不返回整份原始日志。
 
@@ -170,7 +170,7 @@ worker := environments.NewEnvironmentWorker(client, environments.EnvironmentWork
 | --- | --- | --- |
 | 已绑定的 MaaS API Key | 创建会话、读取事件和查询账户资源 | 应用服务端，不放入 worker |
 | 环境密钥 | 领取指定环境的工作项并回传结果 | worker 的密钥管理系统 |
-| 会话级 \`secret\` | 访问本会话获准使用的记忆存储 | 只传给处理该会话的执行实例 |
+| 会话级 `secret` | 访问本会话获准使用的记忆存储 | 只传给处理该会话的执行实例 |
 
 `vault_ids` 只能选择账户下的凭证，不能替代业务用户的权限校验。谁能查看哪个环境的日志，应由应用根据登录身份、服务目录和工单权限决定。
 
@@ -228,8 +228,8 @@ worker 以自身进程权限运行，隔离和清理由部署方负责：
 
 | 现象 | 处理 |
 | --- | --- |
-| 会话一直停在 \`requires\_action\` | 遍历全部 \`stop\_reason.event\_ids\`，逐个处理工具结果或确认。 |
-| worker 领取工作后立即失败 | 检查工具名称是否一致、记忆 \`mount\_path\` 是否预先存在，以及工作项是否带会话 \`secret\`。 |
+| 会话一直停在 `requires_action` | 遍历全部 `stop_reason.event_ids`，逐个处理工具结果或确认。 |
+| worker 领取工作后立即失败 | 检查工具名称是否一致、记忆 `mount_path` 是否预先存在，以及工作项是否带会话 `secret`。 |
 | 工具返回成功但记忆没有更新 | 查询服务端内容，检查同步间隔、挂载路径和 worker 退出流程。 |
 | 归档后内网仍有文件副本 | 按组织的保留策略清理 worker 工作目录、缓存和日志。 |
 | 强制停止后仍有进程 | 在自有基础设施上检查并清理实际进程、容器和网络资源。 |

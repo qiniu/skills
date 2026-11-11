@@ -309,12 +309,12 @@ environment = client.beta.environments.create(
 
 | 字段 | 包管理器 | 示例 |
 | --- | --- | --- |
-| \`apt\` | 系统软件包（apt-get） | \`"graphviz"\` |
-| \`cargo\` | Rust（cargo） | \`"hyperfine@1.18.0"\` |
-| \`gem\` | Ruby（gem） | \`"rails:7.1.0"\` |
-| \`go\` | Go 可执行工具 | \`"golang.org/x/tools/cmd/goimports@latest"\` |
-| \`npm\` | Node.js（npm） | \`"express@4.18.0"\` |
-| \`pip\` | Python（pip） | \`"sqlalchemy==2.0.30"\` |
+| `apt` | 系统软件包（apt-get） | `"graphviz"` |
+| `cargo` | Rust（cargo） | `"hyperfine@1.18.0"` |
+| `gem` | Ruby（gem） | `"rails:7.1.0"` |
+| `go` | Go 可执行工具 | `"golang.org/x/tools/cmd/goimports@latest"` |
+| `npm` | Node.js（npm） | `"express@4.18.0"` |
+| `pip` | Python（pip） | `"sqlalchemy==2.0.30"` |
 
 `packages.go` 填写 Go 工具的模块路径，用于安装可执行工具。它不选择 Go 工具链版本；`go1.27` 不能作为包名，工具链版本由基础环境提供，可在[云端环境参考](execution-environments-cloud-environments.md)中确认。
 
@@ -334,8 +334,8 @@ Go 数组条目支持 `模块路径@版本`，也兼容历史的 `模块路径==
 
 | 模式 | 行为 |
 | --- | --- |
-| \`unrestricted\` | 允许出站互联网访问，这是默认值。 |
-| \`limited\` | 默认拒绝出站访问，仅放行 \`allowed\_hosts\` 中列出的主机。 |
+| `unrestricted` | 允许出站互联网访问，这是默认值。 |
+| `limited` | 默认拒绝出站访问，仅放行 `allowed_hosts` 中列出的主机。 |
 
 省略 `networking` 时使用默认值 `unrestricted`。仅当需要收紧网络访问时才需显式设置；使用 `limited` 时通过 `allowed_hosts` 声明允许访问的主机：
 

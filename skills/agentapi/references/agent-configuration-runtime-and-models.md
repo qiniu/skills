@@ -28,12 +28,12 @@
 
 | 场景 | 起步配置 | 选择理由与接入说明 |
 | --- | --- | --- |
-| 首次接入，验证端到端流程 | \`claudecode\` + \`cloud\` + 内置工具集 | 工具链开箱即用，按[快速开始](quickstart.md)即可跑通。 |
-| 已有 Claude Code 或 Codex 使用经验 | \`claudecode\` 或 \`codex\` + \`cloud\` | 沿用熟悉的工具行为与提示词习惯，核对原工作流所需工具与软件即可。 |
-| 应用需要执行自定义业务工具 | \`native\` + 自定义工具 | 应用经事件[回传结果](sessions-and-tasks-events.md)，链路最短；\`claudecode\`、\`codex\` 需要额外的工具桥接服务。 |
-| MCP 工具调用需要应用审批 | \`native\` + MCP + \`always\_ask\` | 应用处理[工具确认](sessions-and-tasks-events.md)；\`claudecode\`、\`codex\` 的 MCP 仅支持 \`always\_allow\`。 |
-| 文件与命令须在自有基础设施执行 | \`native\` + \`self\_hosted\` | 部署 [worker](execution-environments-self-hosted.md)，在自有环境完成隔离与产物交付。 |
-| 跨任务读取项目规范 | 云端 \`claudecode\`/\`codex\` + 只读记忆存储 | 云端 Native 不自动挂载记忆；其他方式见[记忆接入](data-and-integrations-memory.md)。 |
+| 首次接入，验证端到端流程 | `claudecode` + `cloud` + 内置工具集 | 工具链开箱即用，按[快速开始](quickstart.md)即可跑通。 |
+| 已有 Claude Code 或 Codex 使用经验 | `claudecode` 或 `codex` + `cloud` | 沿用熟悉的工具行为与提示词习惯，核对原工作流所需工具与软件即可。 |
+| 应用需要执行自定义业务工具 | `native` + 自定义工具 | 应用经事件[回传结果](sessions-and-tasks-events.md)，链路最短；`claudecode`、`codex` 需要额外的工具桥接服务。 |
+| MCP 工具调用需要应用审批 | `native` + MCP + `always_ask` | 应用处理[工具确认](sessions-and-tasks-events.md)；`claudecode`、`codex` 的 MCP 仅支持 `always_allow`。 |
+| 文件与命令须在自有基础设施执行 | `native` + `self_hosted` | 部署 [worker](execution-environments-self-hosted.md)，在自有环境完成隔离与产物交付。 |
+| 跨任务读取项目规范 | 云端 `claudecode`/`codex` + 只读记忆存储 | 云端 Native 不自动挂载记忆；其他方式见[记忆接入](data-and-integrations-memory.md)。 |
 
 建议始终显式传入 `runtime`：省略时默认使用 `claudecode`，未必符合任务需要；对执行耗时敏感、或需要应用逐次确认工具的场景，建议评估并显式选择 `native`。网页访问、仓库挂载等细节在[工具](agent-configuration-tools.md)与[GitHub](data-and-integrations-github.md)专题中说明。没有既有偏好时，用相同输入与验收标准比较完成率、恢复行为、耗时和用量，再固定选择。
 

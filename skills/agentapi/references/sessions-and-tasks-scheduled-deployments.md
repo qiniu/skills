@@ -774,10 +774,10 @@ client.beta.deployments.archive(deployment.id)
 
 | 观察结果 | 检查与处理 |
 | --- | --- |
-| 部署运行包含 \`error\`，未返回成功创建的会话 | 查看资源是否可用、是否限流，以及部署的 \`paused\_reason\`。 |
-| 部署运行成功，但会话出现错误或等待确认 | 使用 \`session\_id\` 读取事件，处理模型、工具、权限或输入问题。 |
+| 部署运行包含 `error`，未返回成功创建的会话 | 查看资源是否可用、是否限流，以及部署的 `paused_reason`。 |
+| 部署运行成功，但会话出现错误或等待确认 | 使用 `session_id` 读取事件，处理模型、工具、权限或输入问题。 |
 | 有会话，但没有预期文件 | 核对最终回答、输出路径和[会话文件列表](data-and-integrations-files.md)。 |
-| 部署自动暂停 | 修复 \`paused\_reason.error.type\` 对应的问题，更新模板，手动验证后再恢复。 |
+| 部署自动暂停 | 修复 `paused_reason.error.type` 对应的问题，更新模板，手动验证后再恢复。 |
 
 会话创建或初始事件提交失败时，查看运行记录的 `error.type` 和 `error.message`。计划是否继续执行取决于部署是否自动暂停；会话已启动后的模型调用错误则通过会话事件排查。
 
@@ -787,7 +787,7 @@ client.beta.deployments.archive(deployment.id)
 | --- | --- | --- |
 | 智能体被归档 | 同时自动归档部署 | 不生成 |
 | 智能体被删除 | 同时自动归档部署 | 不生成 |
-| 引用的子智能体被归档 | 下次触发时自动暂停，更新智能体后可恢复 | 记录失败，\`error.type: "agent\_archived\_error"\` |
+| 引用的子智能体被归档 | 下次触发时自动暂停，更新智能体后可恢复 | 记录失败，`error.type: "agent_archived_error"` |
 | 其他不可恢复的会话创建错误，如环境或保管库已归档 | 自动暂停，修复后可恢复 | 记录失败 |
 
 自动暂停时，`paused_reason.error.type` 与失败运行的 `error.type` 一致。

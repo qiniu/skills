@@ -25,9 +25,9 @@
 
 | 执行方式 | 内容如何进入任务 | 修改如何保存 |
 | --- | --- | --- |
-| 云端 \`claudecode\`、\`codex\` | 自动准备挂载目录，由文件工具读取 | 成功执行后同步 \`read\_write\` 目录 |
-| 云端 \`native\` | 应用通过 API 获取内容，或准备普通文件资源 | 应用显式调用记忆 API |
-| 自托管 \`native\` | 支持记忆的 worker 下载并挂载 | worker 负责同步，见[自托管记忆接入](execution-environments-self-hosted.md) |
+| 云端 `claudecode`、`codex` | 自动准备挂载目录，由文件工具读取 | 成功执行后同步 `read_write` 目录 |
+| 云端 `native` | 应用通过 API 获取内容，或准备普通文件资源 | 应用显式调用记忆 API |
+| 自托管 `native` | 支持记忆的 worker 下载并挂载 | worker 负责同步，见[自托管记忆接入](execution-environments-self-hosted.md) |
 
 应用也可以通过 API 或 Portal 维护存储，与运行时是否支持自动挂载无关。
 

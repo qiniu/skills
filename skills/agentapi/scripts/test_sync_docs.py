@@ -60,7 +60,6 @@ class SyncDocsTest(unittest.TestCase):
         source = article("接入准备", """
 <p><a href="/agentapi/13587/agentapi-quickstart">快速入门</a>
 <a href="#details">细节</a><img src="example.png"></p>
-<table><tr><th>字段</th></tr><tr><td>`base_url`</td></tr></table>
 <pre><code class="language-bash">echo '$HOME &amp;&amp; ```'
 printf '%s\n' "$BASE_URL"
 </code></pre>
@@ -70,8 +69,20 @@ printf '%s\n' "$BASE_URL"
         self.assertIn("[快速入门](quickstart.md)", markdown)
         self.assertIn(f"[细节]({ACCESS_URL}#details)", markdown)
         self.assertNotIn("example.png", markdown)
-        self.assertIn(r"| \`base\_url\` |", markdown)
         self.assertIn("````bash\necho '$HOME && ```'\nprintf '%s\n' \"$BASE_URL\"\n````", markdown)
+
+    def test_article_restores_cms_inline_code_in_tables_and_prose(self):
+        page = sync_docs.Article("快速入门", "接入准备", ACCESS_URL, "access.md")
+        source = article("接入准备", r"""
+<p>仅对 `native` 生效，孤立反引号 ` 保留。</p>
+<table><tr><th>运行时</th><th>工具</th></tr>
+<tr><td>`native`</td><td>`bash`、\`web\_fetch\`、<code>web_search</code></td></tr>
+<tr><td>`claudecode`</td><td>`cat file | head`</td></tr></table>
+""")
+        markdown, _ = sync_docs.convert(page, source, {})
+        self.assertIn(r"仅对 `native` 生效，孤立反引号 \` 保留。", markdown)
+        self.assertIn("| `native` | `bash`、`web_fetch`、`web_search` |", markdown)
+        self.assertIn(r"| `claudecode` | `cat file \| head` |", markdown)
 
     def test_check_is_read_only_and_successful_sync_replaces_generated_files(self):
         pages = fixture_pages()

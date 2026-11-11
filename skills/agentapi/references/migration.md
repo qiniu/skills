@@ -12,7 +12,7 @@
 
 | 原有架构 | 需要保留在应用中的内容 | 迁移到 AgentAPI 的内容 |
 | --- | --- | --- |
-| Managed Agents API | 业务鉴权、业务状态和结果展示 | Base URL、MaaS API Key、Agent/Environment/Session 资源，以及 AgentAPI 的 \`runtime\` 扩展 |
+| Managed Agents API | 业务鉴权、业务状态和结果展示 | Base URL、MaaS API Key、Agent/Environment/Session 资源，以及 AgentAPI 的 `runtime` 扩展 |
 | Agent SDK（本地运行） | 业务工具实现、审批界面和业务数据 | 云端环境、会话事件流、文件/仓库资源；本地 SDK 的进程生命周期不再由应用管理 |
 | Responses API | 业务输入输出转换和自定义函数 | 智能体循环、内置工具执行、云端沙箱和事件持久化 |
 | LangChain 自定义循环 | 检查点中的业务状态、自定义工具和业务超时 | 智能体版本、会话状态机和事件流 |
@@ -31,8 +31,8 @@
 
 | 之前 | 之后 |
 | --- | --- |
-| 应用维护 Responses 输入，并在每轮调用中传递已有输出或 \`previous\_response\_id\`。 | AgentAPI 在服务端保存会话历史；应用只需发送和接收事件。 |
-| 应用遍历 \`function\_call\`，执行函数，再追加 \`function\_call\_output\`。 | 文件和命令工具在云端沙箱中执行；网页工具按运行时执行。应用通过 \`agent.custom\_tool\_use\` 处理自定义工具。 |
+| 应用维护 Responses 输入，并在每轮调用中传递已有输出或 `previous_response_id`。 | AgentAPI 在服务端保存会话历史；应用只需发送和接收事件。 |
+| 应用遍历 `function_call`，执行函数，再追加 `function_call_output`。 | 文件和命令工具在云端沙箱中执行；网页工具按运行时执行。应用通过 `agent.custom_tool_use` 处理自定义工具。 |
 | 应用自行准备沙箱，运行智能体生成的代码。 | AgentAPI 根据云端环境配置准备沙箱，并在其中执行代码、文件操作和 Bash 命令。 |
 | 应用自行判断智能体循环何时结束。 | AgentAPI 通过状态事件报告本轮停止，应用需检查停止原因、错误与业务结果。 |
 
@@ -468,13 +468,13 @@ end
 
 | LangChain 智能体循环 | AgentAPI |
 | --- | --- |
-| 使用 \`model.bind\_tools(...)\` 或 \`model.bindTools(...)\` 绑定工具 | 在[智能体定义](agent-configuration-agent.md)中配置工具，AgentAPI 在服务端保存配置并管理版本。 |
-| 应用保存消息列表并反复调用 \`model.invoke(...)\` | 创建会话并发送用户事件；AgentAPI 保存会话历史并运行智能体循环。 |
-| 应用读取 \`tool\_calls\`、执行工具并追加 \`ToolMessage\` | 内置工具由 AgentAPI 在云端沙箱中执行；自定义工具通过 \`agent.custom\_tool\_use\` 和 \`user.custom\_tool\_result\` 事件衔接。 |
+| 使用 `model.bind_tools(...)` 或 `model.bindTools(...)` 绑定工具 | 在[智能体定义](agent-configuration-agent.md)中配置工具，AgentAPI 在服务端保存配置并管理版本。 |
+| 应用保存消息列表并反复调用 `model.invoke(...)` | 创建会话并发送用户事件；AgentAPI 保存会话历史并运行智能体循环。 |
+| 应用读取 `tool_calls`、执行工具并追加 `ToolMessage` | 内置工具由 AgentAPI 在云端沙箱中执行；自定义工具通过 `agent.custom_tool_use` 和 `user.custom_tool_result` 事件衔接。 |
 | 本地工具直接访问应用所在机器的文件系统 | 将[文件](data-and-integrations-files.md)作为会话资源上传或挂载；智能体在隔离的云端沙箱中处理文件。 |
-| 每次调用时传入系统提示和模型配置 | 在智能体的 \`system\` 和 \`model\` 中配置；更新智能体时生成新版本。 |
+| 每次调用时传入系统提示和模型配置 | 在智能体的 `system` 和 `model` 中配置；更新智能体时生成新版本。 |
 | 应用自行保存检查点并恢复消息历史 | AgentAPI 持久保存会话和事件；应用通过会话 ID 继续交互。 |
-| 应用在循环中实现工具确认逻辑 | 使用 [\`permission\_policy\`](agent-configuration-permissions.md) 控制工具是否需要确认，并通过 \`user.tool\_confirmation\` 返回选择。 |
+| 应用在循环中实现工具确认逻辑 | 使用 [`permission_policy`](agent-configuration-permissions.md) 控制工具是否需要确认，并通过 `user.tool_confirmation` 返回选择。 |
 
 ### 代码对比
 
@@ -1214,10 +1214,10 @@ end
 
 | 原有逻辑 | AgentAPI 中的处理方式 |
 | --- | --- |
-| 消息输入和输出转换 | 在发送 \`user.message\` 前或接收 \`agent.message\` 后，由应用继续完成格式转换和业务处理。 |
-| 自定义工具前后的校验或审计 | 在处理 \`agent.custom\_tool\_use\` 和发送 \`user.custom\_tool\_result\` 时执行。对于 \`native\` 内置工具，可使用 \`permission\_policy: always\_ask\` 在执行前请求确认。 |
+| 消息输入和输出转换 | 在发送 `user.message` 前或接收 `agent.message` 后，由应用继续完成格式转换和业务处理。 |
+| 自定义工具前后的校验或审计 | 在处理 `agent.custom_tool_use` 和发送 `user.custom_tool_result` 时执行。对于 `native` 内置工具，可使用 `permission_policy: always_ask` 在执行前请求确认。 |
 | LangChain 检查点中的业务状态 | 将业务状态保留在应用自己的存储中；会话消息和执行事件由 AgentAPI 保存。 |
-| 循环次数或业务超时限制 | 由应用根据事件和时间进行控制，必要时发送 \`user.interrupt\` 中断当前任务。 |
+| 循环次数或业务超时限制 | 由应用根据事件和时间进行控制，必要时发送 `user.interrupt` 中断当前任务。 |
 
 ## 迁移清单
 

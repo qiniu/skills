@@ -26,8 +26,8 @@ AgentAPI 当前提供两个服务入口：
 
 | 区域 | 服务地址 |
 | --- | --- |
-| 华东 | \`https://agent.qiniuapi.com\` |
-| 美西 | \`https://agent.sufy.com\` |
+| 华东 | `https://agent.qiniuapi.com` |
+| 美西 | `https://agent.sufy.com` |
 
 > 区域数据独立
 >
@@ -60,9 +60,9 @@ curl --request GET "$AGENTAPI_BASE_URL/v1/agents" \
 
 | 现象 | 检查项 |
 | --- | --- |
-| \`401\` | Key 是否填写正确，是否已在 Portal 绑定 |
+| `401` | Key 是否填写正确，是否已在 Portal 绑定 |
 | 模型不可用 | 模型是否属于当前账户和区域，是否具备使用权限 |
-| 请求地址错误 | \`AGENTAPI\_BASE\_URL\` 是否对应所选区域 |
+| 请求地址错误 | `AGENTAPI_BASE_URL` 是否对应所选区域 |
 | 更换 Key 后仍失败 | 新 Key 是否已绑定，是否处于启用状态 |
 
 准备完成后，继续阅读[通过 API 构建](quickstart.md)。

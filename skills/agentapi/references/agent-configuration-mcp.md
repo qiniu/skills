@@ -22,9 +22,9 @@ MCP 连接会随智能体的 `runtime` 在云端执行：
 
 | 运行时 | MCP 连接方式 | 权限策略 |
 | --- | --- | --- |
-| \`claudecode\` | 将已启用的 MCP 服务器传递给 Claude Code 运行时。 | MCP 工具必须使用 \`always\_allow\`。 |
-| \`codex\` | 将已启用的 MCP 服务器传递给 Codex 运行时。 | MCP 工具必须使用 \`always\_allow\`。 |
-| \`native\` | AgentAPI 在云端直接发现并调用 MCP 工具；服务器端点必须使用 HTTPS。 | 支持 \`always\_allow\` 和 \`always\_ask\`，后者会暂停会话等待确认。 |
+| `claudecode` | 将已启用的 MCP 服务器传递给 Claude Code 运行时。 | MCP 工具必须使用 `always_allow`。 |
+| `codex` | 将已启用的 MCP 服务器传递给 Codex 运行时。 | MCP 工具必须使用 `always_allow`。 |
+| `native` | AgentAPI 在云端直接发现并调用 MCP 工具；服务器端点必须使用 HTTPS。 | 支持 `always_allow` 和 `always_ask`，后者会暂停会话等待确认。 |
 
 > MCP 工具确认
 >
@@ -278,9 +278,9 @@ agent = client.beta.agents.create(
 
 | 字段 | 描述 |
 | --- | --- |
-| \`type\` | 必填。必须为 \`"url"\`。AgentAPI 当前不支持通过 \`stdio\` 等方式启动 MCP 服务器。 |
-| \`name\` | 必填。此服务器在智能体内的唯一名称（1–64 个字符，必须以字母开头）。用作 \`tools\` 数组中的 \`mcp\_server\_name\`，并显示在[事件和事件流](sessions-and-tasks-events.md)中的 MCP 工具事件上。 |
-| \`url\` | 必填。MCP 服务器的 \`http\` 或 \`https\` 端点，不能在 URL 中携带用户信息或凭据。 |
+| `type` | 必填。必须为 `"url"`。AgentAPI 当前不支持通过 `stdio` 等方式启动 MCP 服务器。 |
+| `name` | 必填。此服务器在智能体内的唯一名称（1–64 个字符，必须以字母开头）。用作 `tools` 数组中的 `mcp_server_name`，并显示在[事件和事件流](sessions-and-tasks-events.md)中的 MCP 工具事件上。 |
+| `url` | 必填。MCP 服务器的 `http` 或 `https` 端点，不能在 URL 中携带用户信息或凭据。 |
 
 约束：
 

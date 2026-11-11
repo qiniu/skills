@@ -16,11 +16,11 @@
 
 | 停止原因 | 应用的下一步 |
 | --- | --- |
-| \`end\_turn\` | 检查最终回答和任务产物，确认满足业务要求。 |
-| \`requires\_action\` | 按 \`stop\_reason.event\_ids\` 找到阻塞事件，处理自定义工具或工具确认。 |
-| \`interrupted\` | 记录中断，检查已完成的操作；中断不会撤销外部修改。 |
-| \`budget\_reached\` | 检查预算和部分产物，再决定是否继续。 |
-| \`retries\_exhausted\` | 读取错误信息，解决问题后再发送输入。 |
+| `end_turn` | 检查最终回答和任务产物，确认满足业务要求。 |
+| `requires_action` | 按 `stop_reason.event_ids` 找到阻塞事件，处理自定义工具或工具确认。 |
+| `interrupted` | 记录中断，检查已完成的操作；中断不会撤销外部修改。 |
+| `budget_reached` | 检查预算和部分产物，再决定是否继续。 |
+| `retries_exhausted` | 读取错误信息，解决问题后再发送输入。 |
 
 > 状态与停止原因
 >
@@ -36,9 +36,9 @@
 
 | 操作 | 请求方法与路径后缀 | 使用场景 |
 | --- | --- | --- |
-| 发送事件 | \`POST /events\` | 提交用户消息、中断、工具结果或确认。请求返回表示事件已接收，任务结果需从后续事件读取。 |
-| 订阅事件流 | \`GET /events/stream\` | 通过 SSE 展示执行进度。连接先回放历史，再推送实时事件。 |
-| 读取事件历史 | \`GET /events\` | 分页读取已保存的记录，用于查询、审计或恢复应用状态。 |
+| 发送事件 | `POST /events` | 提交用户消息、中断、工具结果或确认。请求返回表示事件已接收，任务结果需从后续事件读取。 |
+| 订阅事件流 | `GET /events/stream` | 通过 SSE 展示执行进度。连接先回放历史，再推送实时事件。 |
+| 读取事件历史 | `GET /events` | 分页读取已保存的记录，用于查询、审计或恢复应用状态。 |
 
 消费循环应先订阅事件流，再发送用户消息，并持续处理回答和状态变化。应用重启或连接中断后，按回放和去重恢复消费。
 
@@ -1841,12 +1841,12 @@ end
 
 | 消费目的 | 事件 | 应用职责 |
 | --- | --- | --- |
-| 展示回答 | \`agent.message\` | 提取回答内容；Native 增量预览另按 \`event\_start\`、\`event\_delta\` 处理。 |
-| 观察云端工具 | \`agent.tool\_use\`、\`agent.mcp\_tool\_use\` | 展示调用过程，按权限策略处理确认。 |
-| 执行业务工具 | \`agent.custom\_tool\_use\` | 保存调用，按阻塞事件 ID 回传结果。 |
-| 更新任务状态 | \`session.status\_running\`、\`session.status\_idle\`、\`session.status\_terminated\` | 展示执行状态；停止时检查原因，终止后停止提交输入。 |
-| 排查模型请求 | \`span.model\_request\_start\`、\`span.model\_request\_end\` | 关联请求阶段，检查运行时报告的用量。 |
-| 记录错误 | \`session.error\` | 保存错误信息，继续检查后续状态。 |
+| 展示回答 | `agent.message` | 提取回答内容；Native 增量预览另按 `event_start`、`event_delta` 处理。 |
+| 观察云端工具 | `agent.tool_use`、`agent.mcp_tool_use` | 展示调用过程，按权限策略处理确认。 |
+| 执行业务工具 | `agent.custom_tool_use` | 保存调用，按阻塞事件 ID 回传结果。 |
+| 更新任务状态 | `session.status_running`、`session.status_idle`、`session.status_terminated` | 展示执行状态；停止时检查原因，终止后停止提交输入。 |
+| 排查模型请求 | `span.model_request_start`、`span.model_request_end` | 关联请求阶段，检查运行时报告的用量。 |
+| 记录错误 | `session.error` | 保存错误信息，继续检查后续状态。 |
 
 `agent.message` 只包含面向用户的助手文本，不包含运行时初始化、重试等控制记录。某些轮次可能没有任何 `agent.message`，例如本轮只有工具调用；应用应结合 Session 状态和停止原因判断执行结果，不要因为缺少 `agent.message` 就认定执行失败。
 

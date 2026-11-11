@@ -225,9 +225,9 @@ AgentAPI 的智能体、环境、会话和事件接口可以使用 Anthropic SDK
 
 | 配置 | 注意事项 |
 | --- | --- |
-| 服务地址 | 将 \`base\_url\`、\`baseURL\` 或对应语言的选项设为 \`AGENTAPI\_BASE\_URL\`，使用所选区域的 AgentAPI 服务根地址，不附加 \`/v1\`。SDK 的资源方法会拼接接口路径。 |
-| API Key | 将 \`api\_key\`、\`apiKey\` 或对应选项设为 \`AGENTAPI\_API\_KEY\`，SDK 会通过 \`x-api-key\` 发送。Key 必须已在 Portal 绑定到 AgentAPI 账户。 |
-| 模型 | 创建智能体时使用当前账户和区域可调用的模型 ID，示例从 \`AGENTAPI\_MODEL\_ID\` 读取。模型选择与 \`runtime\` 选择是两个独立字段。 |
+| 服务地址 | 将 `base_url`、`baseURL` 或对应语言的选项设为 `AGENTAPI_BASE_URL`，使用所选区域的 AgentAPI 服务根地址，不附加 `/v1`。SDK 的资源方法会拼接接口路径。 |
+| API Key | 将 `api_key`、`apiKey` 或对应选项设为 `AGENTAPI_API_KEY`，SDK 会通过 `x-api-key` 发送。Key 必须已在 Portal 绑定到 AgentAPI 账户。 |
+| 模型 | 创建智能体时使用当前账户和区域可调用的模型 ID，示例从 `AGENTAPI_MODEL_ID` 读取。模型选择与 `runtime` 选择是两个独立字段。 |
 
 ### 获取 SDK
 

@@ -15,7 +15,7 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urljoin, urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Comment, Tag
 from markdownify import BACKSLASH, MarkdownConverter
 import yaml
 
@@ -24,6 +24,7 @@ SOURCE = "https://developer.qiniu.com/agentapi"
 DOC_HOST = "developer.qiniu.com"
 ATTACHMENT_HOST = "dn-odum9helk.qbox.me"
 ARTICLE_PATH = re.compile(r"/agentapi/[0-9]+/([a-z0-9]+(?:-[a-z0-9]+)*)")
+INLINE_CODE = re.compile(r"(?<![\\`])(?P<delimiter>\\?`)(?P<code>[^`\n]+?)(?<!\\)(?P=delimiter)(?!`)")
 SKIP_SECTIONS = {"产品动态", "购买指南"}
 NOTICE = "<!-- 由 scripts/sync-docs.py 自动生成。 -->"
 SKILL_DIR = Path(__file__).resolve().parents[1]
@@ -98,9 +99,30 @@ def discover(index: str) -> list[Article]:
     return articles
 
 
+def restore_inline_code(soup: BeautifulSoup, body: Tag) -> None:
+    # Some CMS table cells and paragraphs store Markdown code spans as HTML text.
+    for node in body.find_all(string=lambda value: "`" in value):
+        if isinstance(node, Comment) or node.find_parent(["code", "pre", "kbd", "samp"]):
+            continue
+        parts = []
+        offset = 0
+        for match in INLINE_CODE.finditer(node):
+            parts.append(node[offset:match.start()])
+            code = soup.new_tag("code")
+            text = match["code"]
+            if match["delimiter"].startswith("\\"):
+                text = re.sub(r"\\([_*])", r"\1", text)
+            code.string = text
+            parts.append(code)
+            offset = match.end()
+        if parts:
+            parts.append(node[offset:])
+            node.replace_with(*parts)
+
+
 class ArticleConverter(MarkdownConverter):
     def escape(self, text, parent_tags):
-        # CMS table cells may contain literal backticks and backslashes.
+        # Preserve literal punctuation outside code spans.
         text = text.replace("\\", "\\\\").replace("`", "\\`")
         return super().escape(text, parent_tags)
 
@@ -149,6 +171,7 @@ def convert(article: Article, document: str, local_links: dict[str, str]) -> tup
             link["href"] = "openapi.yaml"
         else:
             link["href"] = local_links.get(url, url)
+    restore_inline_code(soup, body)
     converter = ArticleConverter(heading_style="ATX", bullets="-", autolinks=False, newline_style=BACKSLASH)
     markdown = converter.convert_soup(body).strip()
     if not markdown:

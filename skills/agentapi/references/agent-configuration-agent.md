@@ -190,16 +190,16 @@ agent = client.beta.agents.create(
 
 | 字段 | 描述 |
 | --- | --- |
-| \`name\` | 必填。用于在 Portal 和资源列表中识别智能体的名称。 |
-| \`runtime\` | 可选。指定智能体使用的运行时：\`claudecode\`、\`codex\` 或 \`native\`。匹配时忽略首尾空白和大小写，并保存规范小写名。省略时使用 \`claudecode\`，建议按任务场景显式指定，选择方法见[运行时和模型](agent-configuration-runtime-and-models.md)。创建或更新智能体时传入其他值返回 \`400\`。 |
-| \`model\` | 必填。驱动智能体的模型。可以传入模型 ID 字符串，也可以传入对象，例如 \`{"id": "your-model-id", "effort": {"type": "high"}}\`。可用模型请前往[七牛 MaaS 模型管理页](https://portal.qiniu.com/ai-inference/model)查看。 |
-| \`agentapi\_options\` | 可选。AgentAPI 扩展配置。\`thinking\` 控制 Native 思考，详见思考配置。\`system\_prompt\_mode\` 控制 \`claudecode\` 和 \`codex\` 如何放置 \`system\`，取值为 \`append\` 或 \`replace\`，详见系统提示词放置方式。 |
-| \`system\` | 定义智能体行为和角色设定的系统提示。系统提示用于描述智能体应如何工作，[用户消息](api-conventions.md)用于描述本次要完成的任务。默认与云端环境说明一起追加到运行时产品提示词之后；需要用它替换产品提示词时，见系统提示词放置方式。 |
-| \`tools\` | 智能体可用的[内置工具集](agent-configuration-tools.md)、[MCP 工具](agent-configuration-mcp.md)和[自定义工具](agent-configuration-tools.md)。 |
-| \`mcp\_servers\` | 提供标准化第三方能力的 [MCP 服务器](agent-configuration-mcp.md)。 |
-| \`skills\` | 智能体按任务需要加载的[技能](agent-configuration-skills.md)，包含工作说明和辅助文件。 |
-| \`description\` | 对智能体功能的描述。 |
-| \`metadata\` | 用于业务跟踪的键值对。 |
+| `name` | 必填。用于在 Portal 和资源列表中识别智能体的名称。 |
+| `runtime` | 可选。指定智能体使用的运行时：`claudecode`、`codex` 或 `native`。匹配时忽略首尾空白和大小写，并保存规范小写名。省略时使用 `claudecode`，建议按任务场景显式指定，选择方法见[运行时和模型](agent-configuration-runtime-and-models.md)。创建或更新智能体时传入其他值返回 `400`。 |
+| `model` | 必填。驱动智能体的模型。可以传入模型 ID 字符串，也可以传入对象，例如 `{"id": "your-model-id", "effort": {"type": "high"}}`。可用模型请前往[七牛 MaaS 模型管理页](https://portal.qiniu.com/ai-inference/model)查看。 |
+| `agentapi_options` | 可选。AgentAPI 扩展配置。`thinking` 控制 Native 思考，详见思考配置。`system_prompt_mode` 控制 `claudecode` 和 `codex` 如何放置 `system`，取值为 `append` 或 `replace`，详见系统提示词放置方式。 |
+| `system` | 定义智能体行为和角色设定的系统提示。系统提示用于描述智能体应如何工作，[用户消息](api-conventions.md)用于描述本次要完成的任务。默认与云端环境说明一起追加到运行时产品提示词之后；需要用它替换产品提示词时，见系统提示词放置方式。 |
+| `tools` | 智能体可用的[内置工具集](agent-configuration-tools.md)、[MCP 工具](agent-configuration-mcp.md)和[自定义工具](agent-configuration-tools.md)。 |
+| `mcp_servers` | 提供标准化第三方能力的 [MCP 服务器](agent-configuration-mcp.md)。 |
+| `skills` | 智能体按任务需要加载的[技能](agent-configuration-skills.md)，包含工作说明和辅助文件。 |
+| `description` | 对智能体功能的描述。 |
+| `metadata` | 用于业务跟踪的键值对。 |
 
 ## 思考配置
 
@@ -211,10 +211,10 @@ agent = client.beta.agents.create(
 
 | 设置 | 行为 |
 | --- | --- |
-| \`disabled\` | 要求模型关闭思考，优先于已保存的 effort，但不删除 effort。 |
-| \`default\` | 取消智能体层面的关闭要求，恢复默认行为和已保存 effort 的正常映射；不代表强制开启思考，也不代表 medium。 |
-| 创建时省略整个 \`agentapi\_options\` | 沿用默认行为，不额外设置思考开关。 |
-| 更新时省略整个 \`agentapi\_options\` | 保留已有设置；若思考已关闭，则继续保持关闭。 |
+| `disabled` | 要求模型关闭思考，优先于已保存的 effort，但不删除 effort。 |
+| `default` | 取消智能体层面的关闭要求，恢复默认行为和已保存 effort 的正常映射；不代表强制开启思考，也不代表 medium。 |
+| 创建时省略整个 `agentapi_options` | 沿用默认行为，不额外设置思考开关。 |
+| 更新时省略整个 `agentapi_options` | 保留已有设置；若思考已关闭，则继续保持关闭。 |
 
 恢复默认、更新与校验规则如下：
 
@@ -310,8 +310,8 @@ Native 的 Messages 协议会发送 `thinking: {"type":"disabled"}`，不发送 
 
 | 取值 | 行为 |
 | --- | --- |
-| 省略，或 \`append\` | 默认。\`system\` 与云端环境的目录、文件说明组成追加内容，附加在运行时自带的产品提示词之后；云端说明位于 \`system\` 之后。保存前会去除 \`system\` 首尾空白。 |
-| \`replace\` | \`system\` 替换运行时产品提示词，并且不再追加到产品提示词之后。新建会话和续接会话均使用此配置。缩进和末尾换行会原样保存并传给运行时。云端环境的目录和文件说明仍然追加在正文之后，不属于被替换的产品提示词。 |
+| 省略，或 `append` | 默认。`system` 与云端环境的目录、文件说明组成追加内容，附加在运行时自带的产品提示词之后；云端说明位于 `system` 之后。保存前会去除 `system` 首尾空白。 |
+| `replace` | `system` 替换运行时产品提示词，并且不再追加到产品提示词之后。新建会话和续接会话均使用此配置。缩进和末尾换行会原样保存并传给运行时。云端环境的目录和文件说明仍然追加在正文之后，不属于被替换的产品提示词。 |
 
 > 系统提示词替换限制
 >
@@ -467,11 +467,11 @@ puts "New version: #{updated_agent.version}"
 
 更新智能体时，模型思考强度按以下规则处理。这与[会话级模型覆盖](sessions-and-tasks-session.md)的整体替换规则不同。
 
-| 模型更新内容 | \`effort\` 行为 |
+| 模型更新内容 | `effort` 行为 |
 | --- | --- |
-| 模型 ID 不变，省略 \`effort\` | 保留该智能体已保存的思考强度。 |
-| 更换模型 ID，省略 \`effort\` | 清除已保存的显式强度，使用新模型的默认值。 |
-| 显式提供 \`effort\` | 使用指定强度，例如 \`{"type": "high"}\`。 |
+| 模型 ID 不变，省略 `effort` | 保留该智能体已保存的思考强度。 |
+| 更换模型 ID，省略 `effort` | 清除已保存的显式强度，使用新模型的默认值。 |
+| 显式提供 `effort` | 使用指定强度，例如 `{"type": "high"}`。 |
 
 ## 智能体生命周期
 

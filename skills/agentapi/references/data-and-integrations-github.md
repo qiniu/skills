@@ -12,7 +12,7 @@ GitHub 任务应先确定交付结果：读取代码形成审查结论，查询 
 
 | 任务 | 所需配置 |
 | --- | --- |
-| 读取代码并生成审查结论 | 给会话添加 \`github\_repository\` 资源，使用能读取目标仓库的令牌。 |
+| 读取代码并生成审查结论 | 给会话添加 `github_repository` 资源，使用能读取目标仓库的令牌。 |
 | 查询 Issue、创建 Pull Request 或调用其他 GitHub API | 给智能体配置 GitHub MCP 工具，并通过会话引用的 Vault 提供 MCP 凭证。 |
 | 修改代码并提交 Pull Request | 同时配置仓库资源和 GitHub MCP；仓库访问需允许提交和推送，MCP 访问需允许创建 Pull Request。 |
 
@@ -455,11 +455,11 @@ session = client.beta.sessions.create(
 
 | 字段 | 描述 |
 | --- | --- |
-| \`type\` | 必填。必须为 \`"github\_repository"\`。 |
-| \`url\` | 必填。仓库的 HTTPS 克隆 URL，例如 \`https://github.com/<owner>/<repo>\`。必须使用 \`https\`（SSH 等非 https URL 一律拒绝），且主机不能是 localhost 或私网地址；结尾的 \`.git\` 会自动去除。 |
-| \`authorization\_token\` | 必填。用于克隆仓库的 GitHub 令牌。它不会在 API 响应中回显。请参阅[令牌权限](data-and-integrations-github.md)。 |
-| \`mount\_path\` | 可选。沙箱内用于克隆仓库的绝对路径，不能为根目录或包含 \`..\`。默认为 \`/workspace/<repo-name>\`。 |
-| \`checkout\` | 可选。要检出的分支（\`{"type": "branch", "name": "main"}\`）或提交（\`{"type": "commit", "sha": "..."}\`）。默认为仓库的默认分支。 |
+| `type` | 必填。必须为 `"github_repository"`。 |
+| `url` | 必填。仓库的 HTTPS 克隆 URL，例如 `https://github.com/<owner>/<repo>`。必须使用 `https`（SSH 等非 https URL 一律拒绝），且主机不能是 localhost 或私网地址；结尾的 `.git` 会自动去除。 |
+| `authorization_token` | 必填。用于克隆仓库的 GitHub 令牌。它不会在 API 响应中回显。请参阅[令牌权限](data-and-integrations-github.md)。 |
+| `mount_path` | 可选。沙箱内用于克隆仓库的绝对路径，不能为根目录或包含 `..`。默认为 `/workspace/<repo-name>`。 |
+| `checkout` | 可选。要检出的分支（`{"type": "branch", "name": "main"}`）或提交（`{"type": "commit", "sha": "..."}`）。默认为仓库的默认分支。 |
 
 挂载仓库后，运行时会按自身规则发现仓库级技能：Claude Code 读取 `.claude/skills`，Codex 读取 `.agents/skills`。AgentAPI 不会替运行时扫描这些目录；技能只在会话启动时发现一次，依据是当时检出的仓库状态。请参阅[从 GitHub 仓库加载技能](agent-configuration-skills.md)。
 

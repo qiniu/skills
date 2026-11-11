@@ -24,10 +24,10 @@
 
 | 配置项 | 负责什么 | 本例中的配置位置 |
 | --- | --- | --- |
-| 工作流提示词 | 固定审查步骤、范围、输出格式和禁止的操作 | 智能体的 \`system\` |
-| 审查规范 Skill | 固定团队要检查的规则和意见格式 | 仓库的 \`.claude/skills\` 或智能体附加的 Skill |
-| GitHub MCP | 读取 PR 上下文、提交 review 和查询提交结果 | \`mcp\_servers\` 与 \`mcp\_toolset\` |
-| 仓库资源 | 提供本次审查使用的代码和 head commit | 会话的 \`resources\` |
+| 工作流提示词 | 固定审查步骤、范围、输出格式和禁止的操作 | 智能体的 `system` |
+| 审查规范 Skill | 固定团队要检查的规则和意见格式 | 仓库的 `.claude/skills` 或智能体附加的 Skill |
+| GitHub MCP | 读取 PR 上下文、提交 review 和查询提交结果 | `mcp_servers` 与 `mcp_toolset` |
+| 仓库资源 | 提供本次审查使用的代码和 head commit | 会话的 `resources` |
 
 先把不随 PR 变化的流程写入智能体配置，再在每次任务中传入仓库、PR 编号和 head SHA。这样可以复用同一套审查标准，同时保证每次审查都针对确定的代码版本。
 
@@ -37,8 +37,8 @@
 
 | 能力 | 配置 | 用途 |
 | --- | --- | --- |
-| 读取待审查代码 | 会话资源中的 \`github\_repository\` 和 \`authorization\_token\` | 克隆仓库、检出指定 commit、读取文件和运行测试 |
-| 读取 PR 并提交 review | 智能体声明 GitHub MCP，会话 \`vault\_ids\` 引用匹配的凭证 | 查询 PR、提交 review；不把令牌写入提示词或仓库 |
+| 读取待审查代码 | 会话资源中的 `github_repository` 和 `authorization_token` | 克隆仓库、检出指定 commit、读取文件和运行测试 |
+| 读取 PR 并提交 review | 智能体声明 GitHub MCP，会话 `vault_ids` 引用匹配的凭证 | 查询 PR、提交 review；不把令牌写入提示词或仓库 |
 
 GitHub MCP 服务器地址使用 `https://api.githubcopilot.com/mcp/`。凭证的 `mcp_server_url` 必须与该地址一致，可以使用 `static_bearer` 或 `mcp_oauth`；仓库令牌和 GitHub MCP 凭证分别按最小权限配置。审查通常只需要仓库内容读取权限和 Pull Request 的读写权限，不需要仓库内容写入权限。
 
@@ -161,7 +161,7 @@ session.status_idle      stop_reason.type = end_turn
 
 | 现象 | 原因 | 处理 |
 | --- | --- | --- |
-| PR 上没有 review | GitHub MCP 凭证缺失、服务器地址不匹配、权限不足，或任务只要求输出报告 | 检查智能体的服务器和工具配置、Vault 凭证、Pull Request 权限及对应的 \`agent.tool\_result\`，确认没有已提交的 review 后再重跑本次 head SHA |
+| PR 上没有 review | GitHub MCP 凭证缺失、服务器地址不匹配、权限不足，或任务只要求输出报告 | 检查智能体的服务器和工具配置、Vault 凭证、Pull Request 权限及对应的 `agent.tool_result`，确认没有已提交的 review 后再重跑本次 head SHA |
 | review 引用了错误的行号 | 会话复用了旧检出，或 PR head 在任务期间变化 | 重新取得 head SHA，创建新会话并重新审查 |
 | 只覆盖了部分文件 | 审查范围未写清，或上下文/执行预算不足 | 在任务中要求逐文件检查，必要时按目录拆分审查 |
 | 测试失败但 review 已提交 | 审查意见和测试结果没有分开验收 | 将测试结果记录为独立状态，不把 review 创建成功当作测试通过 |

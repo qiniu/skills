@@ -28,9 +28,9 @@ Webhook 提供资源与生命周期通知，不包含完整回答、文本增量
 
 | 请求头 | 内容 |
 | --- | --- |
-| \\\`webhook-id\\\` | \\\`whe\\\_...\\\` 事件 ID；同一事件的重试保持不变。 |
-| \\\`webhook-timestamp\\\` | 本次发送时的 Unix 秒数；重试会重新签名。 |
-| \\\`webhook-signature\\\` | \\\`v1,<Base64 签名>\\\`，签名使用 HMAC-SHA256。 |
+| `webhook-id` | `whe_...` 事件 ID；同一事件的重试保持不变。 |
+| `webhook-timestamp` | 本次发送时的 Unix 秒数；重试会重新签名。 |
+| `webhook-signature` | `v1,<Base64 签名>`，签名使用 HMAC-SHA256。 |
 
 去掉密钥的 `whsec_` 前缀并 Base64 解码，得到 HMAC 密钥。签名输入是 `webhook-id + "." + webhook-timestamp + "." + 原始请求体` 的字节序列。必须使用 JSON 解码前的原始字节，不能重新序列化 JSON 后验签。建议同时拒绝与接收时间相差超过 5 分钟的请求，并保持服务器时钟同步；此时间窗口校验由接收端执行。
 
@@ -208,15 +208,15 @@ HTTPServer(("127.0.0.1", 8000), Receiver).serve_forever()
 
 | 资源 | 类型 |
 | --- | --- |
-| 会话状态 | \\\`session.status\\\_scheduled\\\`、\\\`session.status\\\_run\\\_started\\\`、\\\`session.status\\\_idled\\\`、\\\`session.status\\\_rescheduled\\\`、\\\`session.status\\\_terminated\\\` |
-| 会话与线程 | \\\`session.thread\\\_created\\\`、\\\`session.thread\\\_idled\\\`、\\\`session.thread\\\_terminated\\\`、\\\`session.outcome\\\_evaluation\\\_ended\\\`、\\\`session.updated\\\`、\\\`session.deleted\\\` |
-| Vault | \\\`vault.created\\\`、\\\`vault.archived\\\`、\\\`vault.deleted\\\` |
-| 凭证 | \\\`vault\\\_credential.created\\\`、\\\`vault\\\_credential.archived\\\`、\\\`vault\\\_credential.deleted\\\`、\\\`vault\\\_credential.refresh\\\_failed\\\`（尚无触发点） |
-| 智能体 | \\\`agent.created\\\`、\\\`agent.updated\\\`、\\\`agent.archived\\\`、\\\`agent.deleted\\\` |
-| 部署 | \\\`deployment.created\\\`、\\\`deployment.updated\\\`、\\\`deployment.paused\\\`、\\\`deployment.unpaused\\\`、\\\`deployment.archived\\\`、\\\`deployment.deleted\\\`（尚无触发点） |
-| 计划部署运行 | \\\`deployment\\\_run.started\\\`、\\\`deployment\\\_run.succeeded\\\`、\\\`deployment\\\_run.failed\\\` |
-| 环境 | \\\`environment.created\\\`、\\\`environment.updated\\\`、\\\`environment.archived\\\`、\\\`environment.deleted\\\` |
-| 持久记忆 | \\\`memory\\\_store.created\\\`、\\\`memory\\\_store.archived\\\`、\\\`memory\\\_store.deleted\\\` |
+| 会话状态 | `session.status_scheduled`、`session.status_run_started`、`session.status_idled`、`session.status_rescheduled`、`session.status_terminated` |
+| 会话与线程 | `session.thread_created`、`session.thread_idled`、`session.thread_terminated`、`session.outcome_evaluation_ended`、`session.updated`、`session.deleted` |
+| Vault | `vault.created`、`vault.archived`、`vault.deleted` |
+| 凭证 | `vault_credential.created`、`vault_credential.archived`、`vault_credential.deleted`、`vault_credential.refresh_failed`（尚无触发点） |
+| 智能体 | `agent.created`、`agent.updated`、`agent.archived`、`agent.deleted` |
+| 部署 | `deployment.created`、`deployment.updated`、`deployment.paused`、`deployment.unpaused`、`deployment.archived`、`deployment.deleted`（尚无触发点） |
+| 计划部署运行 | `deployment_run.started`、`deployment_run.succeeded`、`deployment_run.failed` |
+| 环境 | `environment.created`、`environment.updated`、`environment.archived`、`environment.deleted` |
+| 持久记忆 | `memory_store.created`、`memory_store.archived`、`memory_store.deleted` |
 
 `deployment_run.*` 仅用于计划触发，不由手动运行触发；`succeeded` 表示成功创建并初始化会话，不代表智能体任务最终成功。会话的后续结果需同时订阅相应会话状态并读取事件，详见[定时部署](sessions-and-tasks-scheduled-deployments.md)。
 
