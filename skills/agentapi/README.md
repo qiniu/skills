@@ -1,27 +1,16 @@
 # AgentAPI Skill
 
-在项目目录安装或更新七牛云 AgentAPI skill：
+在项目目录安装或更新七牛云 AgentAPI skill。
 
 ```sh
 npx skills add qiniu/skills --skill agentapi
 npx skills update agentapi
 ```
 
-`SKILL.md` 提供任务步骤和参考资料入口。安装包内的 `references/` 由脚本从[七牛开发者中心](https://developer.qiniu.com/agentapi)生成，包含技术文章、原文索引和公开 OpenAPI 附件。已收录文章的无锚点链接会指向包内副本，其他链接保留线上地址。参考资料包含「在 Portal 中构建」教程。产品动态和计费说明可在官网查阅。
+[SKILL.md](SKILL.md) 帮助 agent 根据任务选择 Portal 或 API、运行时和执行环境。[任务文档索引](references/INDEX.md) 指向七牛开发者中心的具体页面，包括「在 Portal 中构建」。Agent 可以按任务查阅最新的接口规范、示例和产品说明。
 
-维护者在仓库根目录使用 Python 3.9 或更新版本运行：
+`Check AgentAPI documentation links` 每天北京时间 09:23 在 `qiniu/skills` 默认分支检查索引链接，也可在 Actions 页面手动触发。发现失效或重定向的链接时，运行日志会列出对应的 URL 和行号。维护者也可以在仓库根目录运行同一检查。
 
 ```sh
-python3 -m venv .venv
-. .venv/bin/activate
-python -m pip install -r skills/agentapi/scripts/requirements.txt
-python skills/agentapi/scripts/sync-docs.py
-python skills/agentapi/scripts/sync-docs.py --check
-python -m unittest discover -s skills/agentapi/scripts
+python3 .github/scripts/check-agentapi-doc-links.py
 ```
-
-同步脚本在抓取和校验全部资料后才写入文件。`--check` 只比较，不写文件，有差异时退出码为 1，抓取或校验失败时为 2。提交更新前审查 `references/` 的差异。安装和使用 skill 不需要安装同步脚本的依赖。
-
-`Sync AgentAPI skill references` 每天北京时间 09:23 在 `qiniu/skills` 默认分支运行，也可在 Actions 页面手动触发。参考资料有变化时，workflow 使用同一个分支创建或更新同步 PR，由维护者审阅合并。
-
-同步 PR 使用仓库的 `GITHUB_TOKEN`。首次运行前，请在上游仓库的 **Settings → Actions → General → Workflow permissions** 确认已启用 **Allow GitHub Actions to create and approve pull requests**。

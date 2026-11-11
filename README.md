@@ -33,7 +33,7 @@ npx skills add qiniu/skills --list
 | [maas](skills/maas/SKILL.md) | Qiniu MaaS platform management: request log query, usage statistics, API Key lifecycle | REST API |
 | [miku-live](skills/miku-live/SKILL.md) | Intent resolution, parameter validation, and signed execution for Qiniu Miku Live management APIs | 40+ action keys across buckets, streams, domains, certificates, recording, relay, statistics, and API keys |
 | [xfetch-web](skills/xfetch-web/SKILL.md) | 通过七牛 xfetch 抓取并抽取网页内容 | markdown/json/html |
-| [agentapi](skills/agentapi/SKILL.md) | Integrate with Qiniu AgentAPI using HTTP or the Anthropic SDK | Agents, sessions, SSE events, and task results |
+| [agentapi](skills/agentapi/SKILL.md) | Choose and build with Qiniu AgentAPI in Portal or through the API | Runtimes, sessions, SSE events, and task results |
 
 ## What Can You Do
 

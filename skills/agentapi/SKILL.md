@@ -1,26 +1,36 @@
 ---
 name: agentapi
-description: Build agents in the Qiniu Cloud AgentAPI Portal or integrate AgentAPI using HTTP or the Anthropic SDK. Use for AgentAPI agents, runtimes and models, execution environments, sessions, SSE events, files and task results, deployments, MCP, or skills attached to an AgentAPI agent.
+description: Choose and build with Qiniu Cloud AgentAPI for multi-step, tool-using agent workloads. Use for AgentAPI Portal or API integration, choosing a runtime and execution environment, running session tasks, streaming progress, delivering files, or scheduling recurring work.
 ---
 
 # 七牛云 AgentAPI
 
-先读与当前任务对应的参考资料，再编写请求或修改代码。参考资料由[七牛开发者中心](https://developer.qiniu.com/agentapi)生成，每篇都附有原文地址。查字段、必填项和响应结构时，使用[线上接口规范的本地副本](references/openapi.yaml)；需要确认最新行为时查阅原文。
+AgentAPI 是七牛云的托管智能体框架，适合需要多步推理、调用工具并交付可验证结果的长任务。把模型、提示词和工具配置为可复用的智能体，在执行环境中通过会话运行任务，再用事件、回答和文件产物跟踪结果。只需一次文本生成或分类时，可以直接使用模型推理 API。
 
-| 要完成的任务 | 先读 |
+## 选择接入方式
+
+- **先验证任务或调试配置**时，用 Portal 配置智能体和环境，发一条代表性任务，检查执行过程、回答和文件。验证后的配置可以在 API 接入时复用。
+- **集成到应用或业务流程**时，用 HTTP API 或受支持的 Anthropic SDK 管理智能体、提交会话任务、消费事件和获取结果。让应用记录业务任务与会话的关联，以便查询进度和排查问题。
+
+## 选择运行时、环境和工具
+
+| 任务约束 | 起步方案 |
 | --- | --- |
-| 选服务区域、准备七牛 MaaS API Key、验证鉴权 | [接入准备](references/access.md)、[API 通用约定](references/api-conventions.md) |
-| 在 Portal 配置并测试智能体，或在代码中复用配置 | [在 Portal 中构建](references/portal.md) |
-| 用 HTTP 或 Anthropic SDK 接入现有项目 | [通过 API 构建](references/quickstart.md) |
-| 选择运行时、模型和环境 | [运行时和模型](references/agent-configuration-runtime-and-models.md)、[配置云端环境](references/execution-environments-environment.md) |
-| 创建、配置和管理智能体 | [创建与管理智能体](references/agent-configuration-agent.md) |
-| 提交或继续任务、消费 SSE、处理停止原因 | [创建会话](references/sessions-and-tasks-session.md)、[事件和事件流](references/sessions-and-tasks-events.md)、[会话操作](references/sessions-and-tasks-session-lifecycle.md) |
-| 获取回答、下载文件并验证任务结果 | [定义结果](references/sessions-and-tasks-outcomes.md)、[附加和下载文件](references/data-and-integrations-files.md) |
-| 配置 MCP、Agent Skills、Webhook、定时部署、持久记忆或自托管执行器 | [参考资料索引](references/INDEX.md) |
+| 希望沿用 Claude Code 或 Codex 的编程工具和工作方式 | 分别选择由 Claude Code SDK 驱动的 `claudecode` 或由 Codex harness 驱动的 `codex`，使用云端环境并核对所需工具。 |
+| 应用要执行自定义业务工具、回传结果或审批工具调用 | 优先评估 `native`，通过会话事件处理工具结果和确认。 |
+| 任务要在自有网络执行文件和命令 | 选择 `native` 与自托管执行器，核对 worker 的访问范围及输入、模型请求和工具结果的数据流。 |
+| 需要访问第三方系统或复用任务规范 | 用 MCP 接入远程工具，用 Agent Skills 提供可复用的说明和资料。按任务需要配置凭证和工具权限。 |
 
-第一次接入时，按快速入门验证完整流程：
+确认所选地域的模型和凭证可用。如果有多个候选运行时，用同一任务和验收标准比较完成质量、耗时和所需工具。
 
-1. 确认目标区域和该区域可用的模型。配置 `AGENTAPI_BASE_URL` 和 `AGENTAPI_API_KEY`，HTTP 请求按文档使用 `x-api-key`。凭证从环境变量或项目已有的密钥配置读取，示例使用占位符。
-2. 选用项目已有的 HTTP 客户端或受支持的 SDK。创建或复用智能体与环境，记录 API 返回的资源 ID，再用这些 ID 创建会话。使用 SDK 时，按快速入门核对 AgentAPI 扩展字段的传入方式。
-3. 需要实时进度时先打开 SSE，再按会话文档发送 `user.message`，结构化输入使用 `input.parts`。按事件文档处理历史回放、事件顺序和重连。
-4. 根据本轮停止原因、回答和预期文件判断结果。收到 `session.status_idle` 后还需检查 `stop_reason`，并验收用户要求的产物。
+## 从业务场景选方案
+
+| 场景 | 方案和验收方式 |
+| --- | --- |
+| 批量处理文件、核对数据或生成报告 | 为任务附加输入文件，让智能体交付约定格式的文件。检查文件是否可下载、内容是否满足验收条件。 |
+| 每日核对订单或生成巡检摘要 | 先手动跑通一次，再配置定时部署。用业务日期或任务 ID 做去重，按运行记录核对每次产物。 |
+| 代码审查或仓库维护 | 先限定仓库权限和审查范围，再选择运行时、GitHub 接入方式和审查规范。用具体问题、文件位置和验证结果验收。 |
+| 应用内的异步任务或交互式助手 | 需要实时展示时消费 SSE，需要后台通知时用 Webhook。收到停止事件或通知后，结合停止原因、回答和产物判断结果。 |
+| 内网查询或运维辅助 | 把内网访问封装为自托管 worker 执行的业务工具，区分查询和变更，按操作影响设置确认和权限。 |
+
+接到任务后，先确认输入、交付物、工具权限和执行位置，再选最小可行方案。从[任务文档索引](references/INDEX.md)打开对应官网页面，查验请求字段、SDK 用法和限制，再给出接入步骤。调用真实服务前确认目标地域和资源，凭证通过应用的密钥配置传入。
