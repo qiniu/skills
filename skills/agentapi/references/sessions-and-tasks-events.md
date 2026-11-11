@@ -1833,7 +1833,7 @@ end
 
 ### 在 Portal 定位执行问题
 
-在 Portal 会话详情的“轨迹”中检查事件和停止原因，需要完整记录时通过“Raw JSONL”导出。界面使用说明见[在 Portal 中构建](https://developer.qiniu.com/agentapi/13586/agentapi-portal)。
+在 Portal 会话详情的“轨迹”中检查事件和停止原因，需要完整记录时通过“Raw JSONL”导出。界面使用说明见[在 Portal 中构建](portal.md)。
 
 ## 事件字段与消费职责
 

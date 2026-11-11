@@ -7,7 +7,7 @@ npx skills add qiniu/skills --skill agentapi
 npx skills update agentapi
 ```
 
-`SKILL.md` 提供任务步骤和参考资料入口。安装包内的 `references/` 由脚本从[七牛开发者中心](https://developer.qiniu.com/agentapi)生成，包含技术文章、原文索引和公开 OpenAPI 附件。已收录文章的无锚点链接会指向包内副本，其他链接保留线上地址。产品动态、计费说明和 Portal 操作教程可在官网查阅。
+`SKILL.md` 提供任务步骤和参考资料入口。安装包内的 `references/` 由脚本从[七牛开发者中心](https://developer.qiniu.com/agentapi)生成，包含技术文章、原文索引和公开 OpenAPI 附件。已收录文章的无锚点链接会指向包内副本，其他链接保留线上地址。参考资料包含「在 Portal 中构建」教程。产品动态和计费说明可在官网查阅。
 
 维护者在仓库根目录使用 Python 3.9 或更新版本运行：
 

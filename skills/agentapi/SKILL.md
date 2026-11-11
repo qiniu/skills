@@ -1,6 +1,6 @@
 ---
 name: agentapi
-description: Integrate with Qiniu Cloud AgentAPI using HTTP or the Anthropic SDK. Use for AgentAPI agents, runtimes and models, execution environments, sessions, SSE events, files and task results, deployments, MCP, or skills attached to an AgentAPI agent.
+description: Build agents in the Qiniu Cloud AgentAPI Portal or integrate AgentAPI using HTTP or the Anthropic SDK. Use for AgentAPI agents, runtimes and models, execution environments, sessions, SSE events, files and task results, deployments, MCP, or skills attached to an AgentAPI agent.
 ---
 
 # 七牛云 AgentAPI
@@ -10,6 +10,7 @@ description: Integrate with Qiniu Cloud AgentAPI using HTTP or the Anthropic SDK
 | 要完成的任务 | 先读 |
 | --- | --- |
 | 选服务区域、准备七牛 MaaS API Key、验证鉴权 | [接入准备](references/access.md)、[API 通用约定](references/api-conventions.md) |
+| 在 Portal 配置并测试智能体，或在代码中复用配置 | [在 Portal 中构建](references/portal.md) |
 | 用 HTTP 或 Anthropic SDK 接入现有项目 | [通过 API 构建](references/quickstart.md) |
 | 选择运行时、模型和环境 | [运行时和模型](references/agent-configuration-runtime-and-models.md)、[配置云端环境](references/execution-environments-environment.md) |
 | 创建、配置和管理智能体 | [创建与管理智能体](references/agent-configuration-agent.md) |

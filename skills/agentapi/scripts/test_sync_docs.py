@@ -27,6 +27,7 @@ INDEX = """
 </ul></div></div>
 """
 ACCESS_URL = "https://developer.qiniu.com/agentapi/13585/agentapi-access"
+PORTAL_URL = "https://developer.qiniu.com/agentapi/13586/agentapi-portal"
 QUICKSTART_URL = "https://developer.qiniu.com/agentapi/13587/agentapi-quickstart"
 OPENAPI_URL = "https://developer.qiniu.com/agentapi/13619/agentapi-openapi"
 ATTACHMENT = "https://dn-odum9helk.qbox.me/example"
@@ -41,6 +42,7 @@ def fixture_pages():
     return {
         sync_docs.SOURCE: INDEX,
         ACCESS_URL: article("接入准备", '<p>参见<a href="/agentapi/13587/agentapi-quickstart">快速入门</a>。</p>'),
+        PORTAL_URL: article("在 Portal 中构建", "<p>配置并测试智能体。</p>"),
         QUICKSTART_URL: article("通过 API 构建", "<p>运行任务。</p>"),
         OPENAPI_URL: article("OpenAPI 规范", f'<p><a href="{ATTACHMENT}">下载 OpenAPI YAML</a></p>'),
     }
@@ -49,7 +51,9 @@ def fixture_pages():
 class SyncDocsTest(unittest.TestCase):
     def test_only_discovers_relevant_agentapi_articles(self):
         pages = sync_docs.discover(INDEX)
-        self.assertEqual([page.filename for page in pages], ["access.md", "quickstart.md", "openapi.md"])
+        self.assertEqual(
+            [page.filename for page in pages], ["access.md", "portal.md", "quickstart.md", "openapi.md"]
+        )
 
     def test_article_preserves_code_and_keeps_online_anchors(self):
         page = sync_docs.Article("快速入门", "接入准备", ACCESS_URL, "access.md")
@@ -74,7 +78,7 @@ printf '%s\n' "$BASE_URL"
         with TemporaryDirectory() as directory, patch.object(sync_docs, "html", side_effect=pages.__getitem__), \
                 patch.object(sync_docs, "fetch", return_value=SCHEMA) as fetch, redirect_stdout(io.StringIO()):
             root = Path(directory)
-            (root / "SKILL.md").write_text("[接入](references/access.md)\n", encoding="utf-8")
+            (root / "SKILL.md").write_text("[在 Portal 中构建](references/portal.md)\n", encoding="utf-8")
             references = root / "references"
             references.mkdir()
             stale = references / "stale.md"
@@ -88,6 +92,8 @@ printf '%s\n' "$BASE_URL"
             self.assertFalse(stale.exists())
             self.assertTrue(handwritten.exists())
             self.assertIn("[快速入门](quickstart.md)", (references / "access.md").read_text(encoding="utf-8"))
+            self.assertIn("配置并测试智能体。", (references / "portal.md").read_text(encoding="utf-8"))
+            self.assertIn("[在 Portal 中构建](portal.md)", (references / "INDEX.md").read_text(encoding="utf-8"))
             self.assertIn("[下载 OpenAPI YAML](openapi.yaml)", (references / "openapi.md").read_text(encoding="utf-8"))
             self.assertEqual((references / "openapi.yaml").read_bytes(), SCHEMA)
             self.assertEqual(fetch.call_args.args[0], ATTACHMENT)

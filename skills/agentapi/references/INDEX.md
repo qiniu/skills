@@ -14,6 +14,7 @@
 ## 快速入门
 
 - [接入准备](access.md) · [原文](https://developer.qiniu.com/agentapi/13585/agentapi-access)
+- [在 Portal 中构建](portal.md) · [原文](https://developer.qiniu.com/agentapi/13586/agentapi-portal)
 - [通过 API 构建](quickstart.md) · [原文](https://developer.qiniu.com/agentapi/13587/agentapi-quickstart)
 
 ## 使用指南

@@ -32,4 +32,4 @@ AgentAPI 通过智能体与环境保存可复用配置，通过会话与事件�
 
 ## 配置与任务的关系
 
-具体操作见[在 Portal 中构建](https://developer.qiniu.com/agentapi/13586/agentapi-portal)或[通过 API 构建](quickstart.md)。
+具体操作见[在 Portal 中构建](portal.md)或[通过 API 构建](quickstart.md)。

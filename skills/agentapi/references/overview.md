@@ -12,7 +12,7 @@ AgentAPI 支持 Portal 可视化使用和 API 方式使用，两种方式都可�
 
 | 使用方式 | 适用场景 | 入门指南 |
 | --- | --- | --- |
-| Portal 可视化 | 快速上手，或无需编写代码即可配置、测试和调整智能体。 | [在 Portal 中构建](https://developer.qiniu.com/agentapi/13586/agentapi-portal) |
+| Portal 可视化 | 快速上手，或无需编写代码即可配置、测试和调整智能体。 | [在 Portal 中构建](portal.md) |
 | API | 将 AgentAPI 集成到自有智能体产品或业务系统，通过代码管理配置、提交任务并处理结果。支持直接发送 HTTP 请求或使用 SDK。API 兼容 Claude Managed Agents 协议。 | [通过 API 构建](quickstart.md) |
 
 可以先在 Portal 验证配置，再在代码中引用已有智能体和环境。

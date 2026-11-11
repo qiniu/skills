@@ -87,8 +87,6 @@ def discover(index: str) -> list[Article]:
             if not match or parsed.scheme != "https" or parsed.netloc != DOC_HOST:
                 continue
             slug = match[1].removeprefix("agentapi-")
-            if slug == "portal":
-                continue
             title = link.get_text(strip=True)
             if not title:
                 raise ValueError(f"文章标题为空：{url}")
