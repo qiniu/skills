@@ -1,0 +1,47 @@
+name: Sync AgentAPI documentation index
+
+on:
+  schedule:
+    # 09:23 China Standard Time.
+    - cron: '23 1 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: sync-agentapi-doc-index
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    if: github.repository == 'qiniu/skills' && github.ref_name == github.event.repository.default_branch
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.12'
+
+      - name: Install index dependencies
+        run: python -m pip install -r .github/scripts/requirements-agentapi-doc-index.txt
+
+      - name: Generate and check the AgentAPI documentation index
+        run: python .github/scripts/sync-agentapi-doc-index.py
+
+      - name: Open or update the index pull request
+        uses: peter-evans/create-pull-request@3ffccacd46053766916f087ce41d627c0b8cf2d1 # v8.1.3
+        with:
+          add-paths: skills/agentapi/references/INDEX.md
+          branch: automation/sync-agentapi-doc-index
+          delete-branch: true
+          author: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
+          commit-message: 'docs(agentapi): sync official documentation index'
+          title: 'docs(agentapi): 同步官网文档索引'
+          body: |
+            根据七牛开发者中心的 AgentAPI 目录更新文档索引。索引中的链接已通过检查。

@@ -1,7 +1,7 @@
 # Qiniu Skills
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
-[![Skills](https://img.shields.io/badge/skills-5-informational?style=flat-square)](#available-skills)
+[![Skills](https://img.shields.io/badge/skills-6-informational?style=flat-square)](#available-skills)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square)](CONTRIBUTING.md)
 
 AI Skill definitions for coding agents (Claude Code, Cursor, Codex, etc.) to operate Qiniu Cloud products via natural language.
@@ -14,6 +14,9 @@ npx skills add qiniu/skills
 
 # Install to a specific agent
 npx skills add qiniu/skills -a claude-code
+
+# Install only the AgentAPI skill
+npx skills add qiniu/skills --skill agentapi
 
 # List available skills without installing
 npx skills add qiniu/skills --list
@@ -30,6 +33,7 @@ npx skills add qiniu/skills --list
 | [maas](skills/maas/SKILL.md) | Qiniu MaaS platform management: request log query, usage statistics, API Key lifecycle | REST API |
 | [miku-live](skills/miku-live/SKILL.md) | Intent resolution, parameter validation, and signed execution for Qiniu Miku Live management APIs | 40+ action keys across buckets, streams, domains, certificates, recording, relay, statistics, and API keys |
 | [xfetch-web](skills/xfetch-web/SKILL.md) | 通过七牛 xfetch 抓取并抽取网页内容 | markdown/json/html |
+| [agentapi](skills/agentapi/SKILL.md) | Choose and build with Qiniu AgentAPI in Portal or through the API | Runtimes, sessions, SSE events, and task results |
 
 ## What Can You Do
 
