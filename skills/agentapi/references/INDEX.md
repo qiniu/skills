@@ -18,6 +18,7 @@
 - [接入准备](https://developer.qiniu.com/agentapi/13585/agentapi-access)
 - [在 Portal 中构建](https://developer.qiniu.com/agentapi/13586/agentapi-portal)
 - [通过 API 构建](https://developer.qiniu.com/agentapi/13587/agentapi-quickstart)
+- [AgentAPI Skills](https://developer.qiniu.com/agentapi/13639/agentapi-skills)
 
 ## 使用指南
 
