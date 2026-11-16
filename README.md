@@ -35,6 +35,8 @@ npx skills add qiniu/skills --list
 | [xfetch-web](skills/xfetch-web/SKILL.md) | 通过七牛 xfetch 抓取并抽取网页内容 | markdown/json/html |
 | [agentapi](skills/agentapi/SKILL.md) | Choose and build with Qiniu AgentAPI in Portal or through the API | Runtimes, sessions, SSE events, and task results |
 
+For AgentAPI Skill help and feedback, see the [AgentAPI developer community](skills/agentapi/README.md#交流与反馈).
+
 ## What Can You Do
 
 Talk to your AI agent in natural language:
