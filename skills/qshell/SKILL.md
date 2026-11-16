@@ -413,11 +413,11 @@ qshell sandbox list -m key=value                   # 按元数据过滤
 qshell sandbox list -f json                        # JSON 格式输出
 
 # 创建沙箱（默认自动连接终端）
-# ⚠ AI 助手应始终使用 -d（分离模式），避免交互式终端阻塞
-qshell sandbox create <TemplateID> -d
-qshell sbx cr <TemplateID> -d
-qshell sandbox create <TemplateID> -d -t 300          # 设置超时 300 秒
-qshell sandbox create <TemplateID> -d -m env=dev      # 添加元数据
+# ⚠ AI 助手应始终使用 --detach（分离模式），避免交互式终端阻塞
+qshell sandbox create <TemplateID> --detach
+qshell sbx cr <TemplateID> --detach
+qshell sandbox create <TemplateID> --detach -t 300          # 设置超时 300 秒
+qshell sandbox create <TemplateID> --detach -m env=dev      # 添加元数据
 
 # 连接到已有沙箱终端
 qshell sandbox connect <SandboxID>
@@ -509,7 +509,7 @@ qshell sandbox template init --name my-api --language typescript --path ./my-api
 | "设置文件生命周期" | `qshell chlifecycle`（单文件） / `qshell batchchlifecycle`（批量） | 根据操作规模选择 |
 | "移动文件" / "重命名文件" | `qshell rename`（同 bucket）/ `qshell move`（跨 bucket） | 根据是否跨 bucket 选择 |
 | "删除 m3u8" | `qshell m3u8delete` | 会同时删除所有切片文件 |
-| "创建沙箱" | `qshell sandbox create <TemplateID> -d` | AI 助手必须使用 -d 分离模式 |
+| "创建沙箱" | `qshell sandbox create <TemplateID> --detach` | AI 助手必须使用 --detach 分离模式 |
 | "生成 token" | `qshell token` | 交互式命令，提示用户手动运行 |
 
 ---

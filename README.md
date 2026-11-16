@@ -1,7 +1,7 @@
 # Qiniu Skills
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
-[![Skills](https://img.shields.io/badge/skills-6-informational?style=flat-square)](#available-skills)
+[![Skills](https://img.shields.io/badge/skills-7-informational?style=flat-square)](#available-skills)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square)](CONTRIBUTING.md)
 
 AI Skill definitions for coding agents (Claude Code, Cursor, Codex, etc.) to operate Qiniu Cloud products via natural language.
@@ -18,6 +18,9 @@ npx skills add qiniu/skills -a claude-code
 # Install only the AgentAPI skill
 npx skills add qiniu/skills --skill agentapi
 
+# Install only the Sandbox skill
+npx skills add qiniu/skills --skill qiniu-sandbox
+
 # List available skills without installing
 npx skills add qiniu/skills --list
 ```
@@ -29,6 +32,7 @@ npx skills add qiniu/skills --list
 | Skill | Description | Commands |
 |-------|-------------|----------|
 | [qshell](skills/qshell/SKILL.md) | Qiniu Cloud KODO object storage CLI | 98 commands, 15 categories |
+| [qiniu-sandbox](skills/qiniu-sandbox/SKILL.md) | Qiniu Sandbox lifecycle, commands, files, templates, snapshots, and service access | qshell, Go, Node.js/TypeScript, Python |
 | [appmarket-dev](skills/appmarket-dev/SKILL.md) | Qiniu AppMarket app development & publishing | create/version/image/deploy |
 | [maas](skills/maas/SKILL.md) | Qiniu MaaS platform management: request log query, usage statistics, API Key lifecycle | REST API |
 | [miku-live](skills/miku-live/SKILL.md) | Intent resolution, parameter validation, and signed execution for Qiniu Miku Live management APIs | 40+ action keys across buckets, streams, domains, certificates, recording, relay, statistics, and API keys |
@@ -43,7 +47,7 @@ Talk to your AI agent in natural language:
 
 - "列一下 my-bucket 里的文件" → `qshell listbucket2 my-bucket`
 - "上传 test.png 到 my-bucket" → `qshell fput my-bucket test.png ./test.png`
-- "创建一个沙箱" → `qshell sandbox create <template>`
+- "创建一个沙箱并执行 Python 代码" → `qiniu-sandbox` skill，选择 qshell 或项目所用的 SDK
 - "刷新 CDN 缓存" → `qshell cdnrefresh -i <urls.txt>`
 - "生成私有链接" → `qshell privateurl <URL>`
 - "批量下载 logs/ 前缀的文件" → `qshell qdownload2 --bucket <Bucket> --dest-dir ./logs --prefix logs/`
@@ -62,6 +66,9 @@ Talk to your AI agent in natural language:
 
 ```
 skills/
+├── qiniu-sandbox/                # Qiniu Sandbox via qshell and language SDKs
+│   ├── SKILL.md                  # Workflow and task routing
+│   └── references/               # Setup, CLI, SDKs, lifecycle, templates, and sources
 ├── qshell/                       # Qiniu KODO object storage via qshell CLI
 │   ├── SKILL.md                  # Skill definition (commands, intent mapping, safety rules)
 │   ├── references/
