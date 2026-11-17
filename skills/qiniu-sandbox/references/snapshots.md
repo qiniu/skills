@@ -80,7 +80,7 @@ while (pages.hasNext) {
 }
 ```
 
-`listSnapshots` 的实例封装自动限定来源沙箱；使用 `client.listSnapshotsPage({ sandboxID, name, limit, nextToken })` 可直接获得 `{ items, nextToken }`，底层 `client.listSnapshots(...)` 只返回当前页数组。
+`listSnapshots` 的实例封装自动限定来源沙箱；底层 `client.listSnapshots({ sandboxID, name, limit, nextToken })` 返回 `{ items, nextToken }`。继续翻页时将返回的 `nextToken` 传回同一个方法，直到游标为空。
 
 ## Python：捕获与验证副本
 
