@@ -26,7 +26,9 @@
 
 主题页中标明发布基线的封装限制，仅适用于上方固定源码。配套版本中的分页仍重复调用同一个列表方法并回填游标；高层分页器负责自动传递游标。Code Interpreter／Desktop 的兼容 SDK 路径不依赖这些分页返回值变化。
 
-Code Interpreter 的兼容接入另核对 JS `@e2b/code-interpreter` 2.3.3（基础 `e2b` 2.8.3）和 Python `e2b-code-interpreter` 2.11.10（基础 `e2b` 2.64.0）的发布包签名，见 [code-interpreter.md](code-interpreter.md)。JS 版本与七牛仓库中的兼容回归用例所用版本一致；本地签名、类型和语法验证不代表已完成真实服务回归。
+Node.js／Python 配套修复还将 Commands／PTY 的进程选择器按 Envd Protobuf JSON 直接编码为 `process.pid` 或 `process.tag`，修复重连、输入、关闭 stdin、缩放和 kill 的 501。云端回归覆盖完整交互，PTY 测试不再把此类协议错误当作不支持而跳过；Go 的 stdin 集成用例验证真实写入、EOF 和输出。
+
+Code Interpreter／Desktop 的兼容版本、安装命令和实测范围分别维护在 [code-interpreter.md](code-interpreter.md) 与 [desktop.md](desktop.md)。2026-11-17 已在七牛扬州环境完成解释器及桌面基础操作验证，并确认新版 E2B 的创建接口／Key 校验与当前环境存在兼容边界。升级依赖后复测实际流程；中文桌面输入与完整视觉 Agent 任务的边界见 Desktop 页。
 
 服务端能力还需对照[当前公开 OpenAPI](https://github.com/qbox/sandbox/blob/e3dfa87062481997412d505cccc2beaaffa49a06/spec/openapi-public.yml)。SDK 包中存在方法不代表服务端已提供相应操作，例如运行时网络 PATCH 的边界见 [network.md](network.md)。
 

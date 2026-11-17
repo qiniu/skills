@@ -6,12 +6,14 @@
 
 ## 依赖、模板与端点
 
-复用项目已有依赖。本文核对 JavaScript `@e2b/code-interpreter` 2.3.3（基础 `e2b` 2.8.3，Node.js 20 或以上）和 Python `e2b-code-interpreter` 2.11.10（基础 `e2b` 2.64.0，Python 3.11 或以上）。新项目可安装对应版本：
+复用项目中已验证的依赖。本文在七牛扬州环境实测通过 JavaScript `@e2b/code-interpreter` 2.3.3 + `e2b` 2.8.3，以及 Python `e2b-code-interpreter` 2.6.0 + `e2b` 2.7.0；本轮客户端为 Node.js 24 和 Python 3.12。新项目固定安装对应版本：
 
 ```bash
-npm install @e2b/code-interpreter@2.3.3 e2b@2.8.3
-python -m pip install 'e2b-code-interpreter==2.11.10' 'e2b==2.64.0'
+npm install --save-exact @e2b/code-interpreter@2.3.3 e2b@2.8.3
+python -m pip install 'e2b-code-interpreter==2.6.0' 'e2b==2.7.0'
 ```
+
+安装后用 `npm ls e2b` 或 `python -m pip show e2b` 核对基础 SDK。2026-11-17 的扬州实测中，Python `e2b` 2.44.0 在请求前拒绝七牛 `sk-` 格式的 Key；2.64.0 使用 `POST /v2/sandboxes` 创建，当前环境返回 404 `method not allowed`。包能安装、方法签名相同不代表能接入七牛；升级组合后重新验证创建、执行和清理。
 
 先按 [templates.md](templates.md) 查询目标地域的模板，确认所选模板提供 Code Interpreter／Jupyter 服务，并把其实际名称或 ID 设置为 `QINIU_SANDBOX_TEMPLATE`。普通 `base` 或自定义业务模板不保证包含解释器。依赖包的可用语言与版本由所选模板决定。
 
@@ -158,4 +160,4 @@ finally:
 | 请求成功但代码失败 | `execution.error` 和 stderr，核对语言、依赖和输入 |
 | 没有图片结果 | 代码是否展示了图像、绘图库是否安装、结果是否包含对应 MIME 表示 |
 
-来源：[七牛代码执行指南](https://developer.qiniu.com/las/13292/sandbox-code-interpreter)、[七牛上下文回归用例](https://github.com/qbox/sandbox/blob/e3dfa87062481997412d505cccc2beaaffa49a06/tests/sdk/js-sdk/code-execution.test.ts#L121-L184)、[JS 2.3.3 发布包](https://www.npmjs.com/package/@e2b/code-interpreter/v/2.3.3)、[Python 2.11.10 发布包](https://pypi.org/project/e2b-code-interpreter/2.11.10/)。本文示例已做本地签名与语法检查，未作为真实七牛服务回归结果。
+来源：[七牛代码执行指南](https://developer.qiniu.com/las/13292/sandbox-code-interpreter)、[七牛上下文回归用例](https://github.com/qbox/sandbox/blob/e3dfa87062481997412d505cccc2beaaffa49a06/tests/sdk/js-sdk/code-execution.test.ts#L121-L184)、[JS 2.3.3 发布包](https://www.npmjs.com/package/@e2b/code-interpreter/v/2.3.3)、[Python 2.6.0 发布包](https://pypi.org/project/e2b-code-interpreter/2.6.0/)。2026-11-17 在扬州 `code-interpreter-v1` 模板实测通过两种客户端的 Python／JavaScript 执行、stdout／stderr／结果回调、上下文保留／列举／重启／删除、结构化代码异常、PNG 图表，以及执行超时后的再次运行；测试沙箱已清理。

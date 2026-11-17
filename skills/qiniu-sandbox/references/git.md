@@ -78,6 +78,8 @@ Go 片段位于返回 error 的函数中，需要 `os`、`fmt`。为 `GIT_REPO_U
 
 Go 返回的 `GitStatus` 和 Python 状态对象包含当前分支、upstream、ahead／behind 和文件状态；Node.js 当前状态结果为 `currentBranch`、`changedFiles`、`untrackedFiles` 和原始 stdout。不要跨语言假定状态结果字段完全相同。
 
+查询 remote 时，Go `RemoteGet` 和 Node.js `remoteGet` 返回 URL 字符串；Python `remote_get` 返回命令结果，检查 `exit_code` 后从 `stdout.strip()` 读取 URL。
+
 Go 通用 `GitOptions` 提供 `Envs`、`User`、`Cwd`、`Timeout time.Duration`；Node.js／Python 使用命令选项，例如 `cwd`、`user`、`envs` 和输出回调。Go 的 Git 调用会把非零退出转换为错误；Node.js 默认要检查 `exitCode`，可设置 `throwOnError: true`。Python `status` 会对失败抛错，其他操作按返回结果或 `throw_on_error=True` 检查。
 
 ## 本地提交流程
@@ -146,3 +148,5 @@ Go `Add` 无文件列表且 `All=nil` 时默认暂存全部；Node.js／Python �
 Go 默认 `PushOptions.SetUpstream=nil` 和 Python `set_upstream=True` 会尝试配置 upstream；Node.js push 只使用给定 remote／branch，首次设 upstream 可通过 `commands.run('git push --set-upstream ...')`，按实际仓库名和分支正确引用参数。缺少 upstream 的 pull 应选择明确 remote 和 branch，避免反复执行同一个失败命令。
 
 qshell 没有独立的沙箱 Git helper 命令组；可通过 `qshell sandbox exec SANDBOX_ID -- git -C /home/user/repo status --short --branch` 查询。凭据型操作使用 SDK 或平台资源配置，避免把 token 放在 CLI 参数里。
+
+2026-11-17 云端回归在新建的七牛沙箱内启动了隔离的 HTTPS Git 服务，使用测试专用账号验证 Go／Node.js／Python 的认证 clone、commit、push 和 pull。匿名请求被拒绝，推送后的远端文件内容正确，remote 未残留凭据，预设的 credential store 未保存临时密码；测试沙箱已清理。这验证了 SDK 的私库交互与凭据隔离，未验证外部 Git 托管平台的账号权限或组织策略。

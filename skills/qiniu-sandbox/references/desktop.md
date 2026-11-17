@@ -95,11 +95,24 @@ VNC 密码和平台的服务流量 token 是两层鉴权。关闭公共流量时
 
 七牛原生 `qiniu` Node.js／Python 包当前没有 Desktop 类；以下是官方提供的兼容 SDK 路线，包名和时间单位与原生 SDK 分开使用。配置 `E2B_API_KEY` 和 `E2B_API_URL` 为七牛对应地域端点。
 
-安装 `@e2b/desktop` 后，TypeScript：
+2026-11-17 的七牛扬州环境实测组合为 Node.js `@e2b/desktop` 2.2.0 + `e2b` 2.8.3，Python `e2b-desktop` 2.3.0 + `e2b` 2.7.0；本轮客户端为 Node.js 24 和 Python 3.12。固定安装版本并核对实际解析出的基础依赖：
+
+```bash
+npm install --save-exact @e2b/desktop@2.2.0 e2b@2.8.3
+npm ls e2b
+python -m pip install 'e2b-desktop==2.3.0' 'e2b==2.7.0'
+```
+
+Node.js `@e2b/desktop` 2.5.0 拉取的新版基础 SDK 使用 `POST /v2/sandboxes`，本轮在创建时返回 404 `method not allowed`；Python 新版的 Key 格式及创建接口限制见 [Code Interpreter 接入说明](code-interpreter.md#依赖模板与端点)。升级后先重测创建和清理。
+
+TypeScript：
 
 ```typescript
 import { Sandbox as DesktopSandbox } from '@e2b/desktop';
-const session = await DesktopSandbox.create('desktop', { timeoutMs: 300_000 });
+const session = await DesktopSandbox.create('desktop', {
+  timeoutMs: 300_000,
+  envs: { LANG: 'C.UTF-8', LC_ALL: 'C.UTF-8' }
+});
 try {
   const image = await session.screenshot();
   // 将 image 交给业务侧保存或视觉模型。
@@ -108,11 +121,14 @@ try {
 }
 ```
 
-安装 `e2b-desktop` 后，Python：
+Python：
 
 ```python
 from e2b_desktop import Sandbox as DesktopSandbox
-session = DesktopSandbox.create(template='desktop', timeout=300)
+session = DesktopSandbox.create(
+    template='desktop', timeout=300,
+    envs={'LANG': 'C.UTF-8', 'LC_ALL': 'C.UTF-8'},
+)
 try:
     image = session.screenshot()
 finally:
@@ -120,5 +136,11 @@ finally:
 ```
 
 兼容 SDK 的鼠标、输入和流服务方法按其安装版本及官方指南核对，不调用不存在的 `qiniu.sandbox.Desktop`。详见 [compatibility.md](compatibility.md)。
+
+兼容 SDK 的 `launch('xfce4-terminal')` 使用桌面应用 ID；Go 的 `Launch` 接收可执行程序及参数。开始键盘输入前，确认窗口已出现并获得焦点。`write`／`press` 返回成功后仍需读回文件、界面文本或截图，验证动作产生了预期效果。
+
+本轮 Go 集成测试通过桌面启动、PNG 尺寸、鼠标位置、点击／拖动／滚动、窗口、键盘调用和 noVNC 生命周期；Node.js／Python 兼容组合通过截图、鼠标位置、终端内 ASCII 输入并读回文件、按键／点击／滚动及开启认证的 noVNC 页面访问。Node.js 另验证 WebSocket RFB 握手要求 VNC 认证。测试沙箱均已清理；未接入视觉模型执行完整 Agent 任务。
+
+本轮 Node.js／Python 的中文键盘输入未通过：默认 locale 下出现 `Invalid multi-byte sequence`，显式设置 UTF-8 后仍观察到丢字。需要中文或其他 Unicode 文本时，将准确内容通过文件 API 写入，再使用应用的文件打开／导入流程；需要直接模拟键入时，先在目标模板验证完整文本，不能将命令退出码作为正确输入的证明。
 
 来源：[Go Desktop](https://github.com/qiniu/go-sdk/blob/master/sandbox/desktop.go)、[Go noVNC](https://github.com/qiniu/go-sdk/blob/master/sandbox/desktop_stream.go)、[七牛 Desktop 官方指南](https://developer.qiniu.com/las/13576/sandbox-desktop)。
