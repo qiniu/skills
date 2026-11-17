@@ -13,7 +13,9 @@ npm install --save-exact @e2b/code-interpreter@2.3.3 e2b@2.8.3
 python -m pip install 'e2b-code-interpreter==2.6.0' 'e2b==2.7.0'
 ```
 
-安装后用 `npm ls e2b` 或 `python -m pip show e2b` 核对基础 SDK。2026-11-17 的扬州实测中，Python `e2b` 2.44.0 在请求前拒绝七牛 `sk-` 格式的 Key；2.64.0 使用 `POST /v2/sandboxes` 创建，当前环境返回 404 `method not allowed`。包能安装、方法签名相同不代表能接入七牛；升级组合后重新验证创建、执行和清理。
+安装后用 `npm ls e2b` 或 `python -m pip show e2b` 核对基础 SDK。Python `e2b` 2.44.0 默认在请求前检查 `e2b_` 格式；对接七牛时，可在该进程设置 `export E2B_VALIDATE_API_KEY=false`，或给 `Sandbox.create` 传 `validate_api_key=False`，由七牛服务端校验原始 `sk-` 密钥。2026-11-17 扬州补测中，`e2b-code-interpreter` 2.10.0 + `e2b` 2.44.0 关闭格式检查后，执行、上下文、日志、PNG 和超时恢复均通过。
+
+Python `e2b` 2.64.0 使用 `POST /v2/sandboxes` 创建，当前环境返回 404 `method not allowed`；关闭密钥格式检查不会解决接口路径差异。升级组合后重新验证创建、执行和清理。
 
 先按 [templates.md](templates.md) 查询目标地域的模板，确认所选模板提供 Code Interpreter／Jupyter 服务，并把其实际名称或 ID 设置为 `QINIU_SANDBOX_TEMPLATE`。普通 `base` 或自定义业务模板不保证包含解释器。依赖包的可用语言与版本由所选模板决定。
 
