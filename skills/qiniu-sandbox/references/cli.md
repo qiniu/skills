@@ -31,7 +31,7 @@ qshell sandbox kill SANDBOX_ID
 qshell sandbox list --state running,paused --metadata purpose=skill-demo --format json
 ```
 
-最后一次查询应确认该 ID 已不在结果中。API 返回仍在处理中时，继续核对最终状态。实际脚本需要在创建成功并拿到 ID 后注册清理逻辑，失败时也清理本次资源；交互任务需要保留沙箱时按用户约定处理。
+清理后按已知 ID 调用 SDK 的详情接口确认 404／已删除状态。qshell 列表目前只读取一页，不能单凭第一页缺少该 ID 就判定删除。API 返回仍在处理中时，继续核对最终状态。实际脚本需要在创建成功并拿到 ID 后注册清理逻辑，失败时也清理本次资源；交互任务需要保留沙箱时按用户约定处理。
 
 文件传输通过 `exec` 的 stdin／stdout 完成，适合小文件。较大文件、二进制文件和批量读写优先使用语言 SDK 的文件接口。使用 shell 重定向保存下载内容时，确认本地目标文件的覆盖范围。
 
@@ -65,3 +65,29 @@ qshell sandbox exec --doc
 ```
 
 模板构建见 [templates.md](templates.md)，快照见 [lifecycle.md](lifecycle.md)。
+
+## 子命令索引
+
+以下路径均接在 `qshell sandbox` 后；具体参数按主题页读取。
+
+| 路径 | 用途 | 参考 |
+| --- | --- | --- |
+| `list` | 查询一页沙箱，按 state／metadata 筛选 | 本页；完整分页见 [parameters.md](parameters.md) |
+| `create TEMPLATE_ID --detach` | 创建实例；env、资源、注入及到期策略 | [公共参数](parameters.md)、[资源](resources.md)、[注入](injections.md) |
+| `connect ID` | 交互式终端，支持 `--user` | [PTY](pty.md) |
+| `exec ID -- COMMAND` | 前台／后台执行 | [进程](commands.md) |
+| `pause IDS`、`resume IDS`、`kill IDS` | 明确 ID 集合的生命周期操作 | [生命周期](lifecycle.md) |
+| `logs ID`、`metrics ID` | 平台日志和采样指标，支持 follow | [观测](observability.md) |
+| `template list`、`template get ID` | 查询模板 | [模板](templates.md) |
+| `template init`、`template config` | 脚手架和 TOML 配置说明 | [模板](templates.md) |
+| `template build`、`template builds ID BUILD_ID` | 构建及状态／日志 | [模板](templates.md) |
+| `template tags ID` | 查询标签与构建 | [模板](templates.md) |
+| `template publish IDS`、`template unpublish IDS` | 调整模板可见性 | [模板](templates.md) |
+| `template delete IDS` | 删除模板或快照 | [模板](templates.md)、[快照](snapshots.md) |
+| `snapshot create ID`、`snapshot list` | 快照捕获、筛选和游标分页 | [快照](snapshots.md) |
+| `resource list ID`、`resource update ID RESOURCE_ID` | 查询挂载资源，更新 Git token | [资源](resources.md) |
+| `injection-rule list`、`get ID`、`create`、`update ID`、`delete IDS` | 保存规则的完整生命周期，使用 AK／SK | [注入](injections.md) |
+
+API Key 与 AK／SK 的配置和优先级见 [setup.md](setup.md)。实例、模板、快照和资源接口按对应鉴权方式调用；无需为了普通 API Key 沙箱操作更换 qshell 当前账号。秘密参数通过 SDK 的环境配置传入，避免把真实凭据放到命令行。
+
+当前实例 list 未提供下一页游标。`kill/pause/resume --all` 的资源枚举同样依赖单页列表，不能用来证明大规模匹配集合已全部处理；先用原始 HTTP 查询完整 ID 集合，再按授权 ID 分批操作。部分管理命令的错误分支只打印错误后返回，脚本需要结合输出与按 ID 查询的状态判断结果，不能把退出 0 当作资源已收敛。

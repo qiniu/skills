@@ -58,13 +58,8 @@ if __name__ == '__main__':
 | 写入二进制 | `sandbox.files.write(path, data)` |
 | 服务域名 | `sandbox.get_host(8080)`，返回不带协议的 host |
 
-分页查询：
-
-```python
-pages = Sandbox.list(client=client, state=['running', 'paused'], limit=100)
-while pages.has_next:
-    for item in pages.next_items():
-        print(item.sandbox_id)
-```
+列表单页接口可用于状态查询。当前沙箱 paginator 未读取 API 的 `X-Next-Token` 响应头，不能保证完整遍历；按元数据过滤和完整分页使用 [parameters.md](parameters.md) 的原始 HTTP 示例。快照 paginator 是独立实现。
 
 时间参数以秒为单位。创建时的 `envs` 映射到平台的 `envVars`；SDK 参数通常使用 snake_case。生命周期与快照见 [lifecycle.md](lifecycle.md)，模板见 [templates.md](templates.md)。
+
+进阶任务按主题读取：[进程与流式输出](commands.md)、[文件系统](filesystem.md)、[Git](git.md)、[PTY](pty.md)、[网络](network.md)、[资源挂载](resources.md)、[请求注入](injections.md)、[模板](templates.md)和[快照](snapshots.md)。先核对[语言接口差异](compatibility.md)，避免把其他 SDK 的同名方法或默认值套入当前语言。

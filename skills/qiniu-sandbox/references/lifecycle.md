@@ -1,58 +1,59 @@
-# 生命周期、快照与服务访问
+# 生命周期与长期任务
 
-## 选择操作
+创建、连接和列表参数见 [parameters.md](parameters.md)，持久快照见 [snapshots.md](snapshots.md)，网络唤醒与服务认证见 [network.md](network.md)。
+
+## 状态与操作
 
 | 用户目标 | 操作和结果 |
 | --- | --- |
-| 延长或调整运行时间 | 使用 SDK 的 `setTimeout`／`set_timeout`／`SetTimeout`，区分沙箱 TTL 与客户端请求超时 |
-| 稍后继续运行中的任务 | 暂停并保存内存；恢复后检查进程和业务状态 |
-| 保存文件、下次重新启动程序 | 暂停时 `memory=false`；恢复冷启动，内存和原进程丢失 |
-| 通过流量唤醒 | 创建时启用 `autoPause` 和 `autoResume.enabled`，保持内存暂停方式 |
-| 保存可复用的环境状态 | 创建持久快照，记录快照 ID，再以此 ID 创建新沙箱 |
-| 结束临时任务 | 销毁本次沙箱，再核对资源状态 |
+| 调整运行时间 | SetTimeout，设置从现在起的存活时间，受团队配额约束 |
+| 保留运行中的进程 | 暂停并保存内存；Connect 后核对进程和业务状态 |
+| 保留文件，下次重启程序 | 暂停时 `memory=false`；恢复冷启动，内存和原进程丢失 |
+| 通过流量恢复 | 创建时启用自动暂停、内存暂停和 `autoResume.enabled` |
+| 复用环境状态创建新实例 | 创建持久快照；以快照 ID 创建新的沙箱 |
+| 完成临时任务 | Kill 本次 ID，然后查询确认终态 |
 
-`autoPauseMemory=false` 不能与启用的 `autoResume` 同用。文件系统暂停需要显式 Connect／Resume。冷启动时 `/tmp` 可能被清理，验证持久化使用 `/home/user` 等持久路径。
+列表状态为 `running`／`paused`。Kill 后资源可能表现为详情 404 或从列表移除；记录实际结果。暂停／恢复请求完成后，再核对实例与业务状态。
 
-SDK 的 Connect 使用 v2 连接接口，连接已暂停沙箱时恢复运行；连接只延长、不缩短已有 TTL。需要主动调整到期时间时使用 SetTimeout。qshell 的 `connect` 进入交互式终端，自动化恢复使用 `resume`。
+## 暂停与恢复
 
-创建时配置自动暂停、流量恢复的参数：
+| 工具 | 内存暂停 | 文件系统暂停 | 显式恢复 |
+| --- | --- | --- | --- |
+| qshell | `sandbox pause ID` | `sandbox pause ID --memory=false` | `sandbox resume ID` |
+| Go | `sb.Pause(ctx)` | `sb.PauseWithParams(ctx, sandbox.PauseParams{Memory: &keepMemory})`，`keepMemory=false` | `client.Connect(ctx, id, sandbox.ConnectParams{Timeout: 300})` |
+| Node.js | `sandbox.pause({memory: true})` | `sandbox.pause({memory: false})` | `sandbox.connect({timeout: 300})` |
+| Python | `sandbox.pause(memory=True)` | `sandbox.pause(memory=False)` | `sandbox.connect(timeout=300)` |
 
-| 工具 | 配置 |
+Connect v2 只延长、不缩短已有 TTL。qshell `connect` 进入交互式终端，自动化恢复用 `resume`。连接既有实例后由用户决定保留时间，任务结束不自动销毁其他任务的资源。
+
+## 到期策略
+
+| 工具 | 创建选项 |
 | --- | --- |
-| qshell | `--auto-pause --auto-resume` |
-| Go | `CreateParams.AutoPause`、`AutoPauseMemory` 和 `AutoResume: &sandbox.AutoResumeConfig{Enabled: true}`，布尔选项使用指针 |
-| Node.js | `autoPause: true, autoPauseMemory: true, autoResume: { enabled: true }` |
+| qshell | `--auto-pause --auto-resume`；仅文件系统使用 `--auto-pause --auto-pause-memory=false` |
+| Go | `AutoPause *bool`、`AutoPauseMemory *bool`、`AutoResume: &sandbox.AutoResumeConfig{Enabled: true}` |
+| Node.js | `autoPause: true, autoPauseMemory: true, autoResume: {enabled: true}` |
 | Python | `auto_pause=True, auto_pause_memory=True, auto_resume={'enabled': True}` |
 
-## 持久快照
+文件系统暂停不能与流量自动恢复组合。冷启动时 `/tmp` 可能被清理；验证持久化使用 `/home/user` 等持久路径，并重启应用进程。超出沙箱生命周期仍需保存的数据写入 Kodo／业务存储，或保存为快照。
 
-每次新捕获生成并保存一个幂等键。网络中断、等待超时或取消后，先查询原捕获；重试使用原键、原沙箱 ID 和相同请求体。取消客户端等待不会取消服务端已接受的捕获。完成的结果会重放，包含失败；幂等记录在完成后保留 35 分钟，结果未知时先核实，避免换键重复捕获。
+## 调整 TTL 与 Refresh
 
-```bash
-# 先生成并保存本次捕获的键，后续重试复用这个值。
-CAPTURE_KEY="$(uuidgen)"
-qshell sandbox snapshot create SANDBOX_ID --idempotency-key "$CAPTURE_KEY" --name skill-demo:v1 --memory=false --format json
-qshell sandbox snapshot list --name skill-demo:v1 --format json
+| 工具 | 接口 | 单位与含义 |
+| --- | --- | --- |
+| Go | `sb.SetTimeout(ctx, 300*time.Second)` | `time.Duration`，至少 1 秒 |
+| Node.js | `sandbox.setTimeout(300)`／`sandbox.setTimeout({timeoutMs: 300000})` | 数值形式为秒，选项形式可用毫秒 |
+| Python | `sandbox.set_timeout(300)` | 秒 |
+| Go | `sb.Refresh(ctx, sandbox.RefreshParams{Duration: &seconds})` | `seconds` 为 int；延长请求 |
+| Node.js | `sandbox.refresh({duration: 300})` | duration 为秒 |
+| Python | `sandbox.refresh(duration=300)` | duration 为秒 |
 
-# 从返回的 snapshotID 创建新的沙箱，记下并管理新沙箱的 ID。
-qshell sandbox create SNAPSHOT_ID --detach --timeout 300
-```
+SetTimeout 可能缩短剩余时间，Connect 不会。Refresh 与 SetTimeout 是不同操作；修改后查询 `endAt`／`EndAt`，确认实际到期时间。
 
-生产应用将幂等键与操作记录一同保存，避免 shell 退出后丢失。快照名称为别名和可选标签，例如 `skill-demo:v1`；创建时名称不含 `/`，命名空间由账号决定。
+## 长期运行与空闲回收
 
-| SDK | 创建入口 |
-| --- | --- |
-| Go | `sb.CreateSnapshot(ctx, sandbox.CreateSnapshotParams{IdempotencyKey: key})` |
-| Node.js | `sandbox.createSnapshot({ idempotencyKey: key, name: 'skill-demo:v1', memory: false })` |
-| Python | `sandbox.create_snapshot(idempotency_key=key, name='skill-demo:v1', memory=False)` |
+七牛官方[生命周期说明](https://developer.qiniu.com/las/13284/sandbox-lifecycle)列出了默认时长和团队运行上限，较长时长需按账号权限申请。以当前配置和服务端错误为准；PPIO 的 `long_running` 元数据不是此基线已确认的七牛运行上限开关。
 
-Node.js／Python 返回值中的 `snapshotID` 可作为创建沙箱的模板参数。Go 使用 `SnapshotInfo.SnapshotID`。列表需要遍历后续分页；快照通过模板删除接口清理，删除前确认它属于本次任务且已不再需要。具体参数见 [sources.md](sources.md) 的快照参考。
+长期服务保存沙箱 ID、模板、端点、到期时间和业务归属。在授权保留期内调用 SetTimeout／Refresh，重连后查询进程；句柄等待、输出和终止见 [commands.md](commands.md)。实例到期后从外部数据或快照恢复任务，避免只用控制进程内存中的 PID 保存任务状态。
 
-## 运行和访问应用服务
-
-1. 在沙箱中监听 `0.0.0.0`，例如 `python3 -m http.server 8080 --bind 0.0.0.0`。后台启动后，检查沙箱内就绪接口。
-2. 用 SDK 的 `getHost(8080)`／`get_host(8080)`／`GetHost(8080)` 获取 host，再按访问方式组成 `https://<host>`。使用 API 返回的沙箱域名。
-3. 核对创建时的网络配置。允许公共流量时，按公开服务策略访问；关闭公共流量时，按平台约定携带服务访问 token，并避免把 token 拼入日志或可分享 URL。浏览器直接访问需要考虑其携带认证头的方式。
-4. 从实际调用方验证可达性和响应，再交付 URL、端口及约定的保留时间。
-
-`secure` 控制 Envd 管理接口鉴权；`network.allowPublicTraffic` 控制应用服务的公共访问。配置应用服务访问时，应分别确认这两项设置。详细网络和鉴权接口从 [sources.md](sources.md) 查阅。
+此基线公开 SDK／API 未提供 PPIO 式 `idle_timeout` 回收接口。需要空闲回收时，由业务记录最后活动时间，在自己定义的空闲条件成立后对确定的 ID 调用 Pause／Kill；不要把普通 metadata 当作已生效的空闲策略。差异见 [compatibility.md](compatibility.md)。

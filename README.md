@@ -32,7 +32,7 @@ npx skills add qiniu/skills --list
 | Skill | Description | Commands |
 |-------|-------------|----------|
 | [qshell](skills/qshell/SKILL.md) | Qiniu Cloud KODO object storage CLI | 98 commands, 15 categories |
-| [qiniu-sandbox](skills/qiniu-sandbox/SKILL.md) | Qiniu Sandbox lifecycle, commands, files, templates, snapshots, and service access | qshell, Go, Node.js/TypeScript, Python |
+| [qiniu-sandbox](skills/qiniu-sandbox/SKILL.md) | Qiniu Sandbox lifecycle, processes, files, Git/PTY, templates, snapshots, resource mounts, injections, and desktop automation | qshell, Go, Node.js/TypeScript, Python |
 | [appmarket-dev](skills/appmarket-dev/SKILL.md) | Qiniu AppMarket app development & publishing | create/version/image/deploy |
 | [maas](skills/maas/SKILL.md) | Qiniu MaaS platform management: request log query, usage statistics, API Key lifecycle | REST API |
 | [miku-live](skills/miku-live/SKILL.md) | Intent resolution, parameter validation, and signed execution for Qiniu Miku Live management APIs | 40+ action keys across buckets, streams, domains, certificates, recording, relay, statistics, and API keys |
@@ -68,7 +68,7 @@ Talk to your AI agent in natural language:
 skills/
 ├── qiniu-sandbox/                # Qiniu Sandbox via qshell and language SDKs
 │   ├── SKILL.md                  # Workflow and task routing
-│   └── references/               # Setup, CLI, SDKs, lifecycle, templates, and sources
+│   └── references/               # Task guides, SDK examples, API differences, and sources
 ├── qshell/                       # Qiniu KODO object storage via qshell CLI
 │   ├── SKILL.md                  # Skill definition (commands, intent mapping, safety rules)
 │   ├── references/

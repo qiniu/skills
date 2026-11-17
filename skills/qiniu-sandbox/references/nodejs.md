@@ -60,15 +60,8 @@ main().catch(err => {
 | 写入二进制 | `await sandbox.files.write(path, buffer)` |
 | 服务域名 | `sandbox.getHost(8080)`，返回不带协议的 host |
 
-分页查询返回 paginator；持续读取至 `hasNext` 为 false：
-
-```javascript
-const pages = qiniu.sandbox.Sandbox.list({ client, query: { state: ['running', 'paused'] }, limit: 100 });
-while (pages.hasNext) {
-  for (const item of await pages.nextItems()) {
-    console.log(item.sandboxID);
-  }
-}
-```
+列表单页接口可用于状态查询。当前沙箱 paginator 未读取 API 的 `X-Next-Token` 响应头，不能保证完整遍历；按元数据过滤和完整分页使用 [parameters.md](parameters.md) 的原始 HTTP 示例。快照 paginator 是独立实现。
 
 `timeout` 为秒，`timeoutMs` 为毫秒。SDK 的参数转换并不要求所有 JavaScript 时间都写成毫秒；选定一种表达，避免同时传入两个同义参数。生命周期与快照见 [lifecycle.md](lifecycle.md)，模板见 [templates.md](templates.md)。
+
+进阶任务按主题读取：[进程与流式输出](commands.md)、[文件系统](filesystem.md)、[Git](git.md)、[PTY](pty.md)、[网络](network.md)、[资源挂载](resources.md)、[请求注入](injections.md)、[模板](templates.md)和[快照](snapshots.md)。先核对[语言接口差异](compatibility.md)，避免把其他 SDK 的同名方法或默认值套入当前语言。

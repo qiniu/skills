@@ -15,7 +15,7 @@
 
 产品概念参考[七牛 Sandbox 概览](https://developer.qiniu.com/las/13281/sandbox-overview)。价格、配额、地域可用性和默认模板属于动态信息，需要时查询当前文档或实际环境。
 
-## 按需查阅
+## 官方源码与文档
 
 | 任务 | qshell | Go | Node.js | Python |
 | --- | --- | --- | --- | --- |
@@ -26,7 +26,9 @@
 | Git／Kodo 资源挂载与凭据更新 | [创建参数](https://github.com/qiniu/qshell/blob/master/docs/sandbox_create.md)、[资源更新](https://github.com/qiniu/qshell/blob/master/docs/sandbox_resource_update.md) | [资源类型](https://github.com/qiniu/go-sdk/blob/master/sandbox/types.go) | [资源示例](https://github.com/qiniu/nodejs-sdk/blob/master/examples/sandbox_resources.js) | [资源类型](https://github.com/qiniu/python-sdk/blob/master/qiniu/services/sandbox/resources.py) |
 | 运行时请求注入、保存的注入规则 | [注入规则](https://github.com/qiniu/qshell/blob/master/docs/sandbox_injection_rule.md) | [注入接口](https://github.com/qiniu/go-sdk/tree/master/sandbox) | [注入示例](https://github.com/qiniu/nodejs-sdk/blob/master/examples/sandbox_request_injections.js) | [注入示例](https://github.com/qiniu/python-sdk/blob/master/examples/sandbox_injection_rules.py) |
 
-高级能力只在用户任务需要时读取对应来源；使用安装版本的方法签名构造请求，核对认证方式和返回结构。
+主入口已按任务路由到本地操作指引。本表用于追踪维护时的官方接口来源；使用安装版本的方法签名核对请求、鉴权和返回结构。
+
+Desktop 还需核对 [Go Desktop](https://github.com/qiniu/go-sdk/blob/master/sandbox/desktop.go) 与 [Stream](https://github.com/qiniu/go-sdk/blob/master/sandbox/desktop_stream.go)。Windows、兼容 Desktop 和 Agent 集成见 [integrations.md](integrations.md) 与 [desktop.md](desktop.md) 的官方文档链接。语言封装与平台接口的边界集中记录在 [compatibility.md](compatibility.md)。
 
 ## 更新方式
 

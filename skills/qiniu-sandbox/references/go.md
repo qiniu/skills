@@ -99,3 +99,5 @@ func main() {
 | 服务域名 | `sb.GetHost(8080)`，返回不带协议的 host |
 
 `CreateParams.Timeout` 和 `ConnectParams.Timeout` 为秒；`SetTimeout` 使用 `time.Duration`。命令 API 返回错误和命令退出码需分别检查。完整列表、分页及更多选项从 [sources.md](sources.md) 的源码入口查阅，生命周期见 [lifecycle.md](lifecycle.md)。
+
+进阶任务按主题读取：[进程与流式输出](commands.md)、[文件系统](filesystem.md)、[Git](git.md)、[PTY](pty.md)、[网络](network.md)、[资源挂载](resources.md)、[请求注入](injections.md)、[模板](templates.md)和[快照](snapshots.md)。先核对[语言接口差异](compatibility.md)，避免把其他 SDK 的同名方法或默认值套入当前语言。

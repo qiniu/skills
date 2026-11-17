@@ -17,6 +17,8 @@
 
 客户端默认端点为 `https://cn-yangzhou-1-sandbox.qiniuapi.com`。已有项目配置了其他环境时，沿用其端点，并确认模板、沙箱和凭据属于该环境。
 
+七牛[Windows 沙箱指南](https://developer.qiniu.com/las/13633/sandbox-windows)已列出扬州 `https://cn-yangzhou-1-sandbox.qiniuapi.com` 和达拉斯 `https://us-south-1-sandbox.qiniuapi.com`。这是已核对的端点示例，具体模板和地域可用性以当前环境为准；切换地域后重新查询模板。不要把 PPIO 的 `PPIO_DOMAIN` 或地域名传给七牛客户端。
+
 qshell 原生使用 `QINIU_API_KEY`、`QINIU_SANDBOX_API_URL`，可这样复用上述配置：
 
 ```bash
