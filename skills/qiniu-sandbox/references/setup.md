@@ -8,12 +8,13 @@
 | Go 应用 | `go get github.com/qiniu/go-sdk/v7@v7.31.0` | v7.31.0 |
 | Node.js／TypeScript 应用 | `npm install qiniu@^7.15.6` | v7.15.6 |
 | Python 应用 | `python -m pip install 'qiniu>=7.19.0'` | v7.19.0 |
+| 解释器上下文与富媒体执行结果 | [Code Interpreter 兼容 SDK](code-interpreter.md) | 版本见主题页 |
 
 先核对项目已有版本。使用其他版本时，对照安装包的类型定义、方法签名或 CLI 帮助确认参数。版本和来源见 [sources.md](sources.md)。
 
 ## 凭据与端点
 
-本技能的 SDK 示例统一从 `QINIU_SANDBOX_API_KEY` 读取 API Key，并显式传给客户端；端点从可选的 `QINIU_SANDBOX_ENDPOINT` 读取。通过用户已有的环境或密钥管理方式提供值，避免把密钥写进代码、命令参数、日志和版本控制。
+本技能的原生 SDK 示例统一从 `QINIU_SANDBOX_API_KEY` 读取 API Key，并显式传给客户端；端点从可选的 `QINIU_SANDBOX_ENDPOINT` 读取。Code Interpreter／Desktop 兼容 SDK 的 `E2B_*` 配置按各自主题页映射到七牛端点。通过用户已有的环境或密钥管理方式提供值，避免把密钥写进代码、命令参数、日志和版本控制。
 
 客户端默认端点为 `https://cn-yangzhou-1-sandbox.qiniuapi.com`。已有项目配置了其他环境时，沿用其端点，并确认模板、沙箱和凭据属于该环境。
 

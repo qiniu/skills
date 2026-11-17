@@ -4,8 +4,8 @@ description: >-
   Build and troubleshoot Qiniu Cloud Sandbox workflows with qshell or the
   Qiniu Go, Node.js/TypeScript, and Python SDKs. Use for creating sandboxes,
   managing processes and files, Git and PTY sessions, lifecycle and snapshots,
-  templates, network access, request injections, resource mounts, or desktop
-  automation on Qiniu Sandbox.
+  templates, network access, request injections, resource mounts, code
+  interpretation, or desktop automation on Qiniu Sandbox.
 ---
 
 # 七牛云 Sandbox
@@ -30,6 +30,7 @@ description: >-
 | 使用 Go SDK 编写应用 | [go.md](references/go.md) |
 | 使用 Node.js／TypeScript SDK 编写应用 | [nodejs.md](references/nodejs.md) |
 | 使用 Python SDK 编写应用 | [python.md](references/python.md) |
+| 执行代码片段、保持变量上下文、接收文本或图片结果 | [code-interpreter.md](references/code-interpreter.md) |
 | 后台进程、实时输出、stdin、重连和终止 | [commands.md](references/commands.md) |
 | 目录、批量文件、传输、监听和签名 URL | [filesystem.md](references/filesystem.md) |
 | Git 克隆、凭据、分支、提交和同步 | [git.md](references/git.md) |

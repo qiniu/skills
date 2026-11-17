@@ -7,6 +7,7 @@
 | 任务 | 本地指引 |
 | --- | --- |
 | 创建／连接／列表／公共参数 | [parameters.md](parameters.md)、三语言入门页、[cli.md](cli.md) |
+| 代码片段／解释器上下文／流式与富媒体结果 | [code-interpreter.md](code-interpreter.md) |
 | 暂停／恢复／超时／长期任务 | [lifecycle.md](lifecycle.md) |
 | 前后台进程／流式输出／stdin／重连 | [commands.md](commands.md) |
 | 文件／目录／批量／watch／签名传输 | [filesystem.md](filesystem.md) |
@@ -30,8 +31,10 @@
 | 生命周期事件／idle timeout | 当前公开接口无 getEvents／订阅和平台空闲回收参数 | 业务记录操作和活动时间，按约定查询状态并 Pause／Kill |
 | 长时运行 | 未确认 `long_running` 元数据是七牛上限开关 | 按团队运行配额设置 TTL，需提额时按官方渠道申请 |
 | 沙箱列表分页与过滤 | Go／qshell 未交付下一页游标；Node／Python 沙箱 paginator 也未读取数组响应的 `X-Next-Token`，Node `query.metadata` 编码不符合 API | 用 [原始 HTTP 遍历示例](parameters.md)读取 Header 和正确的 metadata；快照 paginator 不受影响 |
-| Go 运行时网络与服务 token | 无公开网络更新方法；Sandbox 的流量 token 私有，详情类型也未公开它 | 创建时配置网络；受限服务的 token 访问示例使用 Node／Python，或原始 API 响应 |
+| 运行时网络更新 | Node／Python 有方法发送 `PATCH /sandboxes/{id}`，但当前公开服务端 OpenAPI 未提供该操作；Go／qshell 也无对应入口 | 在创建时落实网络配置；变更需按 [network.md](network.md) 保存数据并迁移到新沙箱 |
+| Go 服务 token | Sandbox 的流量 token 私有，详情类型也未公开它 | 受限服务的 token 访问示例使用 Node／Python，或原始 API 响应 |
 | Node 服务 token 类型 | 实例运行时保存 token，但 TypeScript 未声明该成员；waitForReady 会替换 info | 保存原始创建响应中的 token，再包装实例，见 [network.md](network.md) |
+| Code Interpreter | 平台已有解释器运行时；原生 Go／Node／Python qiniu 包没有 runCode／上下文专用封装 | 使用官方支持的 `@e2b/code-interpreter`／`e2b-code-interpreter` 兼容接入，见 [code-interpreter.md](code-interpreter.md) |
 | Desktop | 原生 Desktop／Stream 封装在 Go 中；原生 Node／Python qiniu 包无对应类 | Go 原生 API，或七牛官方支持的 `@e2b/desktop`／`e2b-desktop` 兼容接入 |
 | Windows | 服务提供 Windows 模板，但此基线三语言 Commands helper 均启动 `/bin/bash` | 使用官方 Windows 指南的 E2B 兼容流程；不把 Linux helper 套到 Windows |
 | Python Git 认证 | clone 的 username/password kwargs 未被执行层转换为 Git 认证 | 用授权的 Git 资源挂载，或在沙箱配置经核对的 credential helper |

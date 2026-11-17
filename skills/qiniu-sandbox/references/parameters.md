@@ -146,7 +146,7 @@ func listSandboxIDs(ctx context.Context, hc *http.Client, endpoint, apiKey strin
 | API 请求时限 | context 和 HTTPClient | 客户端 `timeout` 是 urllib 时限（毫秒） | 客户端 `timeout` 为 requests 时限（秒），默认 30 |
 | 自动重试 | `Config.RetryMax *int` | `maxRetries` | `max_retries` |
 | 重试环境变量 | `SANDBOX_RETRY_MAX` | 同左 | 同左 |
-| 进程／文件时限 | context／方法 options | 对应 `timeoutMs`／`requestTimeoutMs`，实际边界见主题页 | 对应 `timeout`／`request_timeout`，见主题页 |
+| 进程／文件时限 | context／方法 options | 命令／PTY 的 `timeoutMs`／`requestTimeoutMs` 限制等待启动；文件 read/write 无单次时限选项，见主题页 | 对应 `timeout`／`request_timeout`，见主题页 |
 
 重试次数默认 5，0 禁用；并非每个接口都走自动重试。不要给命令套上创建请求的重试策略，命令可能已经产生业务副作用。
 

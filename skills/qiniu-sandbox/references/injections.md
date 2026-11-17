@@ -10,7 +10,7 @@
 | `anthropic` | 默认 `api.anthropic.com`，`x-api-key` | `api_key`、可选 `base_url` |
 | `gemini` | 默认 `generativelanguage.googleapis.com`，`x-goog-api-key` | `api_key`、可选 `base_url` |
 | `qiniu` | 默认 `api.qnaigc.com`，请求携带的 Authorization 或 `x-api-key` | `api_key`、可选 `base_url` |
-| `github` | 默认匹配 `github.com`／`api.github.com` | `api_key` 为 token；Go 使用 `GithubInjection.Token` |
+| `github` | 默认匹配 `github.com`／`api.github.com` | `token`；Go 使用 `GithubInjection.Token` |
 | `http` | 明确指定的 HTTPS 目标 | `base_url`、`headers`、`body` 和匹配条件 |
 | `id` | 已保存规则 | `id`；Go 使用 `SandboxInjectionSpec.ByID` |
 

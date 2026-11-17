@@ -47,17 +47,11 @@ params := sandbox.CreateParams{
 
 创建成功后立即登记沙箱 ID 和清理逻辑。出网规则可能影响包安装、Git 或外部 API 调用；只给任务需要的目标放行。域名解析可能得到多个地址，按实际服务与平台支持的规则配置。
 
-## 更新运行中沙箱
+## 网络配置变更
 
-```javascript
-await sandbox.updateNetwork({ denyOut: ['0.0.0.0/0'], allowOut: ['1.1.1.1/32'] });
-```
+将任务需要的网络规则、公共服务访问和 Host 掩码在创建时配置完整。当前公开服务端 API 未提供运行时网络更新：`/sandboxes/{sandboxID}` 仅定义 GET 和 DELETE。Node.js 的 `updateNetwork` 与 Python 的 `update_network` 虽有 SDK 封装，但它们发送的 `PATCH /sandboxes/{id}` 没有对应的公开服务端操作，不能作为可用更新流程。
 
-```python
-sandbox.update_network({'denyOut': ['0.0.0.0/0'], 'allowOut': ['1.1.1.1/32']})
-```
-
-这两个方法向 `PATCH /sandboxes/{id}` 发送 `network` 对象。修改后从沙箱内验证目标可达性。当前 Go 公共 SDK 未提供运行时网络更新方法；qshell 未提供相应网络子命令。Go 可在创建时设置 `NetworkConfig`，后续调整使用上述已提供接口的 SDK。
+现有沙箱需要变更网络时，先保存所需业务数据，再使用新的网络配置创建沙箱并恢复业务。验证新沙箱的目标可达性、应用就绪和外部访问后，按 [生命周期流程](lifecycle.md) 清理旧沙箱。
 
 ## 私有服务访问
 
@@ -111,4 +105,4 @@ Go 的 `Sandbox` 内部保存流量 token，但当前公开类型没有读取该
 | 返回错误站点或 Host 校验失败 | 应用的 Host 校验以及 `maskRequestHost` |
 | 外部 API 或依赖安装失败 | 出网开关和 allow／deny 规则，区分 DNS、连接与远端鉴权错误 |
 
-来源：[Node.js Sandbox 实现](https://github.com/qiniu/nodejs-sdk/blob/master/qiniu/sandbox/sandbox.js)、[Python 客户端](https://github.com/qiniu/python-sdk/blob/master/qiniu/services/sandbox/client.py)、[Go 网络类型](https://github.com/qiniu/go-sdk/blob/master/sandbox/types.go)、[服务代理认证头](https://github.com/qbox/sandbox/blob/main/packages/client-proxy/internal/proxy/proxy.go)。
+来源：[公开 API 定义](https://github.com/qbox/sandbox/blob/e3dfa87062481997412d505cccc2beaaffa49a06/spec/openapi-public.yml#L1840-L1878)、[Node.js Sandbox 实现](https://github.com/qiniu/nodejs-sdk/blob/master/qiniu/sandbox/sandbox.js)、[Python 客户端](https://github.com/qiniu/python-sdk/blob/master/qiniu/services/sandbox/client.py)、[Go 网络类型](https://github.com/qiniu/go-sdk/blob/master/sandbox/types.go)、[服务代理认证头](https://github.com/qbox/sandbox/blob/main/packages/client-proxy/internal/proxy/proxy.go)。

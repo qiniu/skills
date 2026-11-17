@@ -4,7 +4,7 @@
 
 ## 核对基线
 
-2026-11-16 核对以下源码版本。链接固定到对应提交，便于复核。接入已有项目时仍应检查项目实际安装的版本；遇到接口差异，从官方仓库的对应版本继续查阅。
+2026-11-17 核对以下源码版本。链接固定到对应提交，便于复核。接入已有项目时仍应检查项目实际安装的版本；遇到接口差异，从官方仓库的对应版本继续查阅。
 
 | 工具 | 版本 | 源码基线 |
 | --- | --- | --- |
@@ -12,6 +12,10 @@
 | Go SDK | v7.31.0 | [d94ab38](https://github.com/qiniu/go-sdk/tree/d94ab38cd03301662846526377d211f6da03dc74) |
 | Node.js SDK | v7.15.6 | [f0b4989](https://github.com/qiniu/nodejs-sdk/tree/f0b4989a63ab70c7236a3bfc2a6a51eb594f5de9) |
 | Python SDK | v7.19.0 | [26d426e](https://github.com/qiniu/python-sdk/tree/26d426e2d6c67f68a2980828bab5bae611a42545) |
+
+Code Interpreter 的兼容接入另核对 JS `@e2b/code-interpreter` 2.3.3（基础 `e2b` 2.8.3）和 Python `e2b-code-interpreter` 2.11.10（基础 `e2b` 2.64.0）的发布包签名，见 [code-interpreter.md](code-interpreter.md)。JS 版本与七牛仓库中的兼容回归用例所用版本一致；本地签名、类型和语法验证不代表已完成真实服务回归。
+
+服务端能力还需对照[当前公开 OpenAPI](https://github.com/qbox/sandbox/blob/e3dfa87062481997412d505cccc2beaaffa49a06/spec/openapi-public.yml)。SDK 包中存在方法不代表服务端已提供相应操作，例如运行时网络 PATCH 的边界见 [network.md](network.md)。
 
 产品概念参考[七牛 Sandbox 概览](https://developer.qiniu.com/las/13281/sandbox-overview)。价格、配额、地域可用性和默认模板属于动态信息，需要时查询当前文档或实际环境。
 
@@ -21,6 +25,7 @@
 | --- | --- | --- | --- | --- |
 | 生命周期、连接、状态与网络 | [命令文档](https://github.com/qiniu/qshell/tree/master/docs) | [sandbox.go](https://github.com/qiniu/go-sdk/blob/master/sandbox/sandbox.go)、[types.go](https://github.com/qiniu/go-sdk/blob/master/sandbox/types.go) | [SDK 指南](https://github.com/qiniu/nodejs-sdk/blob/master/docs/sandbox.md)、[类型](https://github.com/qiniu/nodejs-sdk/blob/master/index.d.ts) | [SDK 指南](https://github.com/qiniu/python-sdk/blob/master/examples/README-sandbox.md)、[sandbox.py](https://github.com/qiniu/python-sdk/blob/master/qiniu/services/sandbox/sandbox.py) |
 | 命令、文件、Git、PTY | [exec](https://github.com/qiniu/qshell/blob/master/docs/sandbox_exec.md) | [沙箱包](https://github.com/qiniu/go-sdk/tree/master/sandbox) | [沙箱模块](https://github.com/qiniu/nodejs-sdk/tree/master/qiniu/sandbox) | [沙箱模块](https://github.com/qiniu/python-sdk/tree/master/qiniu/services/sandbox) |
+| Code Interpreter | 普通脚本通过 exec；解释器用兼容 SDK | 原生包未提供专用封装 | [兼容 SDK 指南](code-interpreter.md)、[官方指南](https://developer.qiniu.com/las/13292/sandbox-code-interpreter) | 同 Node.js，使用 `e2b-code-interpreter` |
 | 模板、磁盘与标签 | [构建](https://github.com/qiniu/qshell/blob/master/docs/sandbox_template_build.md)、[配置](https://github.com/qiniu/qshell/blob/master/docs/sandbox_template_config.md) | [template.go](https://github.com/qiniu/go-sdk/blob/master/sandbox/template.go) | [模板示例](https://github.com/qiniu/nodejs-sdk/blob/master/examples/sandbox_templates.js) | [模板示例](https://github.com/qiniu/python-sdk/blob/master/examples/sandbox_template_lifecycle.py) |
 | 快照、幂等与分页 | [快照](https://github.com/qiniu/qshell/blob/master/docs/sandbox_snapshot.md) | [snapshot.go](https://github.com/qiniu/go-sdk/blob/master/sandbox/snapshot.go) | [快照示例](https://github.com/qiniu/nodejs-sdk/blob/master/examples/sandbox_paginator_snapshot_mcp.js) | [快照示例](https://github.com/qiniu/python-sdk/blob/master/examples/sandbox_snapshots.py) |
 | Git／Kodo 资源挂载与凭据更新 | [创建参数](https://github.com/qiniu/qshell/blob/master/docs/sandbox_create.md)、[资源更新](https://github.com/qiniu/qshell/blob/master/docs/sandbox_resource_update.md) | [资源类型](https://github.com/qiniu/go-sdk/blob/master/sandbox/types.go) | [资源示例](https://github.com/qiniu/nodejs-sdk/blob/master/examples/sandbox_resources.js) | [资源类型](https://github.com/qiniu/python-sdk/blob/master/qiniu/services/sandbox/resources.py) |

@@ -51,11 +51,11 @@ ready_cmd = "python -c \"import urllib.request; urllib.request.urlopen('http://1
 
 ```bash
 qshell sandbox template build --wait
-qshell sandbox template get skill-demo-web:v1
+qshell sandbox template get TEMPLATE_ID
 qshell sandbox create skill-demo-web:v1 --detach --timeout 300
 ```
 
-`--wait` 等待终态并显示构建日志。没有使用 `--wait` 时，保存返回的两个 ID，再查询：
+`TEMPLATE_ID` 使用构建输出中的实际模板 ID；详情查询按 ID，创建沙箱时可以使用名称和标签。`--wait` 等待终态并显示构建日志。没有使用 `--wait` 时，保存返回的两个 ID，再查询：
 
 ```bash
 qshell sandbox template builds TEMPLATE_ID BUILD_ID
