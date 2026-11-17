@@ -16,7 +16,7 @@ status = sandbox.git.status('/home/user/go-sdk')
 print(status.current_branch, status.is_clean)
 ```
 
-Node.js 的 HTTPS 私库认证同时传入用户名和 token，使用当前进程环境中的凭据：
+下列私库认证使用已包含 [配套凭据隔离修复](sources.md#配套-sdk-修复) 的 SDK。Node.js 的 HTTPS 私库认证同时传入用户名和 token，使用当前进程环境中的凭据：
 
 ```javascript
 const result = await sandbox.git.clone(process.env.GIT_REPO_URL, {
@@ -97,14 +97,28 @@ sandbox.git.commit(repo, 'Add task result', throw_on_error=True)
 
 ## 凭据和语言差异
 
-- Node.js 的 clone／pull／push 使用临时 credential helper 和进程环境传入凭据，避免将 token 拼进 clone 命令的 URL。Go 的 clone 默认在结束后移除 origin URL 凭据；显式 `DangerouslyStoreCredentials` 会保留凭据，push／pull 的临时 remote 凭据在操作后恢复。
-- 当前 Python `Git.clone` 的签名仅处理 URL、path、branch、depth 和命令选项；`username`／`password` 并不是可用的 clone 认证实现。需要私库时优先选用平台 Git 资源挂载；已存在仓库的 Python pull／push 支持 `username`、`password`，使用临时 askpass 文件，操作结束后清理。
-- 用户明确需要从 Python 在沙箱内克隆私库时，可以用命令接口配置临时 credential helper，如下。该方式把 token 放到沙箱进程环境中，因此只适用于授权向沙箱提供凭据的任务。
+- 配套修复版对显式临时凭据使用命令级 `credential.helper=` 隔离已有 helper，避免已有 store／cache 保存本次凭据；未传临时认证参数的普通调用继续使用项目原配置。Node.js 用临时 helper 和进程环境传入凭据，Go 的 clone 默认在结束后移除 origin URL 凭据；显式 `DangerouslyStoreCredentials` 会保留它，push／pull 的临时 remote 凭据在操作后恢复。
+- 配套 Python `Git.clone` 接受 `username`、`password` 和 `user`；clone／pull／push 的私有临时目录、askpass 上传、命令及清理均使用同一用户。前台结束后清理；后台操作保留句柄并调用 `wait()`，使凭据文件在操作完成后清理。
+- 发布基线尚未包含这些隔离修复，且 Python clone 没有实现凭据参数。需要在该基线上克隆私库时，使用授权的 Git 资源挂载，或下面显式清空继承 helper 的命令流程。
+
+配套 Python SDK 的私库调用：
 
 ```python
 import os
 
-command = '''git -c 'credential.helper=!f() { printf "username=%s\\npassword=%s\\n" "$GIT_USERNAME" "$GIT_PASSWORD"; }; f' clone --depth 1 "$GIT_REPO_URL" /home/user/repo'''
+result = sandbox.git.clone(
+    os.environ['GIT_REPO_URL'], path='/home/user/repo',
+    username=os.environ['GIT_USERNAME'], password=os.environ['GITHUB_TOKEN'],
+    user='user', throw_on_error=True,
+)
+```
+
+命令级回退把 token 放入本次沙箱进程环境，只用于用户已授权向沙箱提供凭据的任务：
+
+```python
+import os
+
+command = '''git -c credential.helper= -c 'credential.helper=!f() { printf "username=%s\\npassword=%s\\n" "$GIT_USERNAME" "$GIT_PASSWORD"; }; f' clone --depth 1 "$GIT_REPO_URL" /home/user/repo'''
 result = sandbox.commands.run(command, envs={
     'GIT_TERMINAL_PROMPT': '0',
     'GIT_USERNAME': os.environ['GIT_USERNAME'],

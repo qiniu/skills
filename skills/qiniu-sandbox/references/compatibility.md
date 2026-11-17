@@ -1,6 +1,6 @@
 # 能力覆盖与接口差异
 
-本页以 [sources.md](sources.md) 的四个官方仓库基线为准。主题指引覆盖已有公共接口；表中的边界用于选择实际可执行的方案。SDK 封装缺口不等于服务端没有对应能力，账号与地域是否开通还需查询实际环境。
+本页的限制表以 [sources.md](sources.md) 中固定的发布基线为准；同页的配套 SDK 修复表单独列出尚未作为发布包核对的变更。先确认项目依赖所属版本，再选择对应契约。SDK 封装缺口不等于服务端没有对应能力，账号与地域是否开通还需查询实际环境。
 
 ## 主题覆盖
 
@@ -22,7 +22,7 @@
 | 地域／接入配置 | [setup.md](setup.md) |
 | Agent／浏览器／MCP／Windows／SSH／VPN | [integrations.md](integrations.md) |
 
-## 平台 API 与语言封装
+## 发布基线的平台 API 与语言封装
 
 | 能力 | 此基线的实际边界 | 使用路径 |
 | --- | --- | --- |
@@ -33,6 +33,8 @@
 | 沙箱列表分页与过滤 | Go／qshell 未交付下一页游标；Node／Python 沙箱 paginator 也未读取数组响应的 `X-Next-Token`，Node `query.metadata` 编码不符合 API | 用 [原始 HTTP 遍历示例](parameters.md)读取 Header 和正确的 metadata；快照 paginator 不受影响 |
 | 运行时网络更新 | Node／Python 有方法发送 `PATCH /sandboxes/{id}`，但当前公开服务端 OpenAPI 未提供该操作；Go／qshell 也无对应入口 | 在创建时落实网络配置；变更需按 [network.md](network.md) 保存数据并迁移到新沙箱 |
 | Go 服务 token | Sandbox 的流量 token 私有，详情类型也未公开它 | 受限服务的 token 访问示例使用 Node／Python，或原始 API 响应 |
+| 安全文件鉴权 | Go／Node 文件 HTTP 读写及三语言公开文件 URL 的签名存在与 Envd 不一致的问题 | 使用已确认包含配套文件鉴权修复的 SDK；Go 仅传绝对过期时间不足以修正签名编码 |
+| 临时 Git 凭据 | 继承的 credential helper 可能保存临时凭据；Python 文件操作还可能使用不同用户 | 使用配套凭据隔离修复；命令级回退显式清空继承 helper，见 [git.md](git.md) |
 | Node 服务 token 类型 | 实例运行时保存 token，但 TypeScript 未声明该成员；waitForReady 会替换 info | 保存原始创建响应中的 token，再包装实例，见 [network.md](network.md) |
 | Code Interpreter | 平台已有解释器运行时；原生 Go／Node／Python qiniu 包没有 runCode／上下文专用封装 | 使用官方支持的 `@e2b/code-interpreter`／`e2b-code-interpreter` 兼容接入，见 [code-interpreter.md](code-interpreter.md) |
 | Desktop | 原生 Desktop／Stream 封装在 Go 中；原生 Node／Python qiniu 包无对应类 | Go 原生 API，或七牛官方支持的 `@e2b/desktop`／`e2b-desktop` 兼容接入 |

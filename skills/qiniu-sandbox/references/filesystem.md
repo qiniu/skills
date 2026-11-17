@@ -2,6 +2,8 @@
 
 以下示例使用已连接的 `sandbox`；Go 使用 `sb` 和 `ctx`。文件路径是沙箱内的 POSIX 路径，本地文件路径属于调用应用所在机器。写入会覆盖同路径文件，删除和重命名前确认任务范围。
 
+启用 Envd token 的 Go／Node 文件 HTTP 读写，以及三个 SDK 的公开签名 URL，需要先确认已包含 [配套文件鉴权修复](sources.md#配套-sdk-修复)。发布基线中的签名编码与服务端不一致，Go 默认过期时间和批量上传鉴权也有缺口；只给 URL 传绝对过期时间不能解决这些问题。
+
 ## 方法映射
 
 | 任务 | Go：`sb.Files()` | Node.js：`sandbox.files` | Python：`sandbox.files` |
@@ -32,7 +34,7 @@ with open('output.bin', 'wb') as target:
         target.write(chunk)
 ```
 
-Node.js 的 write 接受 string、Buffer、Uint8Array 或 ArrayBuffer；当前实现拒绝 Node Readable 输入。`format: 'stream'` 返回 Readable 前已经将响应缓冲到内存，因此大文件应用应使用下面的签名 URL 配合 HTTP 流式客户端。
+Node.js 发布基线的 write 只接受 string、Buffer、Uint8Array 或 ArrayBuffer，下载 stream 也先缓冲。下例适合小文件；配套修复版还支持 Readable 输入和端到端流式下载。
 
 ```javascript
 const fs = require('node:fs/promises');
@@ -40,6 +42,22 @@ await sandbox.files.write('/home/user/input.bin', await fs.readFile('input.bin')
 const data = await sandbox.files.read('/home/user/input.bin', { format: 'bytes' });
 await fs.writeFile('output.bin', data);
 ```
+
+使用配套修复版时，Node.js 16 及以上可用 `pipeline` 传输并处理流错误：
+
+```javascript
+const fs = require('node:fs');
+const { pipeline } = require('node:stream/promises');
+await sandbox.files.write('/home/user/input.bin', fs.createReadStream('input.bin'), {
+  requestTimeoutMs: 60000
+});
+const source = await sandbox.files.read('/home/user/input.bin', {
+  format: 'stream', requestTimeoutMs: 60000
+});
+await pipeline(source, fs.createWriteStream('output.bin'));
+```
+
+上传源提前关闭会使本次上传失败并释放连接；需要重新上传时重新创建输入流。`requestTimeoutMs: 0` 显式关闭传输时限，只有任务确实需要时再使用。
 
 Go `Write` 接受 `[]byte`；下载可使用 `ReadStream` 逐块写到本地：
 
@@ -105,7 +123,7 @@ Go／Node.js 通过流接收事件，持续消费期间由应用决定观察时�
 
 ## 签名上传／下载 URL
 
-URL 由已连接实例生成，权限绑定路径、操作和用户。下载使用 GET；上传使用 POST multipart/form-data，字段名为 `file`。签名 URL 是临时访问凭证，应只交给获授权的调用方。
+以下 URL 示例使用已包含配套文件鉴权修复的 SDK。URL 由已连接实例生成，权限绑定路径、操作和用户。下载使用 GET；上传使用 POST multipart/form-data，字段名为 `file`。签名 URL 是临时访问凭证，应只交给获授权的调用方。
 
 | SDK | 下载 | 上传 |
 | --- | --- | --- |
@@ -113,7 +131,7 @@ URL 由已连接实例生成，权限绑定路径、操作和用户。下载使�
 | Node.js | `sandbox.downloadUrl(path, {signatureExpiration: 300})` | `sandbox.uploadUrl(path, {signatureExpiration: 300})` |
 | Python | `sandbox.download_url(path, signature_expiration=300)` | `sandbox.upload_url(path, signature_expiration=300)` |
 
-Node.js／Python 将小于十亿的过期值按相对秒数转换为 Unix 时间，也接受绝对 Unix 秒。当前 Go 实现直接写入整数值，示例显式传入绝对 Unix 秒以避免单位歧义。Go 使用 `WithFileUser(user)`；Node.js／Python 使用 `user` 指定操作用户。
+Node.js／Python 将小于十亿的过期值按相对秒数转换为 Unix 时间，也接受绝对 Unix 秒。Go 的 `WithSignatureExpiration` 接受绝对 Unix 秒；修复版省略此选项时默认当前时间加 300 秒。三个 SDK 的签名都遵循 Envd 的 UTF-8 SHA256、无填充标准 Base64 和 `v1_` 前缀。Go 使用 `WithFileUser(user)`；Node.js／Python 使用 `user` 指定操作用户。
 
 Python 直接把签名 URL 交给 HTTP 客户端：
 
@@ -128,4 +146,4 @@ download.raise_for_status()
 assert download.content == b'uploaded\n'
 ```
 
-qshell 的小文件 stdin／stdout 传输见 [cli.md](cli.md)。Node.js 单文件 `write` 可指定 `useOctetStream`／`gzip`，需要 Envd ≥ 0.5.7；普通 multipart 示例不依赖这些选项。Go 使用请求 context；Python 读写的 `request_timeout` 以秒为单位，目录 RPC 使用 `timeout`。Node.js 当前 read／write 路径没有转发调用方的请求超时选项；需要明确传输时限的大文件流程可使用签名 URL 和带时限的 HTTP 客户端。跨语言迁移时对照当前方法签名。
+qshell 的小文件 stdin／stdout 传输见 [cli.md](cli.md)，它走 Commands 接口，不受文件 HTTP 签名问题影响；直接调用 Go 文件 HTTP 接口时仍需使用含修复的 SDK。Node.js 单文件 `write` 可指定 `useOctetStream`／`gzip`，需要 Envd ≥ 0.5.7；普通 multipart 示例不依赖这些选项。Go 使用请求 context；Python 读写的 `request_timeout` 以秒为单位，目录 RPC 使用 `timeout`。配套 Node SDK 的 `requestTimeoutMs` 以毫秒覆盖单次传输，发布基线尚未转发这一选项。跨语言迁移时对照当前方法签名。

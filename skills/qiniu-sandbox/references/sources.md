@@ -13,6 +13,19 @@
 | Node.js SDK | v7.15.6 | [f0b4989](https://github.com/qiniu/nodejs-sdk/tree/f0b4989a63ab70c7236a3bfc2a6a51eb594f5de9) |
 | Python SDK | v7.19.0 | [26d426e](https://github.com/qiniu/python-sdk/tree/26d426e2d6c67f68a2980828bab5bae611a42545) |
 
+## 配套 SDK 修复
+
+本技能配套的以下 PR 尚未作为发布包基线核对。确认项目依赖已包含对应改动后，使用此表的接口契约；上方发布版本号本身不保证包含这些修复。SDK 发版后，应同时更新安装表、源码基线和相关主题页。
+
+| 工具与来源 | 配套修复的接口与行为 |
+| --- | --- |
+| [Go SDK #245](https://github.com/qiniu/go-sdk/pull/245) | `Client.List` 返回 `*SandboxPage{Items, NextToken}`；`TrafficAccessToken()` 可读取服务 token；PTY 重连可接收原始字节；文件请求使用 Envd token，公开签名 URL 对齐 Envd 编码与 Unix 过期时间；临时 Git 认证隔离已有 credential helper |
+| [Node.js SDK #463](https://github.com/qiniu/nodejs-sdk/pull/463) | `client.listSandboxes`／`listSnapshots` 返回 `{items, nextToken}`；文件支持 Readable 输入、端到端流式下载与 `requestTimeoutMs`；Commands／PTY 支持 `executionTimeoutMs`；类型包含服务 token／`buildConfig`；临时 Git 凭据隔离、上传取消／错误解析和文件 URL 签名已修复 |
+| [Python SDK #476](https://github.com/qiniu/python-sdk/pull/476) | `client.list_sandboxes` 返回 `{'items': [...], 'nextToken': ...}`；PTY 支持 `on_data(bytes)` 与断连；clone 支持临时用户名／密码，临时目录和清理使用同一进程用户；文件 URL 签名对齐 Envd |
+| [qshell #469](https://github.com/qiniu/qshell/pull/469) | 列表支持 `--all`／`--next-token`；批量操作完整枚举后再执行；失败返回非零退出码。此 PR 仍依赖 Go SDK v7.30.1，未包含 Go 文件 HTTP 鉴权修复；CLI 现有 stdin／stdout 文件传输走 Commands 接口，不受该问题影响 |
+
+主题页中标明发布基线的封装限制，仅适用于上方固定源码。配套版本中的分页仍重复调用同一个列表方法并回填游标；高层分页器负责自动传递游标。Code Interpreter／Desktop 的兼容 SDK 路径不依赖这些分页返回值变化。
+
 Code Interpreter 的兼容接入另核对 JS `@e2b/code-interpreter` 2.3.3（基础 `e2b` 2.8.3）和 Python `e2b-code-interpreter` 2.11.10（基础 `e2b` 2.64.0）的发布包签名，见 [code-interpreter.md](code-interpreter.md)。JS 版本与七牛仓库中的兼容回归用例所用版本一致；本地签名、类型和语法验证不代表已完成真实服务回归。
 
 服务端能力还需对照[当前公开 OpenAPI](https://github.com/qbox/sandbox/blob/e3dfa87062481997412d505cccc2beaaffa49a06/spec/openapi-public.yml)。SDK 包中存在方法不代表服务端已提供相应操作，例如运行时网络 PATCH 的边界见 [network.md](network.md)。

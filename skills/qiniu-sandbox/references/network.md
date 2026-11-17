@@ -37,15 +37,17 @@ sandbox = Sandbox.create('base', client=client, timeout=300, secure=True,
 denyOut := []string{"0.0.0.0/0"}
 allowOut := []string{"1.1.1.1/32"}
 publicTraffic := false
+secure := true
 params := sandbox.CreateParams{
 	TemplateID: "base",
+	Secure: &secure,
 	Network: &sandbox.NetworkConfig{
 		DenyOut: &denyOut, AllowOut: &allowOut, AllowPublicTraffic: &publicTraffic,
 	},
 }
 ```
 
-创建成功后立即登记沙箱 ID 和清理逻辑。出网规则可能影响包安装、Git 或外部 API 调用；只给任务需要的目标放行。域名解析可能得到多个地址，按实际服务与平台支持的规则配置。
+`allowPublicTraffic=false` 要求同时设置 `secure=true`；服务端需要据此生成 Envd token，省略时会拒绝创建。Go／Node.js 省略该参数不会自动开启，Python 高层创建的默认值也不能套用到其他语言。创建成功后立即登记沙箱 ID 和清理逻辑。出网规则可能影响包安装、Git 或外部 API 调用；只给任务需要的目标放行。域名解析可能得到多个地址，按实际服务与平台支持的规则配置。
 
 ## 网络配置变更
 
@@ -59,11 +61,12 @@ params := sandbox.CreateParams{
 
 当 `allowPublicTraffic=false` 时，外部请求需要 Header `e2b-traffic-access-token`。Node.js 和 Python 在创建返回值中保留 `trafficAccessToken`；保留该次创建响应，避免误用 API Key 或 Envd token。
 
-Node.js 的 `waitForReady` 会用详情响应替换 `sandbox.info`，详情不含创建时的流量 token。JavaScript 可读取实例的 `sandbox.trafficAccessToken`；该成员目前未在 TypeScript 类型中声明。需要 TypeScript 接入时，在创建阶段显式保存原始响应，再包装为 Sandbox：
+Node.js 发布基线的 `waitForReady` 会用详情响应替换 `sandbox.info`，详情不含创建时的流量 token，实例成员也未在 TypeScript 类型中声明。配套修复版会保留该 token 并提供类型；按发布基线接入时，可以在创建阶段显式保存原始响应，再包装为 Sandbox：
 
 ```javascript
 const created = await client.createSandbox({
-  template: 'base', timeout: 300, network: { allowPublicTraffic: false }
+  template: 'base', timeout: 300, secure: true,
+  network: { allowPublicTraffic: false }
 });
 const token = created.trafficAccessToken;
 const sandbox = new qiniu.sandbox.Sandbox({ client, info: created });
