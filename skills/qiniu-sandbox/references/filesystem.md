@@ -57,7 +57,9 @@ const source = await sandbox.files.read('/home/user/input.bin', {
 await pipeline(source, fs.createWriteStream('output.bin'));
 ```
 
-上传源提前关闭会使本次上传失败并释放连接；需要重新上传时重新创建输入流。`requestTimeoutMs: 0` 显式关闭传输时限，只有任务确实需要时再使用。
+上传源在正常结束前关闭，无论发生在调用前还是传输中，都会使本次上传失败并释放连接；需要重新上传时重新创建输入流。`requestTimeoutMs: 0` 显式关闭传输时限，只有任务确实需要时再使用。
+
+配套 Python SDK 的 Envd 文件请求不自动跟随重定向；收到 30x 时按请求失败处理，避免把 Envd token 带给其他来源。排查时核对实例的 Envd 地址和代理配置，修正端点后重新请求。
 
 Go `Write` 接受 `[]byte`；下载可使用 `ReadStream` 逐块写到本地：
 
@@ -139,11 +141,15 @@ Python 直接把签名 URL 交给 HTTP 客户端：
 import requests
 
 url = sandbox.upload_url('/home/user/upload.txt', signature_expiration=300)
-response = requests.post(url, files={'file': ('upload.txt', b'uploaded\n')}, timeout=30)
-response.raise_for_status()
-download = requests.get(sandbox.download_url('/home/user/upload.txt'), timeout=30)
-download.raise_for_status()
-assert download.content == b'uploaded\n'
+with requests.post(url, files={'file': ('upload.txt', b'uploaded\n')},
+                   timeout=30, allow_redirects=False) as response:
+    if not 200 <= response.status_code < 300:
+        raise RuntimeError('Upload returned HTTP {}'.format(response.status_code))
+with requests.get(sandbox.download_url('/home/user/upload.txt'),
+                  timeout=30, allow_redirects=False) as download:
+    if not 200 <= download.status_code < 300:
+        raise RuntimeError('Download returned HTTP {}'.format(download.status_code))
+    assert download.content == b'uploaded\n'
 ```
 
 qshell 的小文件 stdin／stdout 传输见 [cli.md](cli.md)，它走 Commands 接口，不受文件 HTTP 签名问题影响；直接调用 Go 文件 HTTP 接口时仍需使用含修复的 SDK。Node.js 单文件 `write` 可指定 `useOctetStream`／`gzip`，需要 Envd ≥ 0.5.7；普通 multipart 示例不依赖这些选项。Go 使用请求 context；Python 读写的 `request_timeout` 以秒为单位，目录 RPC 使用 `timeout`。配套 Node SDK 的 `requestTimeoutMs` 以毫秒覆盖单次传输，发布基线尚未转发这一选项。跨语言迁移时对照当前方法签名。

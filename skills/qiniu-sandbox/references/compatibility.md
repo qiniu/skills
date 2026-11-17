@@ -34,6 +34,7 @@
 | 运行时网络更新 | Node／Python 有方法发送 `PATCH /sandboxes/{id}`，但当前公开服务端 OpenAPI 未提供该操作；Go／qshell 也无对应入口 | 在创建时落实网络配置；变更需按 [network.md](network.md) 保存数据并迁移到新沙箱 |
 | Go 服务 token | Sandbox 的流量 token 私有，详情类型也未公开它 | 受限服务的 token 访问示例使用 Node／Python，或原始 API 响应 |
 | 安全文件鉴权 | Go／Node 文件 HTTP 读写及三语言公开文件 URL 的签名存在与 Envd 不一致的问题 | 使用已确认包含配套文件鉴权修复的 SDK；Go 仅传绝对过期时间不足以修正签名编码 |
+| Python Envd 重定向 | 请求默认跟随重定向，自定义访问 token 可能被带给其他来源 | 使用配套的禁止自动重定向修复，收到 30x 时核对端点与代理 |
 | 临时 Git 凭据 | 继承的 credential helper 可能保存临时凭据；Python 文件操作还可能使用不同用户 | 使用配套凭据隔离修复；命令级回退显式清空继承 helper，见 [git.md](git.md) |
 | Node 服务 token 类型 | 实例运行时保存 token，但 TypeScript 未声明该成员；waitForReady 会替换 info | 保存原始创建响应中的 token，再包装实例，见 [network.md](network.md) |
 | Code Interpreter | 平台已有解释器运行时；原生 Go／Node／Python qiniu 包没有 runCode／上下文专用封装 | 使用官方支持的 `@e2b/code-interpreter`／`e2b-code-interpreter` 兼容接入，见 [code-interpreter.md](code-interpreter.md) |
@@ -42,7 +43,7 @@
 | Python Git 认证 | clone 的 username/password kwargs 未被执行层转换为 Git 认证 | 用授权的 Git 资源挂载，或在沙箱配置经核对的 credential helper |
 | Python PTY | 无实时 PTY 字节回调和 disconnect helper | 当前句柄只在 wait 后提供解码后的 stdout；需要实时桌面终端时选择其他接口 |
 | Go PTY 重连 | `Pty.Connect` 无输出回调选项，重连的 PTY 字节也不会进入 Stdout | 用重连句柄等待结束／终止；需要实时输出时保留创建流或更换客户端 |
-| Node 命令／PTY 时限 | 流开始定时器在首个 start 事件后清除，不是完整进程执行期限 | 业务截止时间到达时显式 kill 该 PID，再验收结束状态 |
+| Node 命令／PTY 时限 | 流开始定时器在首个 start 事件后清除，不是完整进程执行期限 | 配套版创建时将 `executionTimeoutMs` 交给 Envd；已有进程重连不会重设期限，见 [commands.md](commands.md) |
 | Node 文件 stream／请求时限 | read 的 stream 是下载缓冲完成后的包装；write 不接受通用流；read/write 未转发每次调用的 timeout | 大文件分块处理／外部存储；不要把返回 Readable 理解为端到端流式下载 |
 | 模板 builder | Go 用底层构建接口；Python Template 只生成配置；Node `.build()` 仅申请构建，不启动／等待，`buildConfig` 也未声明为 TS 公共方法 | 使用文档中实际可编译的分配→启动→等待流程 |
 | qshell 模板高级操作 | 没有私有 registry 凭据 flag，也没有标签修改子命令 | 使用相应 SDK 操作；CLI 的 tags 是查询 |

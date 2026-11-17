@@ -36,20 +36,24 @@ Connect v2 在暂停时恢复沙箱，并只延长 TTL。Go `ConnectParams.Timeo
 
 ## 列表过滤与分页
 
-`GET /v2/sandboxes` 的正文是数组，下一页游标在响应头 `X-Next-Token` 中。请求参数为 `state`（逗号分隔）、`template`、`metadata`、`limit`、`nextToken`；`metadata` 自身是 URL query 字符串，例如 `app=reporting&owner=alice`，再由外层 URL 查询参数编码一次。
+`GET /v2/sandboxes` 的正文是数组，下一页游标在响应头 `X-Next-Token` 中。请求参数为 `state`（逗号分隔）、`template`、`metadata`、`limit`、`nextToken`。`metadata` 先分别对每个键和值做百分号编码，再组成并编码内部 query，最后交给 HTTP 客户端编码外层参数。服务端会先解码整个 metadata，再拆分和解码键值；少一层会把 `a+b` 变成 `a b`，或让包含 `&`、`=`、`%` 的筛选值报错。
 
-此基线 Go／Node／Python 的高层沙箱列表封装均未把该响应头游标交付给完整遍历流程。Node 的 `query.metadata` 还会编码为 `metadata[app]`，不符合此 API 的单个 `metadata` 参数。完整遍历使用下面的原始公共 HTTP 接口；不要把这些问题套到已正确实现的快照 paginator 上。
+发布基线的列表封装没有完整交付响应头游标，Node 的 `query.metadata` 还会编码为 `metadata[app]`。包含 [配套 SDK 修复](sources.md#配套-sdk-修复) 后，Node／Python 接受原始 metadata 字典并完成所需编码；Go 的 `ListParams.Metadata` 仍由调用方提供已编码的内部 query。下面的原始 HTTP 流程可用于发布基线和配套版本，普通 `nextToken` 直接交给 HTTP 客户端编码一次。
 
 Node.js 18+，沿用 SDK 客户端的 `endpoint` 和入门配置的环境变量：
 
 ```javascript
 const listApiKey = process.env.QINIU_SANDBOX_API_KEY;
 if (!listApiKey) throw new Error('Set QINIU_SANDBOX_API_KEY');
+const filters = {app: 'reporting', branch: 'feat/a&b=1+2%'};
+const metadata = new URLSearchParams(Object.entries(filters).map(([key, value]) => [
+  encodeURIComponent(key), encodeURIComponent(value)
+])).toString();
 let nextToken;
 do {
   const url = new URL(client.endpoint + '/v2/sandboxes');
   url.searchParams.set('state', 'running,paused');
-  url.searchParams.set('metadata', new URLSearchParams({app: 'reporting'}).toString());
+  url.searchParams.set('metadata', metadata);
   url.searchParams.set('limit', '100');
   if (nextToken) url.searchParams.set('nextToken', nextToken);
   const response = await fetch(url, {
@@ -67,10 +71,13 @@ Python，沿用 `client.endpoint`，使用相同的 API Key：
 
 ```python
 import os
-from urllib.parse import urlencode
+from urllib.parse import quote, urlencode
 import requests
 
-params = {'state': 'running,paused', 'metadata': urlencode({'app': 'reporting'}), 'limit': 100}
+filters = {'app': 'reporting', 'branch': 'feat/a&b=1+2%'}
+metadata = urlencode({quote(key, safe=''): quote(value, safe='')
+                      for key, value in filters.items()})
+params = {'state': 'running,paused', 'metadata': metadata, 'limit': 100}
 while True:
     response = requests.get(client.endpoint + '/v2/sandboxes', params=params,
                             headers={'X-API-Key': os.environ['QINIU_SANDBOX_API_KEY']},
@@ -88,6 +95,11 @@ Go 可使用下面的函数，传入与 `sandbox.Config` 相同的端点、API K
 
 ```go
 func listSandboxIDs(ctx context.Context, hc *http.Client, endpoint, apiKey string) ([]string, error) {
+	filters := url.Values{}
+	for key, value := range map[string]string{"app": "reporting", "branch": "feat/a&b=1+2%"} {
+		filters.Set(url.QueryEscape(key), url.QueryEscape(value))
+	}
+	metadata := filters.Encode()
 	var ids []string
 	cursor := ""
 	for {
@@ -97,7 +109,7 @@ func listSandboxIDs(ctx context.Context, hc *http.Client, endpoint, apiKey strin
 		}
 		q := u.Query()
 		q.Set("state", "running,paused")
-		q.Set("metadata", url.Values{"app": {"reporting"}}.Encode())
+		q.Set("metadata", metadata)
 		q.Set("limit", "100")
 		if cursor != "" {
 			q.Set("nextToken", cursor)
@@ -135,7 +147,7 @@ func listSandboxIDs(ctx context.Context, hc *http.Client, endpoint, apiKey strin
 }
 ```
 
-批量修改／清理前先完成查询并保存明确的资源 ID 集合，避免边翻页边改变筛选集合。各 SDK 的单页 list 仍可用于小范围查询；qshell 的限制见 [cli.md](cli.md)。
+Go 使用配套 SDK 的 `client.List` 时，将上例的 `metadata` 传给 `ListParams.Metadata`；不要把已编码的值再传给 Node／Python 的 metadata 字典入口。批量修改／清理前先完成查询并保存明确的资源 ID 集合，避免边翻页边改变筛选集合；qshell 的限制见 [cli.md](cli.md)。
 
 ## 请求选项与时间单位
 
@@ -146,7 +158,7 @@ func listSandboxIDs(ctx context.Context, hc *http.Client, endpoint, apiKey strin
 | API 请求时限 | context 和 HTTPClient | 客户端 `timeout` 是 urllib 时限（毫秒） | 客户端 `timeout` 为 requests 时限（秒），默认 30 |
 | 自动重试 | `Config.RetryMax *int` | `maxRetries` | `max_retries` |
 | 重试环境变量 | `SANDBOX_RETRY_MAX` | 同左 | 同左 |
-| 进程／文件时限 | context／方法 options | 命令／PTY 的 `timeoutMs`／`requestTimeoutMs` 限制等待启动；文件 read/write 无单次时限选项，见主题页 | 对应 `timeout`／`request_timeout`，见主题页 |
+| 进程／文件时限 | context／方法 options | `requestTimeoutMs` 等待启动；配套版创建命令／PTY 时用 `executionTimeoutMs` 设置 Envd 执行期限，文件传输也支持 `requestTimeoutMs`，见主题页 | 对应 `timeout`／`request_timeout`，见主题页 |
 
 重试次数默认 5，0 禁用；并非每个接口都走自动重试。不要给命令套上创建请求的重试策略，命令可能已经产生业务副作用。
 

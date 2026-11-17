@@ -93,9 +93,23 @@ Go `Connect(ctx, pid)` 没有回调参数，重连后通过 `Wait` 获取结果�
 | 进程标签 | `WithTag(tag)` | `tag` | `tag`；connect 还支持 `tag` 选择器 |
 | stdin | `WithStdin()` | `stdin: true` | `stdin=True` |
 | 输出回调 | `WithOnStdout`／`WithOnStderr` | `onStdout`／`onStderr` | `on_stdout`／`on_stderr`，或 `handle.wait` 的参数 |
-| 运行与等待时限 | context；`WithTimeout(time.Duration)` 约束执行流 | 当前 `timeout`／`timeoutMs`／`requestTimeoutMs` 用于等待启动事件的计时器 | `timeout` 以秒传到启动请求；`request_timeout` 覆盖 HTTP 读取超时，均以秒为单位 |
+| 运行与等待时限 | context；`WithTimeout(time.Duration)` 约束执行流 | `timeout`／`timeoutMs`／`requestTimeoutMs` 等待启动；配套版 Start 的 `executionTimeoutMs` 由 Envd 执行 | `timeout` 以秒传到启动请求；`request_timeout` 覆盖 HTTP 读取超时，均以秒为单位 |
 
-沙箱 TTL 与以上时限分别设置。Node.js 的启动计时器在收到进程启动事件后清除；若业务要求在固定时刻停止后台命令，应用计时到期后显式调用 `kill`，并检查结果。Python 未传进程读取时限时使用客户端超时；HTTP 超时不表示远端进程已经停止。不要用 `timeout=0` 假定所有 Python HTTP 路径都支持无限等待。
+沙箱 TTL 与以上时限分别设置。Node.js 的启动计时器在收到进程启动事件后清除；发布基线需要应用按业务截止时间显式 kill。Python 未传进程读取时限时使用客户端超时；HTTP 超时不表示远端进程已经停止。不要用 `timeout=0` 假定所有 Python HTTP 路径都支持无限等待。
+
+包含 [配套 SDK 修复](sources.md#配套-sdk-修复) 的 Node.js SDK 在创建进程时用 `executionTimeoutMs` 设置执行期限，单位为毫秒，0 或省略表示不设置。SDK 通过 `Connect-Timeout-Ms` 把期限交给 Envd；客户端断连或退出后，Envd 仍会在期限到达时终止启动的进程。
+
+```javascript
+const task = await sandbox.commands.run('python3 /home/user/job.py', {
+  background: true,
+  requestTimeoutMs: 5000,
+  executionTimeoutMs: 30000
+});
+const result = await task.wait();
+if (result.exitCode !== 0) throw new Error(`Command exited ${result.exitCode}`);
+```
+
+上例最多等待 5 秒取得启动事件，进程的 30 秒期限由 Envd 从启动阶段计时。`commands.connect` 只重新接收已有进程的输出，不接受 `executionTimeoutMs`，也不会延长或重设原期限。断开输出连接仍不代表任务完成，重连后按实际结束状态验收。
 
 ## qshell
 

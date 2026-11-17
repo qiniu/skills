@@ -99,6 +99,8 @@ EOF 应通过 PTY 输入发送 `\x04`；普通进程的 `CloseStdin` 不适用�
 
 PTY 的存活时间仍受沙箱 TTL 约束。Go 通过创建时的 context 控制流；`Pty.Create` 当前不会应用普通命令的 `WithTimeout` 计时逻辑。Node.js 的 `requestTimeoutMs`／`timeoutMs`／`timeout` 用来等待启动事件，启动后应用应自行管理交互会话时限。Python 的 `timeout` 是请求读取超时，单位为秒；不要把它当作后台 shell 必定被终止的时间。
 
+包含 [配套 SDK 修复](sources.md#配套-sdk-修复) 的 Node.js SDK 可在 `pty.create({rows: 24, cols: 80, executionTimeoutMs: 300000})` 时交给 Envd 设置 5 分钟执行期限。断开客户端后期限继续生效；`pty.connect` 只恢复输出订阅，不接受这一选项，也不会修改原期限。需要长期保留交互会话时，在创建阶段按保留策略设置期限。
+
 ```bash
 qshell sandbox connect SANDBOX_ID
 ```

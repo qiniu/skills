@@ -20,8 +20,8 @@
 | 工具与来源 | 配套修复的接口与行为 |
 | --- | --- |
 | [Go SDK #245](https://github.com/qiniu/go-sdk/pull/245) | `Client.List` 返回 `*SandboxPage{Items, NextToken}`；`TrafficAccessToken()` 可读取服务 token；PTY 重连可接收原始字节；文件请求使用 Envd token，公开签名 URL 对齐 Envd 编码与 Unix 过期时间；临时 Git 认证隔离已有 credential helper |
-| [Node.js SDK #463](https://github.com/qiniu/nodejs-sdk/pull/463) | `client.listSandboxes`／`listSnapshots` 返回 `{items, nextToken}`；文件支持 Readable 输入、端到端流式下载与 `requestTimeoutMs`；Commands／PTY 支持 `executionTimeoutMs`；类型包含服务 token／`buildConfig`；临时 Git 凭据隔离、上传取消／错误解析和文件 URL 签名已修复 |
-| [Python SDK #476](https://github.com/qiniu/python-sdk/pull/476) | `client.list_sandboxes` 返回 `{'items': [...], 'nextToken': ...}`；PTY 支持 `on_data(bytes)` 与断连；clone 支持临时用户名／密码，临时目录和清理使用同一进程用户；文件 URL 签名对齐 Envd |
+| [Node.js SDK #463](https://github.com/qiniu/nodejs-sdk/pull/463) | `client.listSandboxes`／`listSnapshots` 返回 `{items, nextToken}`，metadata 字典保留特殊字符；文件支持 Readable 输入、端到端流式下载与 `requestTimeoutMs`，识别调用前或传输中已提前关闭的源；创建命令／PTY 时将 `executionTimeoutMs` 交给 Envd，重连不接受该选项；类型包含服务 token／`buildConfig`；临时 Git 凭据隔离、上传错误解析和文件 URL 签名已修复 |
+| [Python SDK #476](https://github.com/qiniu/python-sdk/pull/476) | `client.list_sandboxes` 返回 `{'items': [...], 'nextToken': ...}`，metadata 字典保留特殊字符；PTY 支持 `on_data(bytes)` 与断连；clone 支持临时用户名／密码，临时目录和清理使用同一进程用户；文件 URL 签名对齐 Envd，原始 Envd 请求不自动跟随重定向 |
 | [qshell #469](https://github.com/qiniu/qshell/pull/469) | 列表支持 `--all`／`--next-token`；批量操作完整枚举后再执行；失败返回非零退出码。此 PR 仍依赖 Go SDK v7.30.1，未包含 Go 文件 HTTP 鉴权修复；CLI 现有 stdin／stdout 文件传输走 Commands 接口，不受该问题影响 |
 
 主题页中标明发布基线的封装限制，仅适用于上方固定源码。配套版本中的分页仍重复调用同一个列表方法并回填游标；高层分页器负责自动传递游标。Code Interpreter／Desktop 的兼容 SDK 路径不依赖这些分页返回值变化。
