@@ -38,7 +38,7 @@ Connect v2 在暂停时恢复沙箱，并只延长 TTL。Go `ConnectParams.Timeo
 
 `GET /v2/sandboxes` 的正文是数组，下一页游标在响应头 `X-Next-Token` 中。请求参数为 `state`（逗号分隔）、`template`、`metadata`、`limit`、`nextToken`。`metadata` 先分别对每个键和值做百分号编码，再组成并编码内部 query，最后交给 HTTP 客户端编码外层参数。服务端会先解码整个 metadata，再拆分和解码键值；少一层会把 `a+b` 变成 `a b`，或让包含 `&`、`=`、`%` 的筛选值报错。
 
-发布基线的列表封装没有完整交付响应头游标，Node 的 `query.metadata` 还会编码为 `metadata[app]`。包含 [配套 SDK 修复](sources.md#配套-sdk-修复) 后，Node／Python 接受原始 metadata 字典并完成所需编码；Go 的 `ListParams.Metadata` 仍由调用方提供已编码的内部 query。下面的原始 HTTP 流程可用于发布基线和配套版本，普通 `nextToken` 直接交给 HTTP 客户端编码一次。
+源码基线的列表封装没有完整交付响应头游标，Node 的 `query.metadata` 还会编码为 `metadata[app]`。包含 [配套 SDK 修复](sources.md#配套-sdk-修复) 后，Node／Python 接受原始 metadata 字典并完成所需编码；Go 的 `ListParams.Metadata` 仍由调用方提供已编码的内部 query。下面的原始 HTTP 流程可用于源码基线和配套版本，普通 `nextToken` 直接交给 HTTP 客户端编码一次。
 
 Node.js 18+，沿用 SDK 客户端的 `endpoint` 和入门配置的环境变量：
 

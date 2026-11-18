@@ -1,6 +1,6 @@
 # Desktop 与 Computer Use
 
-`desktop` 是带 Xfce、Xvfb 和桌面自动化工具的预构建沙箱模板。先确认所用地域已发布该模板。Go 使用七牛原生 Desktop 封装；Node.js／Python 可按[官方 Desktop 指南](https://developer.qiniu.com/las/13576/sandbox-desktop)使用 E2B 兼容 Desktop SDK 接入七牛端点。
+`desktop` 是带 Xfce、Xvfb 和桌面自动化工具的预构建沙箱模板。先确认所用地域已发布该模板。Go 和 Node.js 固定源码提供原生 Desktop。Node.js 也可选择 E2B 兼容 SDK，Python 使用兼容 SDK。
 
 ## Go：创建、截图和操作
 
@@ -91,9 +91,62 @@ if err != nil {
 
 VNC 密码和平台的服务流量 token 是两层鉴权。关闭公共流量时，浏览器还需要能携带平台 Header 的 HTTP／WebSocket 代理；原理见 [network.md](network.md)。仅关闭浏览器页签不会停止桌面流或沙箱。
 
+## Node.js 原生 Desktop
+
+按 [setup.md](setup.md) 安装包含 `Desktop` 的固定源码包。使用已配置的 `qiniu.sandbox.SandboxClient` 创建桌面。模板默认是 `desktop`，沙箱 `timeout` 以秒为单位，`wait()` 和轮询参数以毫秒为单位。
+
+```javascript
+const fs = require('node:fs/promises');
+
+async function captureDesktop(client) {
+  const desktop = await client.createDesktop({
+    template: 'desktop',
+    timeout: 300,
+    resolution: { width: 1024, height: 768 }
+  });
+  try {
+    await desktop.open('https://www.qiniu.com');
+    await desktop.wait(1000);
+    const png = await desktop.screenshot();
+    await fs.writeFile('desktop.png', png, { mode: 0o600 });
+  } finally {
+    await desktop.sandbox.kill();
+  }
+}
+```
+
+也可用 `qiniu.Desktop.create({ client, ...options })`；`qiniu.Desktop` 与 `qiniu.sandbox.Desktop` 指向同一个类。已有桌面沙箱可用 `new qiniu.Desktop(sandbox, options)` 包装，随后调用 `await desktop.start()`。沙箱的命令、文件和生命周期接口通过 `desktop.sandbox` 访问。
+
+| 目标 | 方法 |
+| --- | --- |
+| 屏幕／指针 | `screenSize()`、`cursorPosition()`、`screenshot()`（PNG Buffer） |
+| 键鼠 | `moveMouse({ x, y })`、`click('left', { x, y })`、`drag(from, to)`、`scroll('down', 3)`、`typeText(text, { chunkSize, delayMs })`、`press('ctrl', 'l')` |
+| 应用与窗口 | `open(pathOrURL)`、`launch('xfce4-terminal')`、`activeWindowID()`、`applicationWindows(application)`、`windowTitle(id)` |
+
+### Node.js noVNC
+
+在现有桌面上启动流。让 `useViewer` 在应用已鉴权的会话内交付访问地址和 VNC 密码，并在交互结束后返回。
+
+```javascript
+async function withViewer(desktop, useViewer) {
+  const stream = desktop.stream;
+  await stream.start();
+  try {
+    return await useViewer({
+      url: stream.url({ viewOnly: true, resize: 'scale' }),
+      password: stream.authKey()
+    });
+  } finally {
+    await stream.stop();
+  }
+}
+```
+
+默认开启随机 VNC 密码，VNC／Web 端口为 5900／6080。可以用 `vncPort`、`webPort`、`windowID` 配置端口和共享窗口。地址默认不附带密码，私有流量另需按 [network.md](network.md) 配置携带平台访问头的代理。应用管理沙箱生命周期，任务结束时还需调用 `desktop.sandbox.kill()`。
+
 ## JavaScript／Python 兼容接入
 
-七牛原生 `qiniu` Node.js／Python 包当前没有 Desktop 类；以下是官方提供的兼容 SDK 路线，包名和时间单位与原生 SDK 分开使用。配置 `E2B_API_KEY` 和 `E2B_API_URL` 为七牛对应地域端点。
+按[七牛 Desktop 官方指南](https://developer.qiniu.com/las/13576/sandbox-desktop)选用兼容包，配置 `E2B_API_KEY` 和 `E2B_API_URL` 为七牛对应地域端点。创建和操作参数按安装的兼容包版本核对。
 
 2026-11-17 的七牛扬州环境实测组合为 Node.js `@e2b/desktop` 2.2.0 + `e2b` 2.8.3，Python `e2b-desktop` 2.3.0 + `e2b` 2.7.0；本轮客户端为 Node.js 24 和 Python 3.12。固定安装版本并核对实际解析出的基础依赖：
 
@@ -135,12 +188,12 @@ finally:
     session.kill()
 ```
 
-兼容 SDK 的鼠标、输入和流服务方法按其安装版本及官方指南核对，不调用不存在的 `qiniu.sandbox.Desktop`。详见 [compatibility.md](compatibility.md)。
+兼容 SDK 的鼠标、输入和流服务方法见其安装版本文档与 [compatibility.md](compatibility.md)。
 
 兼容 SDK 的 `launch('xfce4-terminal')` 使用桌面应用 ID；Go 的 `Launch` 接收可执行程序及参数。开始键盘输入前，确认窗口已出现并获得焦点。`write`／`press` 返回成功后仍需读回文件、界面文本或截图，验证动作产生了预期效果。
 
 本轮 Go 集成测试通过桌面启动、PNG 尺寸、鼠标位置、点击／拖动／滚动、窗口、键盘调用和 noVNC 生命周期；Node.js／Python 兼容组合通过截图、鼠标位置、终端内 ASCII 输入并读回文件、按键／点击／滚动及开启认证的 noVNC 页面访问。Node.js 另验证 WebSocket RFB 握手要求 VNC 认证。测试沙箱均已清理；未接入视觉模型执行完整 Agent 任务。
 
-本轮 Node.js／Python 的中文键盘输入未通过：默认 locale 下出现 `Invalid multi-byte sequence`，显式设置 UTF-8 后仍观察到丢字。需要中文或其他 Unicode 文本时，将准确内容通过文件 API 写入，再使用应用的文件打开／导入流程；需要直接模拟键入时，先在目标模板验证完整文本，不能将命令退出码作为正确输入的证明。
+本轮 Node.js／Python 兼容组合的中文键盘输入未通过：默认 locale 下出现 `Invalid multi-byte sequence`，显式设置 UTF-8 后仍观察到丢字。需要中文或其他 Unicode 文本时，将准确内容通过文件 API 写入，再使用应用的文件打开／导入流程；需要直接模拟键入时，先在目标模板验证完整文本，不能将命令退出码作为正确输入的证明。
 
-来源：[Go Desktop](https://github.com/qiniu/go-sdk/blob/master/sandbox/desktop.go)、[Go noVNC](https://github.com/qiniu/go-sdk/blob/master/sandbox/desktop_stream.go)、[七牛 Desktop 官方指南](https://developer.qiniu.com/las/13576/sandbox-desktop)。
+来源：[Go Desktop](https://github.com/qiniu/go-sdk/blob/master/sandbox/desktop.go)、[Go noVNC](https://github.com/qiniu/go-sdk/blob/master/sandbox/desktop_stream.go)、[Node.js Desktop 与 noVNC](https://github.com/qiniu/nodejs-sdk/blob/f382ed6ffef3c225924b3617c73f9581fa4e0390/docs/sandbox.md#desktop)、[七牛 Desktop 官方指南](https://developer.qiniu.com/las/13576/sandbox-desktop)。

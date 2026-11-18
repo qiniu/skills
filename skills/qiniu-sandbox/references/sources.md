@@ -4,27 +4,27 @@
 
 ## 核对基线
 
-2026-11-17 核对以下源码版本。链接固定到对应提交，便于复核。接入已有项目时仍应检查项目实际安装的版本；遇到接口差异，从官方仓库的对应版本继续查阅。
+2026-11-18 核对以下源码提交和公开安装渠道。已有项目按实际依赖版本核对类型和方法签名。
 
-| 工具 | 版本 | 源码基线 |
-| --- | --- | --- |
-| qshell | v2.21.2 | [ab37568](https://github.com/qiniu/qshell/tree/ab37568bd6fe71218f62dd15b62b03d581dfa7a6) |
-| Go SDK | v7.31.0 | [d94ab38](https://github.com/qiniu/go-sdk/tree/d94ab38cd03301662846526377d211f6da03dc74) |
-| Node.js SDK | v7.15.6 | [f0b4989](https://github.com/qiniu/nodejs-sdk/tree/f0b4989a63ab70c7236a3bfc2a6a51eb594f5de9) |
-| Python SDK | v7.19.0 | [26d426e](https://github.com/qiniu/python-sdk/tree/26d426e2d6c67f68a2980828bab5bae611a42545) |
+| 工具 | 源码版本 | 源码基线 | 安装渠道 |
+| --- | --- | --- | --- |
+| qshell | v2.21.2 | [ab37568](https://github.com/qiniu/qshell/tree/ab37568bd6fe71218f62dd15b62b03d581dfa7a6) | [GitHub v2.21.2](https://github.com/qiniu/qshell/releases/tag/v2.21.2) |
+| Go SDK | v7.31.0 | [d94ab38](https://github.com/qiniu/go-sdk/tree/d94ab38cd03301662846526377d211f6da03dc74) | Go module v7.31.0 |
+| Node.js SDK | v7.15.7 | [f382ed6](https://github.com/qiniu/nodejs-sdk/tree/f382ed6ffef3c225924b3617c73f9581fa4e0390) | GitHub 源码包含 Sandbox 和 Desktop。[公开 npm](https://www.npmjs.com/package/qiniu) 当前为 7.15.2，其中没有 Sandbox 模块 |
+| Python SDK | v7.19.0 | [26d426e](https://github.com/qiniu/python-sdk/tree/26d426e2d6c67f68a2980828bab5bae611a42545) | [PyPI 7.18.0](https://pypi.org/project/qiniu/7.18.0/) 包含 Sandbox 模块，固定源码安装见 [setup.md](setup.md) |
 
 ## 配套 SDK 修复
 
-本技能配套的以下 PR 尚未作为发布包基线核对。确认项目依赖已包含对应改动后，使用此表的接口契约；上方发布版本号本身不保证包含这些修复。SDK 发版后，应同时更新安装表、源码基线和相关主题页。
+以下 PR 记录配套接口和行为。项目依赖包含对应改动后，按此表选择契约。SDK 发版后同步核对安装表、源码基线和相关主题页。Node 原生 Desktop 随 [nodejs-sdk#464](https://github.com/qiniu/nodejs-sdk/pull/464) 进入上游源码，属于上表的 Node 基线。
 
 | 工具与来源 | 配套修复的接口与行为 |
 | --- | --- |
-| [Go SDK #245](https://github.com/qiniu/go-sdk/pull/245) | `Client.List` 返回 `*SandboxPage{Items, NextToken}`；`TrafficAccessToken()` 可读取服务 token；PTY 重连可接收原始字节；文件请求使用 Envd token，公开签名 URL 对齐 Envd 编码与 Unix 过期时间；临时 Git 认证隔离已有 credential helper |
+| [Go SDK #245](https://github.com/qiniu/go-sdk/pull/245) | `Client.List` 返回 `*SandboxPage{Items, NextToken}`；`TrafficAccessToken()` 可读取服务 token；PTY 重连可接收原始字节，断连立即释放等待者并保留已收到的输出；文件请求使用 Envd token，公开签名 URL 对齐 Envd 编码与 Unix 过期时间；临时 Git 认证隔离已有 credential helper |
 | [Node.js SDK #463](https://github.com/qiniu/nodejs-sdk/pull/463) | `client.listSandboxes`／`listSnapshots` 返回 `{items, nextToken}`，metadata 字典保留特殊字符；文件支持 Readable 输入、端到端流式下载与 `requestTimeoutMs`，识别调用前或传输中已提前关闭的源；创建命令／PTY 时将 `executionTimeoutMs` 交给 Envd，重连不接受该选项；类型包含服务 token／`buildConfig`；临时 Git 凭据隔离、上传错误解析和文件 URL 签名已修复 |
-| [Python SDK #476](https://github.com/qiniu/python-sdk/pull/476) | `client.list_sandboxes` 返回 `{'items': [...], 'nextToken': ...}`，metadata 字典保留特殊字符；PTY 支持 `on_data(bytes)` 与断连；clone 支持临时用户名／密码，临时目录和清理使用同一进程用户；文件 URL 签名对齐 Envd，原始 Envd 请求不自动跟随重定向 |
+| [Python SDK #476](https://github.com/qiniu/python-sdk/pull/476) | `client.list_sandboxes` 返回 `{'items': [...], 'nextToken': ...}`，metadata 字典保留特殊字符；PTY 支持 `on_data(bytes)` 与断连，活跃读流由读线程完成 HTTP 响应清理；临时 Git 用户名优先于已有配置，临时目录和清理使用同一进程用户；文件 URL 签名对齐 Envd，原始 Envd 请求不自动跟随重定向 |
 | [qshell #469](https://github.com/qiniu/qshell/pull/469) | 列表支持 `--all`／`--next-token`；批量操作完整枚举后再执行；失败返回非零退出码。此 PR 仍依赖 Go SDK v7.30.1，未包含 Go 文件 HTTP 鉴权修复；CLI 现有 stdin／stdout 文件传输走 Commands 接口，不受该问题影响 |
 
-主题页中标明发布基线的封装限制，仅适用于上方固定源码。配套版本中的分页仍重复调用同一个列表方法并回填游标；高层分页器负责自动传递游标。Code Interpreter／Desktop 的兼容 SDK 路径不依赖这些分页返回值变化。
+主题页中标明源码基线的封装限制，仅适用于上方固定源码。配套版本中的分页仍重复调用同一个列表方法并回填游标；高层分页器负责自动传递游标。Code Interpreter／Desktop 的兼容 SDK 路径不依赖这些分页返回值变化。
 
 Node.js／Python 配套修复还将 Commands／PTY 的进程选择器按 Envd Protobuf JSON 直接编码为 `process.pid` 或 `process.tag`，修复重连、输入、关闭 stdin、缩放和 kill 的 501。云端回归覆盖完整交互，PTY 测试不再把此类协议错误当作不支持而跳过；Go 的 stdin 集成用例验证真实写入、EOF 和输出。
 

@@ -2,17 +2,23 @@
 
 ## 选择工具
 
-| 场景 | 安装／依赖 | 本文核对版本 |
+| 场景 | 安装／依赖 | 安装来源 |
 | --- | --- | --- |
 | 直接执行运维命令 | [qshell 发布包](https://github.com/qiniu/qshell/releases)，将 `qshell` 放入 PATH | v2.21.2 |
 | Go 应用 | `go get github.com/qiniu/go-sdk/v7@v7.31.0` | v7.31.0 |
-| Node.js／TypeScript 应用 | `npm install qiniu@^7.15.6` | v7.15.6 |
-| Python 应用 | `python -m pip install 'qiniu>=7.19.0'` | v7.19.0 |
+| Node.js／TypeScript 应用 | `npm install --save-exact https://codeload.github.com/qiniu/nodejs-sdk/tar.gz/f382ed6ffef3c225924b3617c73f9581fa4e0390` | GitHub v7.15.7 对应源码 |
+| Python 应用 | `python -m pip install 'qiniu==7.18.0'` | PyPI v7.18.0 |
 | 解释器上下文与富媒体执行结果 | [Code Interpreter 兼容 SDK](code-interpreter.md) | 版本见主题页 |
 
-本表记录已核对的发布基线；这些安装命令不代表已经包含 [配套 SDK 修复](sources.md#配套-sdk-修复)。首次调用前，对照项目实际安装包的类型、源码或发布记录确认所需能力；需要配套修复接口时，先使用已确认包含相应改动的版本。尚未发布的修复以对应 PR 为依据，不猜测版本号。
+公开 npm 的 `qiniu@7.15.2` 缺少 Sandbox 模块，Node.js 使用上表的固定源码包。PyPI 的 `qiniu==7.18.0` 包含 Sandbox 模块。需要与本文 Python 源码基线一致时，可在隔离环境中安装固定源码：
 
-高层分页器在发布基线与配套修复中都负责管理游标；底层列表的数组／Page 返回形态有变化，应按实际版本选择一种契约。文件签名、临时 Git 凭据隔离等安全修复也需要核对，不能仅凭包名推定已生效。具体版本、源码和修复范围见 [sources.md](sources.md)。
+```bash
+python -m pip install 'qiniu @ https://codeload.github.com/qiniu/python-sdk/tar.gz/26d426e2d6c67f68a2980828bab5bae611a42545'
+```
+
+首次调用前核对项目实际安装的接口。需要 [配套 SDK 修复](sources.md#配套-sdk-修复) 时，选择确认包含相应改动的依赖版本。
+
+高层分页器在源码基线与配套修复中都负责管理游标；底层列表的数组／Page 返回形态有变化，应按实际版本选择一种契约。文件签名、临时 Git 凭据隔离等安全修复也需要核对，不能仅凭包名推定已生效。具体版本、源码和修复范围见 [sources.md](sources.md)。
 
 ## 凭据与端点
 

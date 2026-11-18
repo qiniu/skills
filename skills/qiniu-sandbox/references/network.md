@@ -61,7 +61,7 @@ params := sandbox.CreateParams{
 
 当 `allowPublicTraffic=false` 时，外部请求需要 Header `e2b-traffic-access-token`。Node.js 和 Python 在创建返回值中保留 `trafficAccessToken`；保留该次创建响应，避免误用 API Key 或 Envd token。
 
-Node.js 发布基线的 `waitForReady` 会用详情响应替换 `sandbox.info`，详情不含创建时的流量 token，实例成员也未在 TypeScript 类型中声明。配套修复版会保留该 token 并提供类型；按发布基线接入时，可以在创建阶段显式保存原始响应，再包装为 Sandbox：
+Node.js 源码基线的 `waitForReady` 会用详情响应替换 `sandbox.info`，详情不含创建时的流量 token，实例成员也未在 TypeScript 类型中声明。配套修复版会保留该 token 并提供类型；按源码基线接入时，可以在创建阶段显式保存原始响应，再包装为 Sandbox：
 
 ```javascript
 const created = await client.createSandbox({

@@ -95,7 +95,7 @@ Go `Connect(ctx, pid)` 没有回调参数，重连后通过 `Wait` 获取结果�
 | 输出回调 | `WithOnStdout`／`WithOnStderr` | `onStdout`／`onStderr` | `on_stdout`／`on_stderr`，或 `handle.wait` 的参数 |
 | 运行与等待时限 | context；`WithTimeout(time.Duration)` 约束执行流 | `timeout`／`timeoutMs`／`requestTimeoutMs` 等待启动；配套版 Start 的 `executionTimeoutMs` 由 Envd 执行 | `timeout` 以秒传到启动请求；`request_timeout` 覆盖 HTTP 读取超时，均以秒为单位 |
 
-沙箱 TTL 与以上时限分别设置。Node.js 的启动计时器在收到进程启动事件后清除；发布基线需要应用按业务截止时间显式 kill。Python 未传进程读取时限时使用客户端超时；HTTP 超时不表示远端进程已经停止。不要用 `timeout=0` 假定所有 Python HTTP 路径都支持无限等待。
+沙箱 TTL 与以上时限分别设置。Node.js 的启动计时器在收到进程启动事件后清除；源码基线需要应用按业务截止时间显式 kill。Python 未传进程读取时限时使用客户端超时；HTTP 超时不表示远端进程已经停止。不要用 `timeout=0` 假定所有 Python HTTP 路径都支持无限等待。
 
 包含 [配套 SDK 修复](sources.md#配套-sdk-修复) 的 Node.js SDK 在创建进程时用 `executionTimeoutMs` 设置执行期限，单位为毫秒，0 或省略表示不设置。SDK 通过 `Connect-Timeout-Ms` 把期限交给 Envd；客户端断连或退出后，Envd 仍会在期限到达时终止启动的进程。
 

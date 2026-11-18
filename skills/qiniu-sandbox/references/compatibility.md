@@ -1,6 +1,6 @@
 # 能力覆盖与接口差异
 
-本页的限制表以 [sources.md](sources.md) 中固定的发布基线为准；同页的配套 SDK 修复表单独列出尚未作为发布包核对的变更。先确认项目依赖所属版本，再选择对应契约。SDK 封装缺口不等于服务端没有对应能力，账号与地域是否开通还需查询实际环境。
+本页的限制表以 [sources.md](sources.md) 中固定的源码基线为准；同页的配套 SDK 修复表单独列出尚未作为发布包核对的变更。先确认项目依赖所属版本，再选择对应契约。SDK 封装缺口不等于服务端没有对应能力，账号与地域是否开通还需查询实际环境。
 
 ## 主题覆盖
 
@@ -22,7 +22,7 @@
 | 地域／接入配置 | [setup.md](setup.md) |
 | Agent／浏览器／MCP／Windows／SSH／VPN | [integrations.md](integrations.md) |
 
-## 发布基线的平台 API 与语言封装
+## 源码基线的平台 API 与语言封装
 
 | 能力 | 此基线的实际边界 | 使用路径 |
 | --- | --- | --- |
@@ -38,7 +38,7 @@
 | 临时 Git 凭据 | 继承的 credential helper 可能保存临时凭据；Python 文件操作还可能使用不同用户 | 使用配套凭据隔离修复；命令级回退显式清空继承 helper，见 [git.md](git.md) |
 | Node 服务 token 类型 | 实例运行时保存 token，但 TypeScript 未声明该成员；waitForReady 会替换 info | 保存原始创建响应中的 token，再包装实例，见 [network.md](network.md) |
 | Code Interpreter | 平台已有解释器运行时；原生 Go／Node／Python qiniu 包没有 runCode／上下文专用封装 | 使用官方支持的 `@e2b/code-interpreter`／`e2b-code-interpreter` 兼容接入，见 [code-interpreter.md](code-interpreter.md) |
-| Desktop | 原生 Desktop／Stream 封装在 Go 中；原生 Node／Python qiniu 包无对应类 | Go 原生 API，或七牛官方支持的 `@e2b/desktop`／`e2b-desktop` 兼容接入 |
+| Desktop | Go 和 Node.js v7.15.7 固定源码提供原生 Desktop 与 noVNC | 使用 [Go／Node 原生指引](desktop.md)。Node.js 也可使用 `@e2b/desktop`，Python 使用 `e2b-desktop` |
 | Windows | 服务提供 Windows 模板，但此基线三语言 Commands helper 均启动 `/bin/bash` | 使用官方 Windows 指南的 E2B 兼容流程；不把 Linux helper 套到 Windows |
 | Python Git 认证 | clone 的 username/password kwargs 未被执行层转换为 Git 认证 | 用授权的 Git 资源挂载，或在沙箱配置经核对的 credential helper |
 | Python PTY | 无实时 PTY 字节回调和 disconnect helper | 当前句柄只在 wait 后提供解码后的 stdout；需要实时桌面终端时选择其他接口 |

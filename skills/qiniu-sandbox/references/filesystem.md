@@ -2,7 +2,7 @@
 
 以下示例使用已连接的 `sandbox`；Go 使用 `sb` 和 `ctx`。文件路径是沙箱内的 POSIX 路径，本地文件路径属于调用应用所在机器。写入会覆盖同路径文件，删除和重命名前确认任务范围。
 
-启用 Envd token 的 Go／Node 文件 HTTP 读写，以及三个 SDK 的公开签名 URL，需要先确认已包含 [配套文件鉴权修复](sources.md#配套-sdk-修复)。发布基线中的签名编码与服务端不一致，Go 默认过期时间和批量上传鉴权也有缺口；只给 URL 传绝对过期时间不能解决这些问题。
+启用 Envd token 的 Go／Node 文件 HTTP 读写，以及三个 SDK 的公开签名 URL，需要先确认已包含 [配套文件鉴权修复](sources.md#配套-sdk-修复)。源码基线中的签名编码与服务端不一致，Go 默认过期时间和批量上传鉴权也有缺口；只给 URL 传绝对过期时间不能解决这些问题。
 
 ## 方法映射
 
@@ -34,7 +34,7 @@ with open('output.bin', 'wb') as target:
         target.write(chunk)
 ```
 
-Node.js 发布基线的 write 只接受 string、Buffer、Uint8Array 或 ArrayBuffer，下载 stream 也先缓冲。下例适合小文件；配套修复版还支持 Readable 输入和端到端流式下载。
+Node.js 源码基线的 write 只接受 string、Buffer、Uint8Array 或 ArrayBuffer，下载 stream 也先缓冲。下例适合小文件；配套修复版还支持 Readable 输入和端到端流式下载。
 
 ```javascript
 const fs = require('node:fs/promises');
@@ -152,4 +152,4 @@ with requests.get(sandbox.download_url('/home/user/upload.txt'),
     assert download.content == b'uploaded\n'
 ```
 
-qshell 的小文件 stdin／stdout 传输见 [cli.md](cli.md)，它走 Commands 接口，不受文件 HTTP 签名问题影响；直接调用 Go 文件 HTTP 接口时仍需使用含修复的 SDK。Node.js 单文件 `write` 可指定 `useOctetStream`／`gzip`，需要 Envd ≥ 0.5.7；普通 multipart 示例不依赖这些选项。Go 使用请求 context；Python 读写的 `request_timeout` 以秒为单位，目录 RPC 使用 `timeout`。配套 Node SDK 的 `requestTimeoutMs` 以毫秒覆盖单次传输，发布基线尚未转发这一选项。跨语言迁移时对照当前方法签名。
+qshell 的小文件 stdin／stdout 传输见 [cli.md](cli.md)，它走 Commands 接口，不受文件 HTTP 签名问题影响；直接调用 Go 文件 HTTP 接口时仍需使用含修复的 SDK。Node.js 单文件 `write` 可指定 `useOctetStream`／`gzip`，需要 Envd ≥ 0.5.7；普通 multipart 示例不依赖这些选项。Go 使用请求 context；Python 读写的 `request_timeout` 以秒为单位，目录 RPC 使用 `timeout`。配套 Node SDK 的 `requestTimeoutMs` 以毫秒覆盖单次传输，源码基线尚未转发这一选项。跨语言迁移时对照当前方法签名。

@@ -2,6 +2,8 @@
 
 依赖为 `qiniu`，入口为 `qiniu.sandbox.SandboxClient` 和 `qiniu.sandbox.Sandbox`。安装与环境设置见 [setup.md](setup.md)。TypeScript 可以使用 `import * as qiniu from 'qiniu'`，接口类型随 SDK 提供。
 
+需要截图、键鼠或 noVNC 时，使用 [Node.js 原生 Desktop 指引](desktop.md#nodejs-原生-desktop)。
+
 ## 最小完整流程
 
 以下示例使用 Node.js 18 或更新版本。将代码保存为 `sandbox-demo.cjs`，运行 `node sandbox-demo.cjs`。`QINIU_SANDBOX_TEMPLATE` 可指定已存在的模板，默认使用 `base`。

@@ -80,7 +80,7 @@ while (pages.hasNext) {
 }
 ```
 
-`listSnapshots` 的实例封装自动限定来源沙箱，发布基线与配套修复均可用上面的高层分页器完整遍历。确认项目已包含 [配套 SDK 修复](sources.md#配套-sdk-修复) 后，底层 `client.listSnapshots({ sandboxID, name, limit, nextToken })` 返回 `{ items, nextToken }`；继续翻页时将返回的 `nextToken` 传回同一个方法，直到游标为空。发布基线的低层返回形态不同，直接调用前核对实际类型。
+`listSnapshots` 的实例封装自动限定来源沙箱，源码基线与配套修复均可用上面的高层分页器完整遍历。确认项目已包含 [配套 SDK 修复](sources.md#配套-sdk-修复) 后，底层 `client.listSnapshots({ sandboxID, name, limit, nextToken })` 返回 `{ items, nextToken }`；继续翻页时将返回的 `nextToken` 传回同一个方法，直到游标为空。源码基线的低层返回形态不同，直接调用前核对实际类型。
 
 ## Python：捕获与验证副本
 
