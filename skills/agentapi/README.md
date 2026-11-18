@@ -11,6 +11,6 @@ npx skills update agentapi
 
 ## 交流与反馈
 
-使用微信扫描下方二维码，加入七牛云 AgentAPI 开发者交流群，讨论接入问题或反馈建议。
+使用微信扫描下方二维码，加入七牛云 AgentAPI 交流群，讨论接入问题或反馈建议。
 
-![七牛云 AgentAPI 开发者交流群入群二维码](assets/developer-community.jpg)
+![七牛云 AgentAPI 交流群入群二维码](assets/developer-community.jpg)

@@ -35,7 +35,7 @@ npx skills add qiniu/skills --list
 | [xfetch-web](skills/xfetch-web/SKILL.md) | 通过七牛 xfetch 抓取并抽取网页内容 | markdown/json/html |
 | [agentapi](skills/agentapi/SKILL.md) | Choose and build with Qiniu AgentAPI in Portal or through the API | Runtimes, sessions, SSE events, and task results |
 
-For AgentAPI Skill help and feedback, see the [AgentAPI developer community](skills/agentapi/README.md#交流与反馈).
+For AgentAPI Skill help and feedback, see the [AgentAPI community](skills/agentapi/README.md#交流与反馈).
 
 ## What Can You Do
 
@@ -99,7 +99,7 @@ skills/
         └── xfetch.py             # 路径式 xfetch API 辅助脚本
 └── agentapi/                     # Qiniu AgentAPI integration and troubleshooting guidance
     ├── SKILL.md                  # Skill definition (runtime/env selection, session/SSE, validation)
-    ├── README.md                 # Install guide and developer community QR code
+    ├── README.md                 # Install guide and community QR code
     ├── assets/
     │   └── developer-community.jpg
     └── references/
