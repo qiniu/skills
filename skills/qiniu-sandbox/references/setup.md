@@ -2,18 +2,31 @@
 
 ## 选择工具
 
-| 场景 | 安装／依赖 | 安装来源 |
-| --- | --- | --- |
-| 直接执行运维命令 | 下载 [qshell 最新发行包](https://github.com/qiniu/qshell/releases/latest)，将 `qshell` 放入 PATH | 已核对 v2.22.1 |
-| Go 应用，沿用稳定版签名 | `go get github.com/qiniu/go-sdk/v7@v7.31.0` | Go module 稳定版 |
-| Go 应用，需要新版分页和鉴权 | `go get github.com/qiniu/go-sdk/v7@v7.31.1-0.20261119025108-d01bf5d6d62d` | 已合并提交对应的 Go 伪版本 |
-| Node.js／TypeScript 应用 | `npm install --save-exact https://codeload.github.com/qiniu/nodejs-sdk/tar.gz/a2ead373b7a29c61440cfc4e10298ae1975147f5` | GitHub v8.0.0 固定源码 |
-| Python 应用 | `python -m pip install 'qiniu @ https://codeload.github.com/qiniu/python-sdk/tar.gz/af43f5afda06f48adef27a99aa1f7d777645d054'` | GitHub v7.20.0 固定源码 |
-| 解释器上下文与富媒体执行结果 | [Code Interpreter 兼容 SDK](code-interpreter.md) | 版本见主题页 |
+| 场景 | 安装 |
+| --- | --- |
+| 直接执行运维命令 | 下载 [qshell 最新发行包](https://github.com/qiniu/qshell/releases/latest)中与系统和架构匹配的二进制包，将 `qshell` 放入 PATH |
+| Go 应用 | 在 Go module 中运行 `go get github.com/qiniu/go-sdk/v7/sandbox@latest` |
+| Node.js／TypeScript 应用 | 从 [Node.js SDK 最新 Release](https://github.com/qiniu/nodejs-sdk/releases/latest)安装，见下方命令 |
+| Python 应用 | 从 [Python SDK 最新 Release](https://github.com/qiniu/python-sdk/releases/latest)安装，见下方命令 |
+| 解释器上下文与富媒体执行结果 | 按 [Code Interpreter 兼容 SDK](code-interpreter.md) 安装 |
 
-截至 2026-11-19，公开 npm 的 `qiniu` 最新为 7.15.2，缺少 Sandbox 模块。PyPI 最新为 7.18.0，已有 Sandbox 模块，可用 `python -m pip install 'qiniu==7.18.0'` 安装旧版。等所需版本进入包仓库后，可以改用该渠道对应的版本号。在已有项目中沿用当前依赖，若要升级则先核对 [接口迁移和源码基线](sources.md)。
+有 GitHub CLI 时，以下命令直接选取各仓库的最新正式 Release。npm／PyPI 已提供项目所需接口时，也可分别使用 `npm install qiniu@latest` 和 `python -m pip install --upgrade qiniu`。
 
-Go 稳定版 `List` 返回切片，伪版本返回含 `Items` 和 `NextToken` 的页对象。两种签名及旧版 HTTP 分页见 [parameters.md](parameters.md#列表过滤与分页)。
+```bash
+# Node.js：在项目目录执行。
+node_sdk_tag="$(gh release view --repo qiniu/nodejs-sdk --json tagName --jq .tagName)" &&
+  npm install --save-exact "https://codeload.github.com/qiniu/nodejs-sdk/tar.gz/refs/tags/$node_sdk_tag"
+```
+
+```bash
+# Python：在空的下载目录执行。
+gh release download --repo qiniu/python-sdk --pattern 'qiniu-*-py3-none-any.whl' &&
+  python -m pip install ./qiniu-*-py3-none-any.whl
+```
+
+也可从发布页面下载 Python wheel 后使用同一安装命令。Node.js 可从发布页面复制正式标签，将其填入上方的 `node_sdk_tag` 后执行安装命令。
+
+已有项目按锁定的依赖核对方法签名。旧 Go SDK 的单页签名和各语言的 HTTP 分页回退见 [parameters.md](parameters.md#列表过滤与分页)。
 
 ## 凭据与端点
 

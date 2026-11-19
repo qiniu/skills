@@ -61,7 +61,7 @@ params := sandbox.CreateParams{
 
 当 `allowPublicTraffic=false` 时，外部请求需要 Header `e2b-traffic-access-token`。Node.js 和 Python 在创建返回值中保留 `trafficAccessToken`；保留该次创建响应，避免误用 API Key 或 Envd token。
 
-Node.js v8.0.0 的 `waitForReady` 保留实例流量 token，并提供 TypeScript 类型。兼容更早版本时，可在创建阶段显式保存原始响应中的 token，再包装为 Sandbox：
+Node.js 的 `waitForReady` 保留实例流量 token，并提供 TypeScript 类型。兼容更早版本时，可在创建阶段显式保存原始响应中的 token，再包装为 Sandbox：
 
 ```javascript
 const created = await client.createSandbox({
@@ -97,7 +97,7 @@ with requests.get('https://' + sandbox.get_host(8080) + '/',
         raise RuntimeError('Service returned HTTP {}'.format(response.status_code))
 ```
 
-Go [伪版本](setup.md#选择工具) 用 `sb.TrafficAccessToken()` 读取创建或连接返回的流量 token。下面的片段放在端口 8080 的服务就绪后执行，导入 `fmt` 和 `net/http`，并沿用调用方的 `ctx` 和 `sb`。
+Go 用 `sb.TrafficAccessToken()` 读取创建或连接返回的流量 token。下面的片段放在端口 8080 的服务就绪后执行，导入 `fmt` 和 `net/http`，并沿用调用方的 `ctx` 和 `sb`。
 
 ```go
 token := sb.TrafficAccessToken()
@@ -122,7 +122,7 @@ if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 }
 ```
 
-Go 稳定版 v7.31.0 的公开接口没有该访问器。使用该版本访问私有服务时，从原始 API 的创建响应获取 token，并在调用端安全传递。公开服务可在创建时设置 `AllowPublicTraffic=true`，并按应用自身的认证策略访问。
+旧版 Go SDK 缺少该访问器时，从原始 API 的创建响应获取 token，并在调用端安全传递。公开服务可在创建时设置 `AllowPublicTraffic=true`，并按应用自身的认证策略访问。
 
 浏览器地址栏不能为任意 URL 附加该 Header。受限网页或 noVNC 需要由应用提供携带认证头的代理；将 token 保留在服务端，代理同时处理普通 HTTP 和 WebSocket。详情见 [desktop.md](desktop.md)。
 

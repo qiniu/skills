@@ -36,9 +36,9 @@ Connect v2 在暂停时恢复沙箱，并只延长 TTL。Go `ConnectParams.Timeo
 
 ## 列表过滤与分页
 
-Node.js v8.0.0 通过 `query.metadata`、Python v7.20.0 通过 `metadata` 接收原始键值字典，SDK 会按服务端协议编码。低层接口返回当前页和下一页游标，高层分页器自动传递游标。先完成查询并记录目标 ID，再按授权范围做批量操作。
+Node.js 通过 `query.metadata`、Python 通过 `metadata` 接收原始键值字典，SDK 会按服务端协议编码。低层接口返回当前页和下一页游标，高层分页器自动传递游标。先完成查询并记录目标 ID，再按授权范围做批量操作。
 
-### Node.js v8.0.0
+### Node.js
 
 ```javascript
 const pages = qiniu.sandbox.Sandbox.list({
@@ -52,7 +52,7 @@ while (pages.hasNext) {
 
 需要把游标传给下次调用或保存断点时，使用 `client.listSandboxes({ limit: 100, query: { metadata }, nextToken })`，从返回的 `{ items, nextToken }` 取出游标和本页结果。
 
-### Python v7.20.0
+### Python
 
 ```python
 from qiniu.services.sandbox import Sandbox
@@ -66,21 +66,9 @@ while pages.has_next:
 
 低层入口 `client.list_sandboxes(limit=100, metadata=metadata, nextToken=cursor)` 返回 `{'items': [...], 'nextToken': ...}`。从旧版升级时，把已移除的 `list_sandboxes_v2()`／`listSandboxesV2()` 改为 `list_sandboxes()`。单页遍历使用 `client.list_sandboxes(limit=100)['items']`。
 
-### Go 稳定版与新接口
+### Go
 
-Go v7.31.0 的 `List` 返回 `[]sandbox.ListedSandbox`。在返回 `error` 的函数中，直接遍历切片即可读取一页。
-
-```go
-items, err := client.List(ctx, &sandbox.ListParams{})
-if err != nil {
-	return err
-}
-for _, item := range items {
-	fmt.Println(item.SandboxID)
-}
-```
-
-Go 的 [伪版本](setup.md#选择工具)将同一个 `List` 改为返回 `*SandboxPage`。使用 `page.Items` 遍历、取长度或索引，下一页沿用原过滤条件和返回的游标。Go 的 metadata 字符串由调用方按内部 query 编码。下面的片段使用 `net/url` 编码过滤条件。
+当前 Go 稳定版的 `List` 返回 `*SandboxPage`。使用 `page.Items` 遍历、取长度或索引，下一页沿用原过滤条件和返回的游标。Go 的 metadata 字符串由调用方按内部 query 编码。下面的片段使用 `net/url` 编码过滤条件。
 
 ```go
 filters := url.Values{}
@@ -105,9 +93,23 @@ for {
 }
 ```
 
+#### 既有项目的旧 Go 接口
+
+旧版 Go SDK 的 `List` 返回 `[]sandbox.ListedSandbox`。在返回 `error` 的函数中，直接遍历切片即可读取一页。
+
+```go
+items, err := client.List(ctx, &sandbox.ListParams{})
+if err != nil {
+	return err
+}
+for _, item := range items {
+	fmt.Println(item.SandboxID)
+}
+```
+
 ### 旧版 SDK 与原始 HTTP 分页
 
-使用仍返回切片的 Go 稳定版、旧 Node.js／Python 依赖或直接调用公共 API 时，可用下面的原始 HTTP 流程。游标原样交给 HTTP 客户端编码一次。
+使用仍返回切片的旧版 Go SDK、旧 Node.js／Python 依赖或直接调用公共 API 时，可用下面的原始 HTTP 流程。游标原样交给 HTTP 客户端编码一次。
 
 `GET /v2/sandboxes` 的正文是数组，下一页游标在响应头 `X-Next-Token` 中。请求参数为 `state`（逗号分隔）、`template`、`metadata`、`limit`、`nextToken`。`metadata` 先分别对每个键和值做百分号编码，再组成并编码内部 query，最后交给 HTTP 客户端编码外层参数。服务端会先解码整个 metadata，再拆分和解码键值；少一层会把 `a+b` 变成 `a b`，或让包含 `&`、`=`、`%` 的筛选值报错。
 
@@ -229,7 +231,7 @@ func listSandboxIDs(ctx context.Context, hc *http.Client, endpoint, apiKey strin
 | API 请求时限 | context 和 HTTPClient | 客户端 `timeout` 是 urllib 时限（毫秒） | 客户端 `timeout` 为 requests 时限（秒），默认 30 |
 | 自动重试 | `Config.RetryMax *int` | `maxRetries` | `max_retries` |
 | 重试环境变量 | `SANDBOX_RETRY_MAX` | 同左 | 同左 |
-| 进程／文件时限 | context／方法 options | `requestTimeoutMs` 等待启动；v8.0.0 创建命令／PTY 时用 `executionTimeoutMs` 设置 Envd 执行期限，文件传输也支持 `requestTimeoutMs`，见主题页 | 对应 `timeout`／`request_timeout`，见主题页 |
+| 进程／文件时限 | context／方法 options | `requestTimeoutMs` 等待启动；创建命令／PTY 时用 `executionTimeoutMs` 设置 Envd 执行期限，文件传输也支持 `requestTimeoutMs`，见主题页 | 对应 `timeout`／`request_timeout`，见主题页 |
 
 重试次数默认 5，0 禁用；并非每个接口都走自动重试。不要给命令套上创建请求的重试策略，命令可能已经产生业务副作用。
 

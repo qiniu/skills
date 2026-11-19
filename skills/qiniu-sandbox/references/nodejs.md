@@ -67,7 +67,7 @@ main().catch(err => {
 | 写入二进制 | `await sandbox.files.write(path, buffer)` |
 | 服务域名 | `sandbox.getHost(8080)`，返回不带协议的 host |
 
-v8.0.0 的 `Sandbox.list()` 返回分页器。用 `hasNext` 和 `nextItems()` 完整遍历；低层 `client.listSandboxes()` 返回 `{ items, nextToken }`。示例及旧版回退见 [列表过滤与分页](parameters.md#列表过滤与分页)。
+`Sandbox.list()` 返回分页器。用 `hasNext` 和 `nextItems()` 完整遍历；低层 `client.listSandboxes()` 返回 `{ items, nextToken }`。示例及旧版回退见 [列表过滤与分页](parameters.md#列表过滤与分页)。
 
 设置沙箱存活时间时，`timeout` 为秒，`timeoutMs` 为毫秒，选用其中一个即可。`SandboxClient({ timeout })` 的 HTTP 请求超时为毫秒。生命周期与快照见 [lifecycle.md](lifecycle.md)，模板见 [templates.md](templates.md)。
 

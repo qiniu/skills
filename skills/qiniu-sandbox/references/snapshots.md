@@ -80,7 +80,7 @@ while (pages.hasNext) {
 }
 ```
 
-`listSnapshots` 的实例封装自动限定来源沙箱，高层分页器可完整遍历。Node.js v8.0.0 的底层 `client.listSnapshots({ sandboxID, name, limit, nextToken })` 返回 `{ items, nextToken }`；继续翻页时将返回的 `nextToken` 传回同一个方法，直到游标为空。旧版低层接口的返回形态不同，直接调用前核对实际类型。
+`listSnapshots` 的实例封装自动限定来源沙箱，高层分页器可完整遍历。Node.js 的底层 `client.listSnapshots({ sandboxID, name, limit, nextToken })` 返回 `{ items, nextToken }`；继续翻页时将返回的 `nextToken` 传回同一个方法，直到游标为空。旧版低层接口的返回形态不同，直接调用前核对实际类型。
 
 ## Python：捕获与验证副本
 

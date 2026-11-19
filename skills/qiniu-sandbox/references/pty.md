@@ -18,7 +18,7 @@ const result = await terminal.wait();
 if (result.exitCode !== 0) throw new Error('PTY exited unsuccessfully');
 ```
 
-Python v7.20.0 使用 `on_data(bytes)` 接收实时终端输出，`wait()` 返回退出结果及累计的 stdout。首帧带输出时，回调在 create／connect 的调用线程执行，异常从该调用抛出。后续回调由后台读线程执行。
+Python 使用 `on_data(bytes)` 接收实时终端输出，`wait()` 返回退出结果及累计的 stdout。首帧带输出时，回调在 create／connect 的调用线程执行，异常从该调用抛出。后续回调由后台读线程执行。
 
 ```python
 import sys
@@ -70,12 +70,12 @@ Go 片段位于返回 error 的函数中，需要 `os`、`fmt`。生产交互程
 | 任务 | Go：`sb.Pty()` | Node.js：`sandbox.pty` | Python：`sandbox.pty` |
 | --- | --- | --- | --- |
 | 创建 | `Create(ctx, PtySize, CommandOption...)` | `await create({rows, cols, cwd, envs, user, onData})` | `create(size=None, rows=None, cols=None, cwd=None, envs=None, user=None, timeout=None, on_data=None)` |
-| 重连 | 稳定版 `Connect(ctx, pid)`，伪版本另支持 `ConnectWithOptions(ctx, pid, opts)` | `await connect(pid, {onData, user, requestTimeoutMs})` | `connect(pid, user=None, timeout=None, on_data=None)` |
+| 重连 | `Connect(ctx, pid)`／`ConnectWithOptions(ctx, pid, opts)` | `await connect(pid, {onData, user, requestTimeoutMs})` | `connect(pid, user=None, timeout=None, on_data=None)` |
 | 输入 | `SendInput(ctx, pid, []byte)` | `await sendInput(pid, stringOrBuffer, opts)` | `send_stdin(pid, stringOrBytes, user=None, timeout=None)`；`send_input` 为别名 |
 | 调整尺寸 | `Resize(ctx, pid, PtySize)` | `await resize(pid, {rows, cols}, opts)` | `resize(pid, size=None, rows=None, cols=None, user=None, timeout=None)` |
 | 等待退出 | `handle.Wait()`／`WaitContext(ctx)` | `await handle.wait()` | `handle.wait()`，从最终结果读取终端输出 |
 | 杀死终端进程 | `Kill(ctx, pid)` | `await kill(pid, opts)` | `kill(pid, user=None, timeout=None)` |
-| 断开输出 | `handle.Disconnect()` | `handle.disconnect()` | v7.20.0 用 `handle.disconnect()` |
+| 断开输出 | `handle.Disconnect()` | `handle.disconnect()` | `handle.disconnect()` |
 
 Go 用 `sandbox.PtySize`，Python 可以用 `PtySize(rows=24, cols=80)` 或字典；Python 缺省尺寸为 24 × 80。Node.js 明确传入 `rows`／`cols`。尺寸单位是字符行列，不是像素。
 
@@ -95,7 +95,7 @@ terminal.disconnect();
 
 `savedPid` 是之前记录的 PTY PID。上例只断开客户端；远端 shell 仍可能运行，需要保留会话时记录状态，需要结束时使用 `exit\n` 或 `pty.kill`。断开后的局部结果不是进程成功完成的证明。
 
-Python v7.20.0 用 `sandbox.pty.connect(saved_pid, on_data=callback)` 重连。断连会释放等待者并保留已接收输出，底层仍在读取时由读线程完成 HTTP 清理。Go [伪版本](setup.md#选择工具) 用 `ConnectWithOptions(ctx, pid, &sandbox.PtyConnectOptions{OnData: callback})` 接收重连后的字节，断连释放 `Wait()`，已调度回调可稍后结束。Go 稳定版 v7.31.0 使用 `Connect(ctx, pid)`，重连句柄可等待结束，未提供重连输出选项。
+Python 用 `sandbox.pty.connect(saved_pid, on_data=callback)` 重连。断连会释放等待者并保留已接收输出，底层仍在读取时由读线程完成 HTTP 清理。Go 用 `ConnectWithOptions(ctx, pid, &sandbox.PtyConnectOptions{OnData: callback})` 接收重连后的字节，断连释放 `Wait()`，已调度回调可稍后结束。早期 Go SDK 可使用 `Connect(ctx, pid)`，重连句柄可等待结束，未提供重连输出选项。
 
 EOF 应通过 PTY 输入发送 `\x04`；普通进程的 `CloseStdin` 不适用于 PTY。发送 `\x03` 是终端中断控制字符，`Kill` 是显式终止进程，两者效果由前台程序和终端设置决定。退出时检查结束结果；网络断开和读取超时不等于 shell 已终止。
 
@@ -103,7 +103,7 @@ EOF 应通过 PTY 输入发送 `\x04`；普通进程的 `CloseStdin` 不适用�
 
 PTY 的存活时间仍受沙箱 TTL 约束。Go 通过创建时的 context 控制流；`Pty.Create` 当前不会应用普通命令的 `WithTimeout` 计时逻辑。Node.js 的 `requestTimeoutMs`／`timeoutMs`／`timeout` 用来等待启动事件，启动后应用应自行管理交互会话时限。Python 的 `timeout` 是请求读取超时，单位为秒；不要把它当作后台 shell 必定被终止的时间。
 
-Node.js v8.0.0 可在 `pty.create({rows: 24, cols: 80, executionTimeoutMs: 300000})` 时交给 Envd 设置 5 分钟执行期限。断开客户端后期限继续生效；`pty.connect` 只恢复输出订阅，不接受这一选项，也不会修改原期限。需要长期保留交互会话时，在创建阶段按保留策略设置期限。
+Node.js 可在 `pty.create({rows: 24, cols: 80, executionTimeoutMs: 300000})` 时交给 Envd 设置 5 分钟执行期限。断开客户端后期限继续生效；`pty.connect` 只恢复输出订阅，不接受这一选项，也不会修改原期限。需要长期保留交互会话时，在创建阶段按保留策略设置期限。
 
 ```bash
 qshell sandbox connect SANDBOX_ID

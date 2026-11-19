@@ -129,7 +129,7 @@ async function buildTemplate(client, name) {
 }
 ```
 
-当前 `Template().build(opts)` 将构建配置发给 v3 创建接口。显式控制启动和等待时，使用上面的 `createTemplate` → `startTemplateBuild` → `waitForBuild` 流程。v8.0.0 的 JavaScript 和 TypeScript 都可读取 `builder.buildConfig`，TypeScript 类型为 `TemplateBuildConfig`。
+当前 `Template().build(opts)` 将构建配置发给 v3 创建接口。显式控制启动和等待时，使用上面的 `createTemplate` → `startTemplateBuild` → `waitForBuild` 流程。Node.js 与 TypeScript 都可读取 `builder.buildConfig`，TypeScript 类型为 `TemplateBuildConfig`。
 
 ### Python
 

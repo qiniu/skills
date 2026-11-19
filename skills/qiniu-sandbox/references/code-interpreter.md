@@ -6,16 +6,14 @@
 
 ## 依赖、模板与端点
 
-复用项目中已验证的依赖。本文在七牛扬州环境实测通过 JavaScript `@e2b/code-interpreter` 2.3.3 + `e2b` 2.8.3，以及 Python `e2b-code-interpreter` 2.6.0 + `e2b` 2.7.0；本轮客户端为 Node.js 24 和 Python 3.12。新项目固定安装对应版本：
+已有项目复用兼容依赖。新项目使用下面的组合，避免基础 SDK 更新改变创建接口。
 
 ```bash
 npm install --save-exact @e2b/code-interpreter@2.3.3 e2b@2.8.3
 python -m pip install 'e2b-code-interpreter==2.6.0' 'e2b==2.7.0'
 ```
 
-安装后用 `npm ls e2b` 或 `python -m pip show e2b` 核对基础 SDK。Python `e2b` 2.44.0 默认在请求前检查 `e2b_` 格式；对接七牛时，可在该进程设置 `export E2B_VALIDATE_API_KEY=false`，或给 `Sandbox.create` 传 `validate_api_key=False`，由七牛服务端校验原始 `sk-` 密钥。2026-11-17 扬州补测中，`e2b-code-interpreter` 2.10.0 + `e2b` 2.44.0 关闭格式检查后，执行、上下文、日志、PNG 和超时恢复均通过。
-
-Python `e2b` 2.64.0 使用 `POST /v2/sandboxes` 创建，当前环境返回 404 `method not allowed`；关闭密钥格式检查不会解决接口路径差异。升级组合后重新验证创建、执行和清理。
+安装后用 `npm ls e2b` 或 `python -m pip show e2b` 核对基础 SDK。若 Python 兼容 SDK 在请求前检查 `e2b_` 格式，可在支持此选项的版本中设置 `E2B_VALIDATE_API_KEY=false` 或传 `validate_api_key=False`，由七牛服务端校验原始 `sk-` 密钥。若创建请求走 `POST /v2/sandboxes` 并返回 404 `method not allowed`，使用上面的兼容组合。
 
 先按 [templates.md](templates.md) 查询目标地域的模板，确认所选模板提供 Code Interpreter／Jupyter 服务，并把其实际名称或 ID 设置为 `QINIU_SANDBOX_TEMPLATE`。普通 `base` 或自定义业务模板不保证包含解释器。依赖包的可用语言与版本由所选模板决定。
 
@@ -162,4 +160,4 @@ finally:
 | 请求成功但代码失败 | `execution.error` 和 stderr，核对语言、依赖和输入 |
 | 没有图片结果 | 代码是否展示了图像、绘图库是否安装、结果是否包含对应 MIME 表示 |
 
-来源：[七牛代码执行指南](https://developer.qiniu.com/las/13292/sandbox-code-interpreter)、[内部上下文回归用例（需仓库权限）](https://github.com/qbox/sandbox/blob/e3dfa87062481997412d505cccc2beaaffa49a06/tests/sdk/js-sdk/code-execution.test.ts#L121-L184)、[JS 2.3.3 发布包](https://www.npmjs.com/package/@e2b/code-interpreter/v/2.3.3)、[Python 2.6.0 发布包](https://pypi.org/project/e2b-code-interpreter/2.6.0/)。2026-11-17 在扬州 `code-interpreter-v1` 模板实测通过两种客户端的 Python／JavaScript 执行、stdout／stderr／结果回调、上下文保留／列举／重启／删除、结构化代码异常、PNG 图表，以及执行超时后的再次运行；测试沙箱已清理。
+来源：[七牛代码执行指南](https://developer.qiniu.com/las/13292/sandbox-code-interpreter)、[内部上下文回归用例（需仓库权限）](https://github.com/qbox/sandbox/blob/e3dfa87062481997412d505cccc2beaaffa49a06/tests/sdk/js-sdk/code-execution.test.ts#L121-L184)、[JS 2.3.3 发布包](https://www.npmjs.com/package/@e2b/code-interpreter/v/2.3.3)、[Python 2.6.0 发布包](https://pypi.org/project/e2b-code-interpreter/2.6.0/)。

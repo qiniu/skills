@@ -2,7 +2,7 @@
 
 以下示例使用已连接的 `sandbox`；Go 使用 `sb` 和 `ctx`。文件路径是沙箱内的 POSIX 路径，本地文件路径属于调用应用所在机器。写入会覆盖同路径文件，删除和重命名前确认任务范围。
 
-推荐使用 [已包含文件鉴权修复的版本](sources.md#配套-sdk-修复) 访问安全沙箱或生成公开签名 URL。Go v7.31.0 的文件鉴权和签名修复在伪版本中，安全沙箱的文件 HTTP 读写与签名 URL 使用伪版本。
+访问安全沙箱文件或生成签名 URL 时，使用 [setup.md](setup.md#选择工具) 中的官方发布版本。
 
 ## 方法映射
 
@@ -34,7 +34,7 @@ with open('output.bin', 'wb') as target:
         target.write(chunk)
 ```
 
-Node.js v8.0.0 支持 Readable 输入和端到端流式下载。小文件可以直接传字符串或 Buffer。
+Node.js 支持 Readable 输入和端到端流式下载。小文件可以直接传字符串或 Buffer。
 
 ```javascript
 const fs = require('node:fs/promises');
@@ -43,7 +43,7 @@ const data = await sandbox.files.read('/home/user/input.bin', { format: 'bytes' 
 await fs.writeFile('output.bin', data);
 ```
 
-使用配套修复版时，Node.js 16 及以上可用 `pipeline` 传输并处理流错误：
+Node.js 16 及以上可用 `pipeline` 传输并处理流错误：
 
 ```javascript
 const fs = require('node:fs');
@@ -59,7 +59,7 @@ await pipeline(source, fs.createWriteStream('output.bin'));
 
 上传源在正常结束前关闭，无论发生在调用前还是传输中，都会使本次上传失败并释放连接；需要重新上传时重新创建输入流。`requestTimeoutMs: 0` 显式关闭传输时限，只有任务确实需要时再使用。
 
-配套 Python SDK 的 Envd 文件请求不自动跟随重定向；收到 30x 时按请求失败处理，避免把 Envd token 带给其他来源。排查时核对实例的 Envd 地址和代理配置，修正端点后重新请求。
+Python SDK 的 Envd 文件请求不自动跟随重定向；收到 30x 时按请求失败处理，避免把 Envd token 带给其他来源。排查时核对实例的 Envd 地址和代理配置，修正端点后重新请求。
 
 Go `Write` 接受 `[]byte`；下载可使用 `ReadStream` 逐块写到本地：
 
@@ -125,7 +125,7 @@ Go／Node.js 通过流接收事件，持续消费期间由应用决定观察时�
 
 ## 签名上传／下载 URL
 
-以下 URL 示例使用已包含配套文件鉴权修复的 SDK。URL 由已连接实例生成，权限绑定路径、操作和用户。下载使用 GET；上传使用 POST multipart/form-data，字段名为 `file`。签名 URL 是临时访问凭证，应只交给获授权的调用方。
+URL 由已连接实例生成，权限绑定路径、操作和用户。下载使用 GET；上传使用 POST multipart/form-data，字段名为 `file`。签名 URL 是临时访问凭证，应只交给获授权的调用方。
 
 | SDK | 下载 | 上传 |
 | --- | --- | --- |
@@ -153,4 +153,4 @@ with requests.get(sandbox.download_url('/home/user/upload.txt', signature_expira
         raise RuntimeError('Downloaded file content mismatch')
 ```
 
-qshell 的小文件 stdin／stdout 传输见 [cli.md](cli.md)，它走 Commands 接口，不受文件 HTTP 签名问题影响；直接调用 Go 文件 HTTP 接口时仍需使用含修复的 SDK。Node.js 单文件 `write` 可指定 `useOctetStream`／`gzip`，需要 Envd ≥ 0.5.7；普通 multipart 示例不依赖这些选项。Go 使用请求 context；Python 读写的 `request_timeout` 以秒为单位，目录 RPC 使用 `timeout`。Node.js v8.0.0 的 `requestTimeoutMs` 以毫秒限制整个文件请求，0 表示禁用时限。跨语言迁移时对照当前方法签名。
+qshell 的小文件 stdin／stdout 传输见 [cli.md](cli.md)，它走 Commands 接口，不受文件 HTTP 签名问题影响。Node.js 单文件 `write` 可指定 `useOctetStream`／`gzip`，需要 Envd ≥ 0.5.7；普通 multipart 示例不依赖这些选项。Go 使用请求 context；Python 读写的 `request_timeout` 以秒为单位，目录 RPC 使用 `timeout`。Node.js 的 `requestTimeoutMs` 以毫秒限制整个文件请求，0 表示禁用时限。跨语言迁移时对照当前方法签名。

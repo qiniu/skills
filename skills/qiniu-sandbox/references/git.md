@@ -16,7 +16,7 @@ status = sandbox.git.status('/home/user/go-sdk')
 print(status.current_branch, status.is_clean)
 ```
 
-下列私库认证使用已包含 [配套凭据隔离修复](sources.md#配套-sdk-修复) 的 SDK。Node.js 的 HTTPS 私库认证同时传入用户名和 token，使用当前进程环境中的凭据：
+下列私库认证示例使用 [官方发布版本](setup.md#选择工具)。Node.js 的 HTTPS 私库认证同时传入用户名和 token，使用当前进程环境中的凭据：
 
 ```javascript
 const result = await sandbox.git.clone(process.env.GIT_REPO_URL, {
@@ -99,11 +99,11 @@ sandbox.git.commit(repo, 'Add task result', throw_on_error=True)
 
 ## 凭据和语言差异
 
-- [含凭据修复的版本](sources.md#配套-sdk-修复) 对显式临时凭据使用命令级 `credential.helper=` 隔离已有 helper，避免已有 store／cache 保存本次凭据；未传临时认证参数的普通调用继续使用项目原配置。Node.js 用临时 helper 和进程环境传入凭据，Go 的 clone 默认在结束后移除 origin URL 凭据；显式 `DangerouslyStoreCredentials` 会保留它，push／pull 的临时 remote 凭据在操作后恢复。
-- Python v7.20.0 的 `Git.clone` 接受 `username`、`password` 和 `user`。显式用户名优先于已有 Git 配置，clone 去掉 URL 中已有的凭据。clone／pull／push 的私有临时目录、askpass 上传、命令及清理均使用同一用户。前台结束后清理；后台操作保留句柄并调用 `wait()`，使凭据文件在操作完成后清理。
+- Go SDK 对显式临时凭据使用命令级 `credential.helper=` 隔离已有 helper，避免已有 store／cache 保存本次凭据；未传临时认证参数的普通调用继续使用项目原配置。Node.js 用临时 helper 和进程环境传入凭据，Go 的 clone 默认在结束后移除 origin URL 凭据；显式 `DangerouslyStoreCredentials` 会保留它，push／pull 的临时 remote 凭据在操作后恢复。
+- Python 的 `Git.clone` 接受 `username`、`password` 和 `user`。显式用户名优先于已有 Git 配置，clone 去掉 URL 中已有的凭据。clone／pull／push 的私有临时目录、askpass 上传、命令及清理均使用同一用户。前台结束后清理；后台操作保留句柄并调用 `wait()`，使凭据文件在操作完成后清理。
 - 如果项目仍使用缺少隔离修复或显式认证参数的旧版，可使用授权的 Git 资源挂载，或下面显式清空继承 helper 的命令流程。
 
-Python v7.20.0 的私库调用：
+Python 的私库调用：
 
 ```python
 import os
@@ -148,5 +148,3 @@ Go `Add` 无文件列表且 `All=nil` 时默认暂存全部；Node.js／Python �
 Go 默认 `PushOptions.SetUpstream=nil` 和 Python `set_upstream=True` 会尝试配置 upstream；Node.js push 只使用给定 remote／branch，首次设 upstream 可通过 `commands.run('git push --set-upstream ...')`，按实际仓库名和分支正确引用参数。缺少 upstream 的 pull 应选择明确 remote 和 branch，避免反复执行同一个失败命令。
 
 qshell 没有独立的沙箱 Git helper 命令组；可通过 `qshell sandbox exec SANDBOX_ID -- git -C /home/user/repo status --short --branch` 查询。凭据型操作使用 SDK 或平台资源配置，避免把 token 放在 CLI 参数里。
-
-2026-11-17 云端回归在新建的七牛沙箱内启动了隔离的 HTTPS Git 服务，使用测试专用账号验证 Go／Node.js／Python 的认证 clone、commit、push 和 pull。匿名请求被拒绝，推送后的远端文件内容正确，remote 未残留凭据，预设的 credential store 未保存临时密码；测试沙箱已清理。这验证了 SDK 的私库交互与凭据隔离，未验证外部 Git 托管平台的账号权限或组织策略。

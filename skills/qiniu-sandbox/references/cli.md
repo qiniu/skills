@@ -55,7 +55,7 @@ qshell sandbox list --all --state running,paused --metadata purpose=skill-demo -
 
 ## 分页与批量操作
 
-qshell v2.22.1 默认读取一页。`--limit` 设置每页条数。有下一页时，stderr 输出 `Next token: ...`，JSON stdout 仍是数组。按相同的筛选条件回填游标，或用 `--all` 自动遍历：
+qshell 默认读取一页。`--limit` 设置每页条数。有下一页时，stderr 输出 `Next token: ...`，JSON stdout 仍是数组。按相同的筛选条件回填游标，或用 `--all` 自动遍历：
 
 ```bash
 qshell sandbox list -s running,paused -m 'lang=c++' --limit 20 -f json

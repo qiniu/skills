@@ -1,6 +1,6 @@
 # Desktop 与 Computer Use
 
-`desktop` 是带 Xfce、Xvfb 和桌面自动化工具的预构建沙箱模板。先确认所用地域已发布该模板。Go 和 Node.js 固定源码提供原生 Desktop。Node.js 也可选择 E2B 兼容 SDK，Python 使用兼容 SDK。
+`desktop` 是带 Xfce、Xvfb 和桌面自动化工具的预构建沙箱模板。先确认所用地域已发布该模板。Go 和 Node.js SDK提供原生 Desktop。Node.js 也可选择 E2B 兼容 SDK，Python 使用兼容 SDK。
 
 ## Go：创建、截图和操作
 
@@ -93,7 +93,7 @@ VNC 密码和平台的服务流量 token 是两层鉴权。关闭公共流量时
 
 ## Node.js 原生 Desktop
 
-按 [setup.md](setup.md) 安装包含 `Desktop` 的固定源码包。使用已配置的 `qiniu.sandbox.SandboxClient` 创建桌面。模板默认是 `desktop`，沙箱 `timeout` 以秒为单位，`wait()` 和轮询参数以毫秒为单位。
+按 [setup.md](setup.md) 安装包含 `Desktop` 的官方发布版本。使用已配置的 `qiniu.sandbox.SandboxClient` 创建桌面。模板默认是 `desktop`，沙箱 `timeout` 以秒为单位，`wait()` 和轮询参数以毫秒为单位。
 
 ```javascript
 const fs = require('node:fs/promises');
@@ -148,7 +148,7 @@ async function withViewer(desktop, useViewer) {
 
 按[七牛 Desktop 官方指南](https://developer.qiniu.com/las/13576/sandbox-desktop)选用兼容包，配置 `E2B_API_KEY` 和 `E2B_API_URL` 为七牛对应地域端点。创建和操作参数按安装的兼容包版本核对。
 
-2026-11-17 的七牛扬州环境实测组合为 Node.js `@e2b/desktop` 2.2.0 + `e2b` 2.8.3，Python `e2b-desktop` 2.3.0 + `e2b` 2.7.0；本轮客户端为 Node.js 24 和 Python 3.12。固定安装版本并核对实际解析出的基础依赖：
+使用以下兼容依赖组合，并核对实际解析出的基础依赖：
 
 ```bash
 npm install --save-exact @e2b/desktop@2.2.0 e2b@2.8.3
@@ -156,7 +156,7 @@ npm ls e2b
 python -m pip install 'e2b-desktop==2.3.0' 'e2b==2.7.0'
 ```
 
-Node.js `@e2b/desktop` 2.5.0 拉取的新版基础 SDK 使用 `POST /v2/sandboxes`，本轮在创建时返回 404 `method not allowed`；Python 新版的 Key 格式及创建接口限制见 [Code Interpreter 接入说明](code-interpreter.md#依赖模板与端点)。升级后先重测创建和清理。
+如果兼容 SDK 创建时走 `POST /v2/sandboxes` 并收到 404 `method not allowed`，使用上面的兼容组合。Key 格式及创建接口限制见 [Code Interpreter 接入说明](code-interpreter.md#依赖模板与端点)。
 
 TypeScript：
 
@@ -192,8 +192,6 @@ finally:
 
 兼容 SDK 的 `launch('xfce4-terminal')` 使用桌面应用 ID；Go 的 `Launch` 接收可执行程序及参数。开始键盘输入前，确认窗口已出现并获得焦点。`write`／`press` 返回成功后仍需读回文件、界面文本或截图，验证动作产生了预期效果。
 
-本轮 Go 集成测试通过桌面启动、PNG 尺寸、鼠标位置、点击／拖动／滚动、窗口、键盘调用和 noVNC 生命周期；Node.js／Python 兼容组合通过截图、鼠标位置、终端内 ASCII 输入并读回文件、按键／点击／滚动及开启认证的 noVNC 页面访问。Node.js 另验证 WebSocket RFB 握手要求 VNC 认证。测试沙箱均已清理；未接入视觉模型执行完整 Agent 任务。
-
-本轮 Node.js／Python 兼容组合的中文键盘输入未通过：默认 locale 下出现 `Invalid multi-byte sequence`，显式设置 UTF-8 后仍观察到丢字。需要中文或其他 Unicode 文本时，将准确内容通过文件 API 写入，再使用应用的文件打开／导入流程；需要直接模拟键入时，先在目标模板验证完整文本，不能将命令退出码作为正确输入的证明。
+需要中文或其他 Unicode 文本时，优先通过文件 API 写入，再用应用打开或导入。需要直接模拟键入时，在目标模板验证完整文本，按读回的实际内容验收。
 
 来源：[Go Desktop](https://github.com/qiniu/go-sdk/blob/master/sandbox/desktop.go)、[Go noVNC](https://github.com/qiniu/go-sdk/blob/master/sandbox/desktop_stream.go)、[Node.js Desktop 与 noVNC](https://github.com/qiniu/nodejs-sdk/blob/a2ead373b7a29c61440cfc4e10298ae1975147f5/docs/sandbox.md#desktop)、[七牛 Desktop 官方指南](https://developer.qiniu.com/las/13576/sandbox-desktop)。

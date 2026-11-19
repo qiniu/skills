@@ -98,6 +98,6 @@ func main() {
 | 后台执行 | `sb.Commands().Start(ctx, command)`，返回 `CommandHandle` |
 | 服务域名 | `sb.GetHost(8080)`，返回不带协议的 host |
 
-`CreateParams.Timeout` 和 `ConnectParams.Timeout` 为秒；`SetTimeout` 使用 `time.Duration`。命令 API 返回错误和命令退出码需分别检查。稳定版返回切片，新接口返回页对象，两种 `Client.List` 写法见 [列表过滤与分页](parameters.md#go-稳定版与新接口)，生命周期见 [lifecycle.md](lifecycle.md)。
+`CreateParams.Timeout` 和 `ConnectParams.Timeout` 为秒，`SetTimeout` 使用 `time.Duration`。命令 API 返回错误和命令退出码需分别检查。当前稳定版的 `Client.List` 返回页对象，旧版返回切片。两种签名见 [Go 列表过滤与分页](parameters.md#go)，生命周期见 [lifecycle.md](lifecycle.md)。
 
 进阶任务按主题读取：[进程与流式输出](commands.md)、[文件系统](filesystem.md)、[Git](git.md)、[PTY](pty.md)、[网络](network.md)、[资源挂载](resources.md)、[请求注入](injections.md)、[模板](templates.md)和[快照](snapshots.md)。先核对[语言接口差异](compatibility.md)，避免把其他 SDK 的同名方法或默认值套入当前语言。
