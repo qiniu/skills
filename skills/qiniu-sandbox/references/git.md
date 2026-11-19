@@ -99,11 +99,11 @@ sandbox.git.commit(repo, 'Add task result', throw_on_error=True)
 
 ## 凭据和语言差异
 
-- 配套修复版对显式临时凭据使用命令级 `credential.helper=` 隔离已有 helper，避免已有 store／cache 保存本次凭据；未传临时认证参数的普通调用继续使用项目原配置。Node.js 用临时 helper 和进程环境传入凭据，Go 的 clone 默认在结束后移除 origin URL 凭据；显式 `DangerouslyStoreCredentials` 会保留它，push／pull 的临时 remote 凭据在操作后恢复。
-- 配套 Python `Git.clone` 接受 `username`、`password` 和 `user`；clone／pull／push 的私有临时目录、askpass 上传、命令及清理均使用同一用户。前台结束后清理；后台操作保留句柄并调用 `wait()`，使凭据文件在操作完成后清理。
-- 源码基线尚未包含这些隔离修复，且 Python clone 没有实现凭据参数。需要在该基线上克隆私库时，使用授权的 Git 资源挂载，或下面显式清空继承 helper 的命令流程。
+- [含凭据修复的版本](sources.md#配套-sdk-修复) 对显式临时凭据使用命令级 `credential.helper=` 隔离已有 helper，避免已有 store／cache 保存本次凭据；未传临时认证参数的普通调用继续使用项目原配置。Node.js 用临时 helper 和进程环境传入凭据，Go 的 clone 默认在结束后移除 origin URL 凭据；显式 `DangerouslyStoreCredentials` 会保留它，push／pull 的临时 remote 凭据在操作后恢复。
+- Python v7.20.0 的 `Git.clone` 接受 `username`、`password` 和 `user`。显式用户名优先于已有 Git 配置，clone 去掉 URL 中已有的凭据。clone／pull／push 的私有临时目录、askpass 上传、命令及清理均使用同一用户。前台结束后清理；后台操作保留句柄并调用 `wait()`，使凭据文件在操作完成后清理。
+- 如果项目仍使用缺少隔离修复或显式认证参数的旧版，可使用授权的 Git 资源挂载，或下面显式清空继承 helper 的命令流程。
 
-配套 Python SDK 的私库调用：
+Python v7.20.0 的私库调用：
 
 ```python
 import os

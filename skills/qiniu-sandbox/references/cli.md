@@ -17,7 +17,7 @@ qshell sandbox template list --format json
 qshell sandbox create TEMPLATE_ID --detach --timeout 300 --metadata purpose=skill-demo
 
 # 查询本次沙箱状态；进入 running 后再执行任务。
-qshell sandbox list --state running,paused --metadata purpose=skill-demo --format json
+qshell sandbox list --all --state running,paused --metadata purpose=skill-demo --format json
 
 # 执行命令，检查退出码以及 stdout／stderr。
 qshell sandbox exec SANDBOX_ID -- sh -lc 'printf "hello from qiniu sandbox\n"'
@@ -28,10 +28,10 @@ qshell sandbox exec SANDBOX_ID -- cat /home/user/skill-demo.txt
 
 # 任务结束后，销毁本次创建的沙箱。
 qshell sandbox kill SANDBOX_ID
-qshell sandbox list --state running,paused --metadata purpose=skill-demo --format json
+qshell sandbox list --all --state running,paused --metadata purpose=skill-demo --format json
 ```
 
-清理后按已知 ID 调用 SDK 的详情接口确认 404／已删除状态。qshell 列表目前只读取一页，不能单凭第一页缺少该 ID 就判定删除。API 返回仍在处理中时，继续核对最终状态。实际脚本需要在创建成功并拿到 ID 后注册清理逻辑，失败时也清理本次资源；交互任务需要保留沙箱时按用户约定处理。
+清理后按已知 ID 调用 SDK 的详情接口确认 404／已删除状态。列表可用于辅助核对，详情接口用于确认该 ID 的状态。API 返回仍在处理中时，继续核对最终状态。实际脚本需要在创建成功并拿到 ID 后注册清理逻辑，失败时也清理本次资源；交互任务需要保留沙箱时按用户约定处理。
 
 文件传输通过 `exec` 的 stdin／stdout 完成，适合小文件。较大文件、二进制文件和批量读写优先使用语言 SDK 的文件接口。使用 shell 重定向保存下载内容时，确认本地目标文件的覆盖范围。
 
@@ -53,9 +53,19 @@ qshell sandbox list --state running,paused --metadata purpose=skill-demo --forma
 
 后台命令返回 PID 后，再检查服务监听或就绪接口。需要交付外部访问 URL 时读取 [lifecycle.md](lifecycle.md)。
 
-## 范围与帮助
+## 分页与批量操作
 
-`kill`、`pause`、`resume` 支持多个 ID 和 `--all`。批量操作前明确用户授权的资源范围和状态筛选；本次任务的清理使用已记录的 ID。
+qshell v2.22.1 默认读取一页。`--limit` 设置每页条数。有下一页时，stderr 输出 `Next token: ...`，JSON stdout 仍是数组。按相同的筛选条件回填游标，或用 `--all` 自动遍历：
+
+```bash
+qshell sandbox list -s running,paused -m 'lang=c++' --limit 20 -f json
+qshell sandbox list -s running,paused -m 'lang=c++' --limit 20 --next-token 'CURSOR' -f json
+qshell sandbox list -s running,paused -m 'lang=c++' --limit 20 --all -f json
+```
+
+`--all` 和 `--next-token` 互斥。列表和 `kill/pause/resume --all` 共用 metadata 校验和编码。显式传入空键、空值、重复键或格式错误的过滤条件时，命令在查询前以非零状态退出。批量操作先枚举所有匹配页、去重，再执行变更。操作前确认用户授权的资源和状态范围，本次任务的清理使用已记录的 ID。
+
+## 范围与帮助
 
 ```bash
 qshell version
@@ -72,7 +82,7 @@ qshell sandbox exec --doc
 
 | 路径 | 用途 | 参考 |
 | --- | --- | --- |
-| `list` | 查询一页沙箱，按 state／metadata 筛选 | 本页；完整分页见 [parameters.md](parameters.md) |
+| `list` | 单页、游标续查或完整遍历，按 state／metadata 筛选 | [分页与批量操作](#分页与批量操作) |
 | `create TEMPLATE_ID --detach` | 创建实例；env、资源、注入及到期策略 | [公共参数](parameters.md)、[资源](resources.md)、[注入](injections.md) |
 | `connect ID` | 交互式终端，支持 `--user` | [PTY](pty.md) |
 | `exec ID -- COMMAND` | 前台／后台执行 | [进程](commands.md) |
@@ -89,5 +99,3 @@ qshell sandbox exec --doc
 | `injection-rule list`、`get ID`、`create`、`update ID`、`delete IDS` | 保存规则的完整生命周期，使用 AK／SK | [注入](injections.md) |
 
 API Key 与 AK／SK 的配置和优先级见 [setup.md](setup.md)。实例、模板、快照和资源接口按对应鉴权方式调用；无需为了普通 API Key 沙箱操作更换 qshell 当前账号。秘密参数通过 SDK 的环境配置传入，避免把真实凭据放到命令行。
-
-当前实例 list 未提供下一页游标。`kill/pause/resume --all` 的资源枚举同样依赖单页列表，不能用来证明大规模匹配集合已全部处理；先用原始 HTTP 查询完整 ID 集合，再按授权 ID 分批操作。部分管理命令的错误分支只打印错误后返回，脚本需要结合输出与按 ID 查询的状态判断结果，不能把退出 0 当作资源已收敛。

@@ -4,21 +4,16 @@
 
 | 场景 | 安装／依赖 | 安装来源 |
 | --- | --- | --- |
-| 直接执行运维命令 | [qshell 发布包](https://github.com/qiniu/qshell/releases)，将 `qshell` 放入 PATH | v2.21.2 |
-| Go 应用 | `go get github.com/qiniu/go-sdk/v7@v7.31.0` | v7.31.0 |
-| Node.js／TypeScript 应用 | `npm install --save-exact https://codeload.github.com/qiniu/nodejs-sdk/tar.gz/f382ed6ffef3c225924b3617c73f9581fa4e0390` | GitHub v7.15.7 对应源码 |
-| Python 应用 | `python -m pip install 'qiniu==7.18.0'` | PyPI v7.18.0 |
+| 直接执行运维命令 | 下载 [qshell 最新发行包](https://github.com/qiniu/qshell/releases/latest)，将 `qshell` 放入 PATH | 已核对 v2.22.1 |
+| Go 应用，沿用稳定版签名 | `go get github.com/qiniu/go-sdk/v7@v7.31.0` | Go module 稳定版 |
+| Go 应用，需要新版分页和鉴权 | `go get github.com/qiniu/go-sdk/v7@v7.31.1-0.20261119025108-d01bf5d6d62d` | 已合并提交对应的 Go 伪版本 |
+| Node.js／TypeScript 应用 | `npm install --save-exact https://codeload.github.com/qiniu/nodejs-sdk/tar.gz/a2ead373b7a29c61440cfc4e10298ae1975147f5` | GitHub v8.0.0 固定源码 |
+| Python 应用 | `python -m pip install 'qiniu @ https://codeload.github.com/qiniu/python-sdk/tar.gz/af43f5afda06f48adef27a99aa1f7d777645d054'` | GitHub v7.20.0 固定源码 |
 | 解释器上下文与富媒体执行结果 | [Code Interpreter 兼容 SDK](code-interpreter.md) | 版本见主题页 |
 
-公开 npm 的 `qiniu@7.15.2` 缺少 Sandbox 模块，Node.js 使用上表的固定源码包。PyPI 的 `qiniu==7.18.0` 包含 Sandbox 模块。需要与本文 Python 源码基线一致时，可在隔离环境中安装固定源码：
+截至 2026-11-19，公开 npm 的 `qiniu` 最新为 7.15.2，缺少 Sandbox 模块。PyPI 最新为 7.18.0，已有 Sandbox 模块，可用 `python -m pip install 'qiniu==7.18.0'` 安装旧版。等所需版本进入包仓库后，可以改用该渠道对应的版本号。在已有项目中沿用当前依赖，若要升级则先核对 [接口迁移和源码基线](sources.md)。
 
-```bash
-python -m pip install 'qiniu @ https://codeload.github.com/qiniu/python-sdk/tar.gz/26d426e2d6c67f68a2980828bab5bae611a42545'
-```
-
-首次调用前核对项目实际安装的接口。需要 [配套 SDK 修复](sources.md#配套-sdk-修复) 时，选择确认包含相应改动的依赖版本。
-
-高层分页器在源码基线与配套修复中都负责管理游标；底层列表的数组／Page 返回形态有变化，应按实际版本选择一种契约。文件签名、临时 Git 凭据隔离等安全修复也需要核对，不能仅凭包名推定已生效。具体版本、源码和修复范围见 [sources.md](sources.md)。
+Go 稳定版 `List` 返回切片，伪版本返回含 `Items` 和 `NextToken` 的页对象。两种签名及旧版 HTTP 分页见 [parameters.md](parameters.md#列表过滤与分页)。
 
 ## 凭据与端点
 

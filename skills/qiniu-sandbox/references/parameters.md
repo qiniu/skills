@@ -36,9 +36,80 @@ Connect v2 在暂停时恢复沙箱，并只延长 TTL。Go `ConnectParams.Timeo
 
 ## 列表过滤与分页
 
-`GET /v2/sandboxes` 的正文是数组，下一页游标在响应头 `X-Next-Token` 中。请求参数为 `state`（逗号分隔）、`template`、`metadata`、`limit`、`nextToken`。`metadata` 先分别对每个键和值做百分号编码，再组成并编码内部 query，最后交给 HTTP 客户端编码外层参数。服务端会先解码整个 metadata，再拆分和解码键值；少一层会把 `a+b` 变成 `a b`，或让包含 `&`、`=`、`%` 的筛选值报错。
+Node.js v8.0.0 通过 `query.metadata`、Python v7.20.0 通过 `metadata` 接收原始键值字典，SDK 会按服务端协议编码。低层接口返回当前页和下一页游标，高层分页器自动传递游标。先完成查询并记录目标 ID，再按授权范围做批量操作。
 
-源码基线的列表封装没有完整交付响应头游标，Node 的 `query.metadata` 还会编码为 `metadata[app]`。包含 [配套 SDK 修复](sources.md#配套-sdk-修复) 后，Node／Python 接受原始 metadata 字典并完成所需编码；Go 的 `ListParams.Metadata` 仍由调用方提供已编码的内部 query。下面的原始 HTTP 流程可用于源码基线和配套版本，普通 `nextToken` 直接交给 HTTP 客户端编码一次。
+### Node.js v8.0.0
+
+```javascript
+const pages = qiniu.sandbox.Sandbox.list({
+  client, limit: 100,
+  query: {metadata: {app: 'reporting', branch: 'feat/a&b=1+2%'}}
+});
+while (pages.hasNext) {
+  for (const item of await pages.nextItems()) console.log(item.sandboxID);
+}
+```
+
+需要把游标传给下次调用或保存断点时，使用 `client.listSandboxes({ limit: 100, query: { metadata }, nextToken })`，从返回的 `{ items, nextToken }` 取出游标和本页结果。
+
+### Python v7.20.0
+
+```python
+from qiniu.services.sandbox import Sandbox
+
+pages = Sandbox.list(client=client, limit=100,
+                     metadata={'app': 'reporting', 'branch': 'feat/a&b=1+2%'})
+while pages.has_next:
+    for item in pages.next_items():
+        print(item.sandbox_id)
+```
+
+低层入口 `client.list_sandboxes(limit=100, metadata=metadata, nextToken=cursor)` 返回 `{'items': [...], 'nextToken': ...}`。从旧版升级时，把已移除的 `list_sandboxes_v2()`／`listSandboxesV2()` 改为 `list_sandboxes()`。单页遍历使用 `client.list_sandboxes(limit=100)['items']`。
+
+### Go 稳定版与新接口
+
+Go v7.31.0 的 `List` 返回 `[]sandbox.ListedSandbox`。在返回 `error` 的函数中，直接遍历切片即可读取一页。
+
+```go
+items, err := client.List(ctx, &sandbox.ListParams{})
+if err != nil {
+	return err
+}
+for _, item := range items {
+	fmt.Println(item.SandboxID)
+}
+```
+
+Go 的 [伪版本](setup.md#选择工具)将同一个 `List` 改为返回 `*SandboxPage`。使用 `page.Items` 遍历、取长度或索引，下一页沿用原过滤条件和返回的游标。Go 的 metadata 字符串由调用方按内部 query 编码。下面的片段使用 `net/url` 编码过滤条件。
+
+```go
+filters := url.Values{}
+for key, value := range map[string]string{"app": "reporting", "branch": "feat/a&b=1+2%"} {
+	filters.Set(url.QueryEscape(key), url.QueryEscape(value))
+}
+metadata := filters.Encode()
+limit := int32(100)
+params := &sandbox.ListParams{Metadata: &metadata, Limit: &limit}
+for {
+	page, err := client.List(ctx, params)
+	if err != nil {
+		return err
+	}
+	for _, item := range page.Items {
+		fmt.Println(item.SandboxID)
+	}
+	if page.NextToken == "" {
+		break
+	}
+	params.NextToken = &page.NextToken
+}
+```
+
+### 旧版 SDK 与原始 HTTP 分页
+
+使用仍返回切片的 Go 稳定版、旧 Node.js／Python 依赖或直接调用公共 API 时，可用下面的原始 HTTP 流程。游标原样交给 HTTP 客户端编码一次。
+
+`GET /v2/sandboxes` 的正文是数组，下一页游标在响应头 `X-Next-Token` 中。请求参数为 `state`（逗号分隔）、`template`、`metadata`、`limit`、`nextToken`。`metadata` 先分别对每个键和值做百分号编码，再组成并编码内部 query，最后交给 HTTP 客户端编码外层参数。服务端会先解码整个 metadata，再拆分和解码键值；少一层会把 `a+b` 变成 `a b`，或让包含 `&`、`=`、`%` 的筛选值报错。
 
 Node.js 18+，沿用 SDK 客户端的 `endpoint` 和入门配置的环境变量：
 
@@ -147,7 +218,7 @@ func listSandboxIDs(ctx context.Context, hc *http.Client, endpoint, apiKey strin
 }
 ```
 
-Go 使用配套 SDK 的 `client.List` 时，将上例的 `metadata` 传给 `ListParams.Metadata`；不要把已编码的值再传给 Node／Python 的 metadata 字典入口。批量修改／清理前先完成查询并保存明确的资源 ID 集合，避免边翻页边改变筛选集合；qshell 的限制见 [cli.md](cli.md)。
+调用 Node.js／Python 的 SDK 字典入口时传入原始键和值。CLI 分页和批量过滤见 [cli.md](cli.md#分页与批量操作)。
 
 ## 请求选项与时间单位
 
@@ -158,7 +229,7 @@ Go 使用配套 SDK 的 `client.List` 时，将上例的 `metadata` 传给 `List
 | API 请求时限 | context 和 HTTPClient | 客户端 `timeout` 是 urllib 时限（毫秒） | 客户端 `timeout` 为 requests 时限（秒），默认 30 |
 | 自动重试 | `Config.RetryMax *int` | `maxRetries` | `max_retries` |
 | 重试环境变量 | `SANDBOX_RETRY_MAX` | 同左 | 同左 |
-| 进程／文件时限 | context／方法 options | `requestTimeoutMs` 等待启动；配套版创建命令／PTY 时用 `executionTimeoutMs` 设置 Envd 执行期限，文件传输也支持 `requestTimeoutMs`，见主题页 | 对应 `timeout`／`request_timeout`，见主题页 |
+| 进程／文件时限 | context／方法 options | `requestTimeoutMs` 等待启动；v8.0.0 创建命令／PTY 时用 `executionTimeoutMs` 设置 Envd 执行期限，文件传输也支持 `requestTimeoutMs`，见主题页 | 对应 `timeout`／`request_timeout`，见主题页 |
 
 重试次数默认 5，0 禁用；并非每个接口都走自动重试。不要给命令套上创建请求的重试策略，命令可能已经产生业务副作用。
 

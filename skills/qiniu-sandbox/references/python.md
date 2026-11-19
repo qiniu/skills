@@ -58,7 +58,7 @@ if __name__ == '__main__':
 | 写入二进制 | `sandbox.files.write(path, data)` |
 | 服务域名 | `sandbox.get_host(8080)`，返回不带协议的 host |
 
-列表单页接口可用于状态查询。当前沙箱 paginator 未读取 API 的 `X-Next-Token` 响应头，不能保证完整遍历；按元数据过滤和完整分页使用 [parameters.md](parameters.md) 的原始 HTTP 示例。快照 paginator 是独立实现。
+v7.20.0 的 `Sandbox.list()` 返回分页器。用 `has_next` 和 `next_items()` 完整遍历；低层 `client.list_sandboxes()` 返回 `items` 和 `nextToken`。示例、旧方法迁移及 PyPI 旧版回退见 [列表过滤与分页](parameters.md#列表过滤与分页)。
 
 时间参数以秒为单位。创建时的 `envs` 映射到平台的 `envVars`；SDK 参数通常使用 snake_case。生命周期与快照见 [lifecycle.md](lifecycle.md)，模板见 [templates.md](templates.md)。
 

@@ -196,4 +196,4 @@ finally:
 
 本轮 Node.js／Python 兼容组合的中文键盘输入未通过：默认 locale 下出现 `Invalid multi-byte sequence`，显式设置 UTF-8 后仍观察到丢字。需要中文或其他 Unicode 文本时，将准确内容通过文件 API 写入，再使用应用的文件打开／导入流程；需要直接模拟键入时，先在目标模板验证完整文本，不能将命令退出码作为正确输入的证明。
 
-来源：[Go Desktop](https://github.com/qiniu/go-sdk/blob/master/sandbox/desktop.go)、[Go noVNC](https://github.com/qiniu/go-sdk/blob/master/sandbox/desktop_stream.go)、[Node.js Desktop 与 noVNC](https://github.com/qiniu/nodejs-sdk/blob/f382ed6ffef3c225924b3617c73f9581fa4e0390/docs/sandbox.md#desktop)、[七牛 Desktop 官方指南](https://developer.qiniu.com/las/13576/sandbox-desktop)。
+来源：[Go Desktop](https://github.com/qiniu/go-sdk/blob/master/sandbox/desktop.go)、[Go noVNC](https://github.com/qiniu/go-sdk/blob/master/sandbox/desktop_stream.go)、[Node.js Desktop 与 noVNC](https://github.com/qiniu/nodejs-sdk/blob/a2ead373b7a29c61440cfc4e10298ae1975147f5/docs/sandbox.md#desktop)、[七牛 Desktop 官方指南](https://developer.qiniu.com/las/13576/sandbox-desktop)。
