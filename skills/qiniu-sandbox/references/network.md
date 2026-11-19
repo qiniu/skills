@@ -93,7 +93,32 @@ response = requests.get('https://' + sandbox.get_host(8080) + '/',
 response.raise_for_status()
 ```
 
-Go 的 `Sandbox` 内部保存流量 token，但当前公开类型没有读取该值的方法；`SandboxInfo` 也不返回该字段。使用 Go 访问私有服务前，需要由能返回创建响应 token 的调用端安全交付该值。公开服务可在创建时明确设置 `AllowPublicTraffic=true`，再按应用自身的认证策略访问。
+Go [伪版本](setup.md#选择工具) 用 `sb.TrafficAccessToken()` 读取创建或连接返回的流量 token。下面的片段放在端口 8080 的服务就绪后执行，导入 `fmt` 和 `net/http`，并沿用调用方的 `ctx` 和 `sb`。
+
+```go
+token := sb.TrafficAccessToken()
+if token == "" {
+	return fmt.Errorf("service traffic token is unavailable")
+}
+req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://"+sb.GetHost(8080)+"/", nil)
+if err != nil {
+	return err
+}
+req.Header.Set("e2b-traffic-access-token", token)
+serviceClient := &http.Client{CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
+	return http.ErrUseLastResponse
+}}
+resp, err := serviceClient.Do(req)
+if err != nil {
+	return err
+}
+defer resp.Body.Close()
+if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+	return fmt.Errorf("service returned HTTP %d", resp.StatusCode)
+}
+```
+
+Go 稳定版 v7.31.0 的公开接口没有该访问器。使用该版本访问私有服务时，从原始 API 的创建响应获取 token，并在调用端安全传递。公开服务可在创建时设置 `AllowPublicTraffic=true`，并按应用自身的认证策略访问。
 
 浏览器地址栏不能为任意 URL 附加该 Header。受限网页或 noVNC 需要由应用提供携带认证头的代理；将 token 保留在服务端，代理同时处理普通 HTTP 和 WebSocket。详情见 [desktop.md](desktop.md)。
 

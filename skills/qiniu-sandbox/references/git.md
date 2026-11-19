@@ -141,7 +141,7 @@ result = sandbox.commands.run(command, envs={
 
 ## reset、restore 和默认值
 
-`reset --hard`、工作区 restore、强制删除分支会丢弃改动或引用，先核对用户要求的具体范围。路径级取消暂存可使用 Node.js `reset(path, {paths: ['result.txt']})`、Python `reset(path, paths=['result.txt'])`、Go `ResetOptions{Paths: []string{"result.txt"}}`；有路径时不混用重置模式。
+`reset --hard`、工作区 restore、强制删除分支会丢弃改动或引用，先核对用户要求的具体范围。路径级取消暂存可使用 Node.js `reset(path, {paths: ['result.txt']})`、Python `restore(path, paths=['result.txt'], staged=True)`、Go `ResetOptions{Paths: []string{"result.txt"}}`。Python 的 `staged=True` 只修改暂存区，保留工作区内容。Go、Node 的路径级 reset 省略重置模式。
 
 Go `Add` 无文件列表且 `All=nil` 时默认暂存全部；Node.js／Python 没给文件列表时通常暂存 `.`。因此示例显式列出文件。Python `delete_branch` 的默认 `force=True`，需要保留未合并分支时显式传 `force=False`；Go／Node.js 的默认强制行为不同，也应明确选项。
 
