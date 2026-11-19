@@ -15,12 +15,30 @@
 
 `name` 是构建目标，可带标签如 `skill-demo:v1`；同名模板已存在时，v3 创建接口沿用模板 ID 并申请新构建。`fromTemplate`／`--from-template` 指定构建所用的底模板。构建前确认目标名称和归属，避免把业务模板更新到演示环境。
 
+## 扬州镜像代理
+
+在扬州构建模板时，推荐通过七牛镜像代理拉取官方镜像。把完整路径传给 SDK 的镜像参数、qshell 的 `--from-image` 或 Dockerfile 的 `FROM`。在其他地域构建时，使用该地域构建器可访问的镜像地址。
+
+```text
+<代理地址>/<registry 地址>/<镜像路径>:<tag>
+```
+
+Docker Hub 的 registry 地址填写 `registry-1.docker.io`，官方镜像路径加上 `library/`。例如使用官方 `python:3.11`：
+
+```javascript
+const builder = qiniu.sandbox.Template()
+  .fromImage('crp-internal.qiniucs.com/registry-1.docker.io/library/python:3.11');
+```
+
+当前支持代理的 registry 包括 `registry-1.docker.io`、`quay.io`、`ghcr.io` 和 `gcr.io`。`python:3.11` 固定 Python 的次版本系列，镜像仍会随补丁发布更新。生产构建选用完整补丁版本标签或经核对的 `@sha256:…` digest，确保精确复现时使用 digest。
+
 ## qshell：从镜像或 Dockerfile 构建
 
 ```bash
 qshell sandbox template list --format json
 qshell sandbox template get TEMPLATE_ID
-qshell sandbox template build --name skill-demo-python --from-image python:3.12-slim --wait
+qshell sandbox template build --name skill-demo-python \
+  --from-image crp-internal.qiniucs.com/registry-1.docker.io/library/python:3.11 --wait
 ```
 
 需要本地文件、固定依赖和启动服务时，在同一项目目录保存：
@@ -28,7 +46,7 @@ qshell sandbox template build --name skill-demo-python --from-image python:3.12-
 `Dockerfile`：
 
 ```dockerfile
-FROM python:3.12-slim
+FROM crp-internal.qiniucs.com/registry-1.docker.io/library/python:3.11
 WORKDIR /app
 COPY ./app/ /app/
 RUN python -m pip install --no-cache-dir -r /app/requirements.txt
@@ -95,7 +113,7 @@ const qiniu = require('qiniu');
 
 async function buildTemplate(client, name) {
   const builder = qiniu.sandbox.Template()
-    .fromImage('python:3.12-slim')
+    .fromImage('crp-internal.qiniucs.com/registry-1.docker.io/library/python:3.11')
     .setWorkdir('/app')
     .setEnvs({ PYTHONUNBUFFERED: '1' })
     .runCmd('printf "hello from template\\n" > /app/index.html', { user: 'root' })
@@ -121,7 +139,7 @@ from qiniu.services.sandbox import Template
 
 def build_template(client, name):
     config = (
-        Template().from_image('python:3.12-slim')
+        Template().from_image('crp-internal.qiniucs.com/registry-1.docker.io/library/python:3.11')
         .add_step('WORKDIR', ['/app'])
         .set_env('PYTHONUNBUFFERED', '1')
         .run_cmd('printf "hello from template\\n" > /app/index.html')
@@ -147,7 +165,7 @@ func buildTemplate(ctx context.Context, client *sandbox.Client, name string) (*s
 		return nil, fmt.Errorf("allocate template build: %w", err)
 	}
 	fmt.Println("template:", created.TemplateID, "build:", created.BuildID)
-	image := "python:3.12-slim"
+	image := "crp-internal.qiniucs.com/registry-1.docker.io/library/python:3.11"
 	args := []string{`printf "hello from template\n" > /tmp/template-demo.txt`}
 	steps := []sandbox.TemplateStep{{Type: "RUN", Args: &args}}
 	if err := client.StartTemplateBuild(ctx, created.TemplateID, created.BuildID, sandbox.StartTemplateBuildParams{

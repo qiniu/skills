@@ -41,7 +41,7 @@ description: >-
 | Git／Kodo 挂载、持久化和资源凭据轮换 | [resources.md](references/resources.md) |
 | HTTPS 请求注入、保存规则和密钥轮换 | [injections.md](references/injections.md) |
 | Desktop、截图、鼠标键盘和 VNC | [desktop.md](references/desktop.md) |
-| 选择模板、构建环境、启动命令与就绪检查 | [templates.md](references/templates.md) |
+| 选择模板、配置扬州镜像代理、构建环境与就绪检查 | [templates.md](references/templates.md) |
 | 状态、日志、指标和故障定位 | [observability.md](references/observability.md) |
 | Agent、浏览器、MCP、SSH、组网与 Windows | [integrations.md](references/integrations.md) |
 | 语言支持差异、平台接口边界与覆盖范围 | [compatibility.md](references/compatibility.md) |
