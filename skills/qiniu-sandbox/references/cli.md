@@ -42,7 +42,7 @@ qshell sandbox list --all --state running,paused --metadata purpose=skill-demo -
 | 按状态查询 | `qshell sandbox list --state running,paused --format json` |
 | 指定工作目录 | `qshell sandbox exec SANDBOX_ID --cwd /home/user -- pwd` |
 | 设置进程环境变量 | `qshell sandbox exec SANDBOX_ID --env MODE=demo -- sh -lc 'printf "%s\n" "$MODE"'` |
-| 后台启动服务 | `qshell sandbox exec SANDBOX_ID --background -- python3 -m http.server 8080 --bind 0.0.0.0` |
+| 后台启动静态服务 | `qshell sandbox exec SANDBOX_ID --background -- python3 -m http.server 8080 --bind 0.0.0.0 --directory /home/user/skill-public` |
 | 查看日志 | `qshell sandbox logs SANDBOX_ID` |
 | 查看指标 | `qshell sandbox metrics SANDBOX_ID` |
 | 暂停并保存内存 | `qshell sandbox pause SANDBOX_ID` |
@@ -51,7 +51,7 @@ qshell sandbox list --all --state running,paused --metadata purpose=skill-demo -
 
 `exec` 的 `--` 后是沙箱中的命令。管道、重定向等 shell 语法应放进 `sh -lc '...'`，避免被本地 shell 提前执行。`create --env-var` 设置沙箱环境；`exec --env` 设置该命令的环境。
 
-后台命令返回 PID 后，再检查服务监听或就绪接口。需要交付外部访问 URL 时读取 [lifecycle.md](lifecycle.md)。
+启动静态服务前创建 `/home/user/skill-public`，只放入获准分享的文件。后台命令返回 PID 后，再检查服务监听或就绪接口。交付访问 URL 前，按[服务访问与鉴权](network.md#私有服务访问)核对实例的公开范围。
 
 ## 分页与批量操作
 
@@ -74,7 +74,7 @@ qshell sandbox create --help
 qshell sandbox exec --doc
 ```
 
-模板构建见 [templates.md](templates.md)，快照见 [lifecycle.md](lifecycle.md)。
+模板构建见 [templates.md](templates.md)，快照见 [snapshots.md](snapshots.md)。
 
 ## 子命令索引
 

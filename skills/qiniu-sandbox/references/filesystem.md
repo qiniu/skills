@@ -145,11 +145,12 @@ with requests.post(url, files={'file': ('upload.txt', b'uploaded\n')},
                    timeout=30, allow_redirects=False) as response:
     if not 200 <= response.status_code < 300:
         raise RuntimeError('Upload returned HTTP {}'.format(response.status_code))
-with requests.get(sandbox.download_url('/home/user/upload.txt'),
+with requests.get(sandbox.download_url('/home/user/upload.txt', signature_expiration=300),
                   timeout=30, allow_redirects=False) as download:
     if not 200 <= download.status_code < 300:
         raise RuntimeError('Download returned HTTP {}'.format(download.status_code))
-    assert download.content == b'uploaded\n'
+    if download.content != b'uploaded\n':
+        raise RuntimeError('Downloaded file content mismatch')
 ```
 
 qshell 的小文件 stdin／stdout 传输见 [cli.md](cli.md)，它走 Commands 接口，不受文件 HTTP 签名问题影响；直接调用 Go 文件 HTTP 接口时仍需使用含修复的 SDK。Node.js 单文件 `write` 可指定 `useOctetStream`／`gzip`，需要 Envd ≥ 0.5.7；普通 multipart 示例不依赖这些选项。Go 使用请求 context；Python 读写的 `request_timeout` 以秒为单位，目录 RPC 使用 `timeout`。Node.js v8.0.0 的 `requestTimeoutMs` 以毫秒限制整个文件请求，0 表示禁用时限。跨语言迁移时对照当前方法签名。

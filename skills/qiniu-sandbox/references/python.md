@@ -8,6 +8,7 @@
 
 ```python
 import os
+import sys
 
 from qiniu.services.sandbox import Sandbox, SandboxClient
 
@@ -24,17 +25,30 @@ def main():
         metadata={'purpose': 'skill-demo'},
     )
     print('sandbox:', sandbox.sandbox_id)
+    task_failed = False
     try:
         sandbox.wait_for_ready(timeout=60, interval=1)
         result = sandbox.commands.run('printf "hello from qiniu sandbox\\n"')
-        assert result.exit_code == 0
+        if result.exit_code != 0:
+            raise RuntimeError('Command exited {}'.format(result.exit_code))
         print(result.stdout, end='')
         path = '/home/user/skill-demo.txt'
         sandbox.files.write(path, 'hello from qiniu sandbox\n')
-        assert sandbox.files.read_text(path) == 'hello from qiniu sandbox\n'
+        if sandbox.files.read_text(path) != 'hello from qiniu sandbox\n':
+            raise RuntimeError('Sandbox file content mismatch')
+    except BaseException:
+        task_failed = True
+        raise
     finally:
-        sandbox.kill()
-        print('sandbox deleted:', sandbox.sandbox_id)
+        try:
+            sandbox.kill()
+        except Exception as error:
+            message = 'Failed to delete sandbox {}'.format(sandbox.sandbox_id)
+            if not task_failed:
+                raise RuntimeError(message) from error
+            print('{}: {}'.format(message, error), file=sys.stderr)
+        else:
+            print('sandbox deleted:', sandbox.sandbox_id)
 
 
 if __name__ == '__main__':
@@ -58,7 +72,7 @@ if __name__ == '__main__':
 | 写入二进制 | `sandbox.files.write(path, data)` |
 | 服务域名 | `sandbox.get_host(8080)`，返回不带协议的 host |
 
-v7.20.0 的 `Sandbox.list()` 返回分页器。用 `has_next` 和 `next_items()` 完整遍历；低层 `client.list_sandboxes()` 返回 `items` 和 `nextToken`。示例、旧方法迁移及 PyPI 旧版回退见 [列表过滤与分页](parameters.md#列表过滤与分页)。
+v7.20.0 的 `Sandbox.list()` 返回分页器。用 `has_next` 和 `next_items()` 完整遍历；低层 `client.list_sandboxes()` 返回 `items` 和 `nextToken`。示例与旧方法迁移见 [列表过滤与分页](parameters.md#列表过滤与分页)，PyPI 旧版安装见 [环境与鉴权](setup.md#选择工具)。
 
 时间参数以秒为单位。创建时的 `envs` 映射到平台的 `envVars`；SDK 参数通常使用 snake_case。生命周期与快照见 [lifecycle.md](lifecycle.md)，模板见 [templates.md](templates.md)。
 

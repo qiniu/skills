@@ -162,4 +162,4 @@ finally:
 | 请求成功但代码失败 | `execution.error` 和 stderr，核对语言、依赖和输入 |
 | 没有图片结果 | 代码是否展示了图像、绘图库是否安装、结果是否包含对应 MIME 表示 |
 
-来源：[七牛代码执行指南](https://developer.qiniu.com/las/13292/sandbox-code-interpreter)、[七牛上下文回归用例](https://github.com/qbox/sandbox/blob/e3dfa87062481997412d505cccc2beaaffa49a06/tests/sdk/js-sdk/code-execution.test.ts#L121-L184)、[JS 2.3.3 发布包](https://www.npmjs.com/package/@e2b/code-interpreter/v/2.3.3)、[Python 2.6.0 发布包](https://pypi.org/project/e2b-code-interpreter/2.6.0/)。2026-11-17 在扬州 `code-interpreter-v1` 模板实测通过两种客户端的 Python／JavaScript 执行、stdout／stderr／结果回调、上下文保留／列举／重启／删除、结构化代码异常、PNG 图表，以及执行超时后的再次运行；测试沙箱已清理。
+来源：[七牛代码执行指南](https://developer.qiniu.com/las/13292/sandbox-code-interpreter)、[内部上下文回归用例（需仓库权限）](https://github.com/qbox/sandbox/blob/e3dfa87062481997412d505cccc2beaaffa49a06/tests/sdk/js-sdk/code-execution.test.ts#L121-L184)、[JS 2.3.3 发布包](https://www.npmjs.com/package/@e2b/code-interpreter/v/2.3.3)、[Python 2.6.0 发布包](https://pypi.org/project/e2b-code-interpreter/2.6.0/)。2026-11-17 在扬州 `code-interpreter-v1` 模板实测通过两种客户端的 Python／JavaScript 执行、stdout／stderr／结果回调、上下文保留／列举／重启／删除、结构化代码异常、PNG 图表，以及执行超时后的再次运行；测试沙箱已清理。

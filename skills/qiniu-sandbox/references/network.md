@@ -77,7 +77,9 @@ const sandbox = new qiniu.sandbox.Sandbox({ client, info: created });
 ```javascript
 if (!token) throw new Error('Service traffic token is unavailable');
 const response = await fetch(`https://${sandbox.getHost(8080)}/`, {
-  headers: { 'e2b-traffic-access-token': token }
+  headers: { 'e2b-traffic-access-token': token },
+  redirect: 'manual',
+  signal: AbortSignal.timeout(10000)
 });
 if (!response.ok) throw new Error(`Service returned HTTP ${response.status}`);
 ```
@@ -88,9 +90,11 @@ import requests
 token = sandbox.traffic_access_token
 if not token:
     raise RuntimeError('Service traffic token is unavailable')
-response = requests.get('https://' + sandbox.get_host(8080) + '/',
-    headers={'e2b-traffic-access-token': token}, timeout=10)
-response.raise_for_status()
+with requests.get('https://' + sandbox.get_host(8080) + '/',
+                  headers={'e2b-traffic-access-token': token},
+                  timeout=10, allow_redirects=False) as response:
+    if not 200 <= response.status_code < 300:
+        raise RuntimeError('Service returned HTTP {}'.format(response.status_code))
 ```
 
 Go [伪版本](setup.md#选择工具) 用 `sb.TrafficAccessToken()` 读取创建或连接返回的流量 token。下面的片段放在端口 8080 的服务就绪后执行，导入 `fmt` 和 `net/http`，并沿用调用方的 `ctx` 和 `sb`。
@@ -133,4 +137,4 @@ Go 稳定版 v7.31.0 的公开接口没有该访问器。使用该版本访问�
 | 返回错误站点或 Host 校验失败 | 应用的 Host 校验以及 `maskRequestHost` |
 | 外部 API 或依赖安装失败 | 出网开关和 allow／deny 规则，区分 DNS、连接与远端鉴权错误 |
 
-来源：[公开 API 定义](https://github.com/qbox/sandbox/blob/e3dfa87062481997412d505cccc2beaaffa49a06/spec/openapi-public.yml#L1840-L1878)、[Node.js Sandbox 实现](https://github.com/qiniu/nodejs-sdk/blob/master/qiniu/sandbox/sandbox.js)、[Python 客户端](https://github.com/qiniu/python-sdk/blob/master/qiniu/services/sandbox/client.py)、[Go 网络类型](https://github.com/qiniu/go-sdk/blob/master/sandbox/types.go)、[服务代理认证头](https://github.com/qbox/sandbox/blob/main/packages/client-proxy/internal/proxy/proxy.go)。
+来源：[七牛沙箱实例 API](https://developer.qiniu.com/las/13480/sandbox-api-sandboxes)、[Node.js Sandbox 实现](https://github.com/qiniu/nodejs-sdk/blob/master/qiniu/sandbox/sandbox.js)、[Python 客户端](https://github.com/qiniu/python-sdk/blob/master/qiniu/services/sandbox/client.py)、[Go 网络类型](https://github.com/qiniu/go-sdk/blob/master/sandbox/types.go)、[内部服务代理实现（需仓库权限）](https://github.com/qbox/sandbox/blob/main/packages/client-proxy/internal/proxy/proxy.go)。

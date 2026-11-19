@@ -30,7 +30,7 @@ Go 的可选指针区分“未传”与 false／0。任意选项不会自动变�
 | 连接已有 ID | `client.Connect(ctx, id, ConnectParams{Timeout: 300})` | `Sandbox.connect(id, {client, timeout: 300})` | `Sandbox.connect(id, client=client, timeout=300)` |
 | 就绪等待 | `sb.WaitForReady(ctx)` | `sandbox.waitForReady({timeoutMs: 60000})` | `sandbox.wait_for_ready(timeout=60)` |
 | 查询详情 | `sb.GetInfo(ctx)` | `sandbox.getInfo()` | `sandbox.get_info()` |
-| 查询列表 | `client.List(ctx, &ListParams{...})` | `Sandbox.list({client, query: {...}, limit: 100})` | `Sandbox.list(client=client, query={...}, limit=100)` |
+| 查询列表 | `client.List(ctx, &ListParams{...})` | `Sandbox.list({client, query: {...}, limit: 100})` | `Sandbox.list(client=client, metadata={...}, limit=100)` |
 
 Connect v2 在暂停时恢复沙箱，并只延长 TTL。Go `ConnectParams.Timeout=0` 使用服务端默认的 300 秒；Node／Python 省略时同样使用服务端默认值。创建返回实例后立即注册清理，再进行就绪等待。Go／Node 的等待检查控制面 running；Python 检查 Envd health。后续命令、文件和业务就绪仍需按实际结果验收。
 

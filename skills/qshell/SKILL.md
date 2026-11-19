@@ -402,6 +402,8 @@ qshell m3u8replace <Bucket> <M3u8Key> <NewDomain>             # 替换为新域�
 
 需要配置 `QINIU_API_KEY` 或 `E2B_API_KEY` 环境变量。
 
+使用 `qiniu-sandbox` 技能处理七牛沙箱的完整任务流程，包括 SDK、鉴权、网络和模板构建。本节提供 qshell 命令速查。
+
 别名：`sandbox` = `sbx`
 
 ```bash
@@ -525,9 +527,12 @@ qshell sandbox template init --name my-api --language typescript --path ./my-api
 - `qshell forbidden` — 禁用文件访问
 - `qshell batchexpire` — 批量设置过期可能导致数据丢失
 - `qshell m3u8delete` — 删除 M3U8 及所有切片文件
-- `qshell sandbox kill` / `qshell sandbox kill -a` — 终止沙箱
+- `qshell sandbox kill` — 终止沙箱
+- `qshell sandbox kill -a` / `qshell sandbox pause -a` / `qshell sandbox resume -a` — 批量改变沙箱状态，执行前核对筛选条件和匹配的沙箱 ID
 - `qshell sandbox connect` — 交互式终端，AI 助手无法操作，需提示用户手动执行
 - `qshell sandbox template delete` — 删除模板
+- `qshell sandbox template publish` — 将模板设为公开
+- `qshell sandbox injection-rule delete` — 删除保存的注入规则
 - 任何带 `--overwrite` 的上传/复制/同步操作
 - `qshell token` — 交互式命令，AI 助手无法操作，需提示用户手动执行
 

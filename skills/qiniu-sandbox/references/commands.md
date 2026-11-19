@@ -14,7 +14,7 @@
 | 发送 stdin | `SendStdin(ctx, pid, []byte)` | `await sendStdin(pid, data, opts)` | `send_stdin(pid, data, user=None, timeout=None)` |
 | 发送 stdin EOF | `CloseStdin(ctx, pid)` | `await closeStdin(pid, opts)` | `close_stdin(pid, user=None, timeout=None)` |
 | 终止进程 | `Kill(ctx, pid)`／`handle.Kill(ctx)` | `await kill(pid, opts)`／`handle.kill()` | `kill(pid, ...)`／`handle.kill()` |
-| 断开输出连接 | `handle.Disconnect()` | `handle.disconnect()` | 当前公共 handle 未提供 disconnect 方法 |
+| 断开输出连接 | `handle.Disconnect()` | `handle.disconnect()` | 普通命令的 `CommandHandle` 未提供此方法 |
 
 命令通过沙箱内的 `/bin/bash -l -c` 执行，支持管道与重定向。用户输入作为数据传递时应使用环境变量或 stdin；避免拼接未转义的 shell 字符串。
 
@@ -79,7 +79,7 @@ if (result.exitCode !== 0 || result.stdout !== 'hello\n') throw new Error('stdin
 
 对应的 Go 选项为 `sandbox.WithStdin()`；启动后先用 `pid, err := handle.WaitPID(ctx)` 等待 PID 分配，再发送输入。Python 使用 `stdin=True`，从 `handle.pid` 取得 PID，调用 `send_stdin` 和 `close_stdin` 后 `handle.wait()`。
 
-记录沙箱 ID 和 PID 后，可以在后续请求中连接同一沙箱，再调用进程 `connect`。Go／Node.js 的 `disconnect` 只结束客户端输出连接；进程需要显式 `kill`。断开后的局部结果不能证明远端程序已完成；重新连接或查询进程后继续验收。Python 没有公共 disconnect 方法，应让当前读取结束，或由独立调用方按 PID 管理进程。
+记录沙箱 ID 和 PID 后，可以在后续请求中连接同一沙箱，再调用进程 `connect`。Go／Node.js 的 `disconnect` 只结束客户端输出连接；进程需要显式 `kill`。断开后的局部结果不能证明远端程序已完成；重新连接或查询进程后继续验收。Python 的普通命令和 PTY 返回不同的句柄。普通命令应让当前读取结束，或由独立调用方按 PID 管理进程；PTY 的断开方式见 [pty.md](pty.md)。
 
 Go `Connect(ctx, pid)` 没有回调参数，重连后通过 `Wait` 获取结果。Node.js `connect` 可传 `onStdout`／`onStderr`；Python 在重连 handle 的 `wait` 中传回调。`CloseStdin` 用于普通进程；PTY 的输入和 EOF 见 [pty.md](pty.md)。服务端不支持 CloseStdin 时，应保留该错误并根据命令协议结束输入或显式停止进程。
 
@@ -115,8 +115,9 @@ if (result.exitCode !== 0) throw new Error(`Command exited ${result.exitCode}`);
 
 ```bash
 qshell sandbox exec SANDBOX_ID -- sh -lc 'printf "hello\n"'
-qshell sandbox exec SANDBOX_ID --background -- python3 -m http.server 8080 --bind 0.0.0.0
+qshell sandbox exec SANDBOX_ID -- mkdir -p /home/user/skill-public
+qshell sandbox exec SANDBOX_ID --background -- python3 -m http.server 8080 --bind 0.0.0.0 --directory /home/user/skill-public
 qshell sandbox exec SANDBOX_ID --cwd /home/user --env MODE=demo -- sh -lc 'printf "%s\n" "$MODE"'
 ```
 
-前台 exec 实时转发输出并返回退出码；后台模式返回 PID。qshell 未提供完整的进程 list／重连／stdin 管理子命令时，使用 SDK 句柄 API。`sandbox logs` 查询平台沙箱日志，与某个进程的 stdout／stderr 是不同的数据源。
+前台 exec 实时转发输出并返回退出码；后台模式返回 PID。静态服务目录只放获准分享的文件，交付访问地址前按[服务访问与鉴权](network.md#私有服务访问)核对公开范围。qshell 未提供完整的进程 list／重连／stdin 管理子命令时，使用 SDK 句柄 API。`sandbox logs` 查询平台沙箱日志，与某个进程的 stdout／stderr 是不同的数据源。

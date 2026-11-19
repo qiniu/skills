@@ -7,12 +7,11 @@
 ```bash
 qshell sandbox list --state running,paused --format json
 qshell sandbox logs SANDBOX_ID --level ERROR --limit 100 --format json
-qshell sandbox logs SANDBOX_ID --loggers envd,proxy --follow
+qshell sandbox logs SANDBOX_ID --loggers envd,proxy --limit 100 --format json
 qshell sandbox metrics SANDBOX_ID --format json
-qshell sandbox metrics SANDBOX_ID --follow
 ```
 
-logs 的 `--level` 默认 INFO，显示该级别及更高级别；`--loggers` 为逗号分隔的 logger 前缀。`--follow` 持续运行，需要主动取消或等待实例结束。CLI 漂亮输出可能隐藏内部字段，关联请求时保留相关 API 的请求 ID。
+logs 的 `--level` 默认 INFO，显示该级别及更高级别；`--loggers` 为逗号分隔的 logger 前缀。自动化使用上面的有限查询，交互排障时可为 `logs` 或 `metrics` 加 `--follow` 并主动停止。CLI 漂亮输出可能隐藏内部字段，关联请求时保留相关 API 的请求 ID。
 
 ## SDK 调用
 

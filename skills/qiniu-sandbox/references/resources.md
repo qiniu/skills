@@ -66,37 +66,53 @@ sandbox = Sandbox.create('base', client=client, timeout=300, resources=[resource
 
 ## Kodo 跨沙箱复用
 
-下面的 Python 示例要求 Sandbox API Key 客户端 `client`，以及具备指定测试前缀读写权限的 Kodo AK／SK。它写入独立测试对象、销毁第一个沙箱、在第二个沙箱读取并移除该测试对象。保留业务数据时按用户约定保留对象。
+下面的 Python 示例要求 Sandbox API Key 客户端 `client`，以及具备指定测试前缀读、写、删除权限的 Kodo AK／SK。它写入独立测试对象、销毁第一个沙箱、在第二个沙箱读取，并通过 Kodo API 清理对象。保留业务数据时按用户约定保留对象。
 
 ```python
 import os
 import uuid
+from qiniu import Auth, BucketManager
 from qiniu.services.sandbox import KodoResource, Sandbox
 
+bucket = os.environ['QINIU_SANDBOX_KODO_BUCKET']
+access_key = os.environ['QINIU_SANDBOX_KODO_ACCESS_KEY']
+secret_key = os.environ['QINIU_SANDBOX_KODO_SECRET_KEY']
+prefix = 'skill-demo/'
+mount_path = '/mnt/data'
 resource = KodoResource(
-    bucket=os.environ['QINIU_SANDBOX_KODO_BUCKET'], mount_path='/mnt/data',
-    prefix='skill-demo/', read_only=False,
-    access_key=os.environ['QINIU_SANDBOX_KODO_ACCESS_KEY'],
-    secret_key=os.environ['QINIU_SANDBOX_KODO_SECRET_KEY'])
-path = '/mnt/data/probe-' + uuid.uuid4().hex + '.txt'
+    bucket=bucket, mount_path=mount_path, prefix=prefix, read_only=False,
+    access_key=access_key, secret_key=secret_key)
+kodo = BucketManager(Auth(access_key, secret_key))
+filename = 'probe-' + uuid.uuid4().hex + '.txt'
+path = mount_path + '/' + filename
+object_key = prefix + filename
 
-first = Sandbox.create('base', client=client, timeout=300, resources=[resource])
+write_attempted = False
 try:
-    first.wait_for_ready()
-    first.files.write(path, 'persistent data\n')
-finally:
-    first.kill()
+    first = Sandbox.create('base', client=client, timeout=300, resources=[resource])
+    try:
+        first.wait_for_ready()
+        write_attempted = True
+        first.files.write(path, 'persistent data\n')
+    finally:
+        first.kill()
 
-second = Sandbox.create('base', client=client, timeout=300, resources=[resource])
-try:
-    second.wait_for_ready()
-    assert second.files.read_text(path) == 'persistent data\n'
-    second.files.remove(path)
+    second = Sandbox.create('base', client=client, timeout=300, resources=[resource])
+    try:
+        second.wait_for_ready()
+        if second.files.read_text(path) != 'persistent data\n':
+            raise RuntimeError('Kodo object content mismatch')
+    finally:
+        second.kill()
 finally:
-    second.kill()
+    if write_attempted:
+        _, info = kodo.delete(bucket, object_key)
+        if not info.ok() and info.status_code != 612:
+            raise RuntimeError('Failed to delete Kodo object {}/{} (HTTP {})'.format(
+                bucket, object_key, info.status_code))
 ```
 
-Kodo 数据保存在 bucket 中，沙箱销毁与对象删除是两项操作。验证完成后在 Kodo 侧核对测试对象已删除。挂载使用对象存储资源，应用应按所需文件操作验证语义；不能据此假定本地块设备或任意文件系统的完整行为。
+Kodo 数据保存在 bucket 中。独立的[对象清理请求](https://developer.qiniu.com/kodo/api/delete)在第二个沙箱创建或读取失败时仍会尝试删除原测试对象，状态码 612 表示对象已不存在。最后在 Kodo 侧核对清理结果。挂载使用对象存储资源，应用应按所需文件操作验证语义；不能据此假定本地块设备或任意文件系统的完整行为。
 
 Go／Node.js 对应的 Kodo 字段：
 

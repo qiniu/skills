@@ -35,7 +35,13 @@ fi
 
 qshell 也接受 `E2B_API_KEY`／`E2B_API_URL`，同类 `QINIU_*` 配置优先。Go SDK 的 `Config.APIKey` 需要显式赋值；Node.js 客户端自动读取 `QINIU_SANDBOX_API_KEY`；Python 客户端依次读取 `QINIU_SANDBOX_API_KEY`、`QINIU_API_KEY`、`E2B_API_KEY`。SDK 示例中的显式配置让不同语言使用同一份环境设置。
 
-普通沙箱和模板操作使用 API Key。管理保存的注入规则需要 AK／SK；Kodo 挂载还需按所选 SDK 的资源配置提供对应凭据。只有任务涉及这些功能时，才读取 [sources.md](sources.md) 中的资源和注入参考。qshell 的 AK／SK 优先取当前账号，再取 `QINIU_ACCESS_KEY`／`QINIU_SECRET_KEY`。
+普通沙箱和模板操作使用 API Key。涉及注入规则或 Kodo 挂载时，按任务读取下列配置：
+
+| 场景 | 凭据与示例变量 |
+| --- | --- |
+| SDK 管理已保存的 [注入规则](injections.md) | 使用七牛账号 AK／SK，示例从 `QINIU_SANDBOX_ACCESS_KEY`／`QINIU_SANDBOX_SECRET_KEY` 读取并显式传给客户端 |
+| SDK 挂载 [Kodo 资源](resources.md) | 使用相应 bucket 的授权凭据，示例读取 `QINIU_SANDBOX_KODO_BUCKET`、`QINIU_SANDBOX_KODO_ACCESS_KEY`、`QINIU_SANDBOX_KODO_SECRET_KEY` |
+| qshell 需要 AK／SK 的操作 | 优先使用当前账号，再读 `QINIU_ACCESS_KEY`／`QINIU_SECRET_KEY` |
 
 ## 常见错误
 

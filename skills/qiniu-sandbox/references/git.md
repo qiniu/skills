@@ -62,11 +62,11 @@ Go 片段位于返回 error 的函数中，需要 `os`、`fmt`。为 `GIT_REPO_U
 | 初始化 | `Init(ctx, path, *InitOptions)` | `await init(path, {initialBranch})` | `init(path, initial_branch=...)` |
 | 状态 | `Status(ctx, path, *GitOptions)` | `await status(path, opts)` | `status(path, **opts)` |
 | 分支列表 | `Branches(ctx, path, opts)` | `await branches(path, opts)` | `branches(path, **opts)` |
-| 新建并切换分支 | `CreateBranch(ctx, path, branch, opts)` | `await createBranch(path, branch, opts)` | `create_branch(path, name, start_point=None)` |
-| 切换已有分支 | `CheckoutBranch(ctx, path, branch, opts)` | `await checkoutBranch(path, branch, opts)` | `checkout_branch(path, name, create=False)` |
-| 删除分支 | `DeleteBranch(ctx, path, branch, *DeleteBranchOptions)` | `await deleteBranch(path, branch, {force: false})` | `delete_branch(path, name, force=False)` |
-| 暂存指定文件 | `Add(ctx, path, &AddOptions{Files: []string{...}})` | `await add(path, {files: [...]})` | `add(path, files=[...])` |
-| 提交 | `Commit(ctx, path, message, *CommitOptions)` | `await commit(path, message, opts)` | `commit(path, message, author_name=None, author_email=None)` |
+| 新建并切换分支 | `CreateBranch(ctx, path, branch, opts)` | `await createBranch(path, branch, opts)` | `create_branch(path, name, start_point=None, **opts)` |
+| 切换已有分支 | `CheckoutBranch(ctx, path, branch, opts)` | `await checkoutBranch(path, branch, opts)` | `checkout_branch(path, name, create=False, **opts)` |
+| 删除分支 | `DeleteBranch(ctx, path, branch, *DeleteBranchOptions)` | `await deleteBranch(path, branch, {force: false})` | 显式传 `delete_branch(path, name, force=False, **opts)`，SDK 默认 `force=True` |
+| 暂存指定文件 | `Add(ctx, path, &AddOptions{Files: []string{...}})` | `await add(path, {files: [...]})` | `add(path, files=[...], **opts)` |
+| 提交 | `Commit(ctx, path, message, *CommitOptions)` | `await commit(path, message, opts)` | `commit(path, message, author_name=None, author_email=None, allow_empty=False, **opts)` |
 | 拉取 | `Pull(ctx, path, *PullOptions)` | `await pull(path, {remote, branch, ...opts})` | `pull(path, remote=None, branch=None, **opts)` |
 | 推送 | `Push(ctx, path, *PushOptions)` | `await push(path, {remote, branch, ...opts})` | `push(path, remote=None, branch=None, set_upstream=True, **opts)` |
 | 添加 remote | `RemoteAdd(ctx, path, name, url, *RemoteAddOptions)` | `await remoteAdd(path, name, url, opts)` | `remote_add(path, name, url, **opts)` |

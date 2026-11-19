@@ -35,8 +35,13 @@ async function main() {
     await sandbox.files.write(path, 'hello from qiniu sandbox\n');
     assert.equal(await sandbox.files.readText(path), 'hello from qiniu sandbox\n');
   } finally {
-    await sandbox.kill();
-    console.log('sandbox deleted:', sandbox.sandboxID);
+    try {
+      await sandbox.kill();
+      console.log('sandbox deleted:', sandbox.sandboxID);
+    } catch (error) {
+      console.error(`Failed to delete sandbox ${sandbox.sandboxID}: ${error.message}`);
+      process.exitCode = 1;
+    }
   }
 }
 
@@ -64,6 +69,6 @@ main().catch(err => {
 
 v8.0.0 的 `Sandbox.list()` 返回分页器。用 `hasNext` 和 `nextItems()` 完整遍历；低层 `client.listSandboxes()` 返回 `{ items, nextToken }`。示例及旧版回退见 [列表过滤与分页](parameters.md#列表过滤与分页)。
 
-`timeout` 为秒，`timeoutMs` 为毫秒。SDK 的参数转换并不要求所有 JavaScript 时间都写成毫秒；选定一种表达，避免同时传入两个同义参数。生命周期与快照见 [lifecycle.md](lifecycle.md)，模板见 [templates.md](templates.md)。
+设置沙箱存活时间时，`timeout` 为秒，`timeoutMs` 为毫秒，选用其中一个即可。`SandboxClient({ timeout })` 的 HTTP 请求超时为毫秒。生命周期与快照见 [lifecycle.md](lifecycle.md)，模板见 [templates.md](templates.md)。
 
 进阶任务按主题读取：[进程与流式输出](commands.md)、[文件系统](filesystem.md)、[Git](git.md)、[PTY](pty.md)、[网络](network.md)、[资源挂载](resources.md)、[请求注入](injections.md)、[模板](templates.md)和[快照](snapshots.md)。先核对[语言接口差异](compatibility.md)，避免把其他 SDK 的同名方法或默认值套入当前语言。

@@ -50,7 +50,7 @@ description: >-
 ## 关键约定
 
 - qshell 自动化创建使用 `--detach`。交互式 `create`／`connect` 会进入终端；需要交互时再选择这些模式。
-- 沙箱存活时间、命令执行时限和 HTTP 请求超时分别设置。Node.js 的 `timeout` 为秒，`timeoutMs` 为毫秒；Go 的创建参数为秒，`SetTimeout` 接受 `time.Duration`。
+- 沙箱存活时间、命令执行时限和 HTTP 请求超时分别设置。Node.js 创建、连接或设置沙箱存活时间时，`timeout` 为秒，`timeoutMs` 为毫秒；`SandboxClient({ timeout })` 的 HTTP 请求超时为毫秒。Go 的创建参数为秒，`SetTimeout` 接受 `time.Duration`。
 - 沙箱 API Key 用于平台 API，Envd token 用于沙箱内的命令／文件接口，服务访问 token 用于沙箱中的应用服务。由 SDK 处理 Envd 鉴权，凭据从服务端环境或密钥配置读取。
 - 暂停方式、快照恢复和服务访问有独立语义，按任务读取对应参考。销毁、覆盖文件、删除模板和调整模板可见性应落实到用户授权的具体资源；清理只针对本次任务创建的资源。
 - 查询、诊断任务按只读范围执行。示例中的创建、构建和删除操作用于用户已要求的实际任务；安装技能本身不会创建云资源。

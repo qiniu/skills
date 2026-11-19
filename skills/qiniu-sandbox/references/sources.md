@@ -31,7 +31,7 @@ Node.js／Python 配套修复还将 Commands／PTY 的进程选择器按 Envd Pr
 
 Code Interpreter／Desktop 的兼容版本、安装命令和实测范围分别维护在 [code-interpreter.md](code-interpreter.md) 与 [desktop.md](desktop.md)。2026-11-17 已在七牛扬州环境完成解释器及桌面基础操作验证，并确认新版 E2B 的创建接口／Key 校验与当前环境存在兼容边界。升级依赖后复测实际流程；中文桌面输入与完整视觉 Agent 任务的边界见 Desktop 页。
 
-服务端能力还需对照[当前公开 OpenAPI](https://github.com/qbox/sandbox/blob/e3dfa87062481997412d505cccc2beaaffa49a06/spec/openapi-public.yml)。SDK 包中存在方法不代表服务端已提供相应操作，例如运行时网络 PATCH 的边界见 [network.md](network.md)。
+服务端能力以[七牛沙箱实例 API](https://developer.qiniu.com/las/13480/sandbox-api-sandboxes)和实际环境为准。维护者可对照需仓库权限的[内部 OpenAPI 源文件](https://github.com/qbox/sandbox/blob/e3dfa87062481997412d505cccc2beaaffa49a06/spec/openapi-public.yml)。运行时网络更新的能力边界见 [network.md](network.md)。
 
 产品概念参考[七牛 Sandbox 概览](https://developer.qiniu.com/las/13281/sandbox-overview)。价格、配额、地域可用性和默认模板属于动态信息，需要时查询当前文档或实际环境。
 
