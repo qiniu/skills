@@ -109,7 +109,7 @@ for _, item := range items {
 
 ### 旧版 SDK 与原始 HTTP 分页
 
-使用仍返回切片的旧版 Go SDK、旧 Node.js／Python 依赖或直接调用公共 API 时，可用下面的原始 HTTP 流程。游标原样交给 HTTP 客户端编码一次。
+使用仍返回切片的旧版 Go SDK、旧 Node.js／Python 依赖或直接调用公共 API 时，可用下面的原始 HTTP 流程。游标原样交给 HTTP 客户端编码一次。携带 API Key 的请求只发往已配置的端点，遇到 3xx 直接报错。
 
 `GET /v2/sandboxes` 的正文是数组，下一页游标在响应头 `X-Next-Token` 中。请求参数为 `state`（逗号分隔）、`template`、`metadata`、`limit`、`nextToken`。`metadata` 先分别对每个键和值做百分号编码，再组成并编码内部 query，最后交给 HTTP 客户端编码外层参数。服务端会先解码整个 metadata，再拆分和解码键值；少一层会把 `a+b` 变成 `a b`，或让包含 `&`、`=`、`%` 的筛选值报错。
 
@@ -131,6 +131,7 @@ do {
   if (nextToken) url.searchParams.set('nextToken', nextToken);
   const response = await fetch(url, {
     headers: {'X-API-Key': listApiKey},
+    redirect: 'manual',
     signal: AbortSignal.timeout(30000)
   });
   if (!response.ok) throw new Error(`List sandboxes returned HTTP ${response.status}`);
@@ -152,22 +153,28 @@ metadata = urlencode({quote(key, safe=''): quote(value, safe='')
                       for key, value in filters.items()})
 params = {'state': 'running,paused', 'metadata': metadata, 'limit': 100}
 while True:
-    response = requests.get(client.endpoint + '/v2/sandboxes', params=params,
-                            headers={'X-API-Key': os.environ['QINIU_SANDBOX_API_KEY']},
-                            timeout=30)
-    response.raise_for_status()
-    for item in response.json():
-        print(item['sandboxID'])
-    next_token = response.headers.get('X-Next-Token')
+    with requests.get(client.endpoint + '/v2/sandboxes', params=params,
+                      headers={'X-API-Key': os.environ['QINIU_SANDBOX_API_KEY']},
+                      timeout=30, allow_redirects=False) as response:
+        if not 200 <= response.status_code < 300:
+            raise RuntimeError('List sandboxes returned HTTP {}'.format(response.status_code))
+        for item in response.json():
+            print(item['sandboxID'])
+        next_token = response.headers.get('X-Next-Token')
     if not next_token:
         break
     params['nextToken'] = next_token
 ```
 
-Go 可使用下面的函数，传入与 `sandbox.Config` 相同的端点、API Key 和 HTTPClient。需要导入 `context`、`encoding/json`、`fmt`、`net/http`、`net/url` 和 `strings`。
+Go 可使用下面的函数，传入与 `sandbox.Config` 相同的端点、API Key 和 HTTPClient。函数沿用传入客户端的配置，在副本上关闭重定向。需要导入 `context`、`encoding/json`、`fmt`、`net/http`、`net/url` 和 `strings`。
 
 ```go
 func listSandboxIDs(ctx context.Context, hc *http.Client, endpoint, apiKey string) ([]string, error) {
+	listClient := *hc
+	listClient.CheckRedirect = func(_ *http.Request, _ []*http.Request) error {
+		return http.ErrUseLastResponse
+	}
+
 	filters := url.Values{}
 	for key, value := range map[string]string{"app": "reporting", "branch": "feat/a&b=1+2%"} {
 		filters.Set(url.QueryEscape(key), url.QueryEscape(value))
@@ -193,7 +200,7 @@ func listSandboxIDs(ctx context.Context, hc *http.Client, endpoint, apiKey strin
 			return nil, err
 		}
 		req.Header.Set("X-API-Key", apiKey)
-		resp, err := hc.Do(req)
+		resp, err := listClient.Do(req)
 		if err != nil {
 			return nil, err
 		}
