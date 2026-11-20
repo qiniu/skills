@@ -402,6 +402,8 @@ qshell m3u8replace <Bucket> <M3u8Key> <NewDomain>             # 替换为新域�
 
 需要配置 `QINIU_API_KEY` 或 `E2B_API_KEY` 环境变量。
 
+使用 `qiniu-sandbox` 技能处理七牛沙箱的完整任务流程，包括 SDK、鉴权、网络和模板构建。本节提供 qshell 命令速查。
+
 别名：`sandbox` = `sbx`
 
 ```bash
@@ -413,11 +415,11 @@ qshell sandbox list -m key=value                   # 按元数据过滤
 qshell sandbox list -f json                        # JSON 格式输出
 
 # 创建沙箱（默认自动连接终端）
-# ⚠ AI 助手应始终使用 -d（分离模式），避免交互式终端阻塞
-qshell sandbox create <TemplateID> -d
-qshell sbx cr <TemplateID> -d
-qshell sandbox create <TemplateID> -d -t 300          # 设置超时 300 秒
-qshell sandbox create <TemplateID> -d -m env=dev      # 添加元数据
+# ⚠ AI 助手应始终使用 --detach（分离模式），避免交互式终端阻塞
+qshell sandbox create <TemplateID> --detach
+qshell sbx cr <TemplateID> --detach
+qshell sandbox create <TemplateID> --detach -t 300          # 设置超时 300 秒
+qshell sandbox create <TemplateID> --detach -m env=dev      # 添加元数据
 
 # 连接到已有沙箱终端
 qshell sandbox connect <SandboxID>
@@ -509,7 +511,7 @@ qshell sandbox template init --name my-api --language typescript --path ./my-api
 | "设置文件生命周期" | `qshell chlifecycle`（单文件） / `qshell batchchlifecycle`（批量） | 根据操作规模选择 |
 | "移动文件" / "重命名文件" | `qshell rename`（同 bucket）/ `qshell move`（跨 bucket） | 根据是否跨 bucket 选择 |
 | "删除 m3u8" | `qshell m3u8delete` | 会同时删除所有切片文件 |
-| "创建沙箱" | `qshell sandbox create <TemplateID> -d` | AI 助手必须使用 -d 分离模式 |
+| "创建沙箱" | `qshell sandbox create <TemplateID> --detach` | AI 助手必须使用 --detach 分离模式 |
 | "生成 token" | `qshell token` | 交互式命令，提示用户手动运行 |
 
 ---
@@ -525,9 +527,12 @@ qshell sandbox template init --name my-api --language typescript --path ./my-api
 - `qshell forbidden` — 禁用文件访问
 - `qshell batchexpire` — 批量设置过期可能导致数据丢失
 - `qshell m3u8delete` — 删除 M3U8 及所有切片文件
-- `qshell sandbox kill` / `qshell sandbox kill -a` — 终止沙箱
+- `qshell sandbox kill` — 终止沙箱
+- `qshell sandbox kill -a` / `qshell sandbox pause -a` / `qshell sandbox resume -a` — 批量改变沙箱状态，执行前核对筛选条件和匹配的沙箱 ID
 - `qshell sandbox connect` — 交互式终端，AI 助手无法操作，需提示用户手动执行
 - `qshell sandbox template delete` — 删除模板
+- `qshell sandbox template publish` — 将模板设为公开
+- `qshell sandbox injection-rule delete` — 删除保存的注入规则
 - 任何带 `--overwrite` 的上传/复制/同步操作
 - `qshell token` — 交互式命令，AI 助手无法操作，需提示用户手动执行
 
