@@ -1,5 +1,7 @@
 # Qiniu Skills
 
+English | [简体中文](README.zh-CN.md)
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
 [![Skills](https://img.shields.io/badge/skills-7-informational?style=flat-square)](#available-skills)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square)](CONTRIBUTING.md)
